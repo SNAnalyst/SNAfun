@@ -3,6 +3,7 @@
 S3method(make_edgelist,igraph)
 S3method(make_edgelist,matrix)
 S3method(make_edgelist,network)
+S3method(make_igraph,data.frame)
 S3method(make_igraph,igraph)
 S3method(make_igraph,matrix)
 S3method(make_igraph,network)

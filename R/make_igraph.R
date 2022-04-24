@@ -3,10 +3,33 @@
 #' 
 #' Make an igraph object from various input types.
 #' 
+#' The following inputs are supported:
+#' \describe{
+#' \item{network object}{\code{network} object created by the network package}
+#' \item{matrix}{This is a base R type matrix. When a matrix is used as input, 
+#' the function the number of rows is equal to the number of columns. 
+#' If they do not, the function assumes the matrix refers to a bipartite network. 
+#' This assumption can be overridden by the \code{bipartite} argument.}
+#' \item{data.frame}{The \code{data.frame} contains an edge list. 
+#' The data.frame requires the first column to contain the senders and the 
+#' second column contains the receivers. If there are any additional 
+#' columns, these are considered to be edge attributes.
+#' 
+#' NOTE: The created \code{igraph} object is considered to be directed. 
+#' If an undirected network is required, run \code{\link[igraph]{as.undirected}} 
+#' on the output from this function.}
+#' }
+#' 
+#' 
+#' 
 #' When a matrix is used as input, the function the number of rows is equal  
 #' to the number of columns. If they do not, the function assumes the matrix 
 #' refers to a bipartite network. This assumption can be overridden by 
 #' the \code{bipartite} argument.
+#' 
+#' 
+#' #### add vertices = NULL argument!!!!!
+#' #### add directed = F argument???
 #' 
 #' 
 #'
@@ -37,6 +60,18 @@
 #' make_igraph(mat)  # same network, but not officially bipartite
 #' mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
 #' make_igraph(mat, bipartite = TRUE)
+#' 
+#' relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 
+#'     "David", "Esmeralda"), 
+#'     to = c("Alice", "Bob", "Alice", "Alice", "Bob", "Alice"),
+#'     same.dept = c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE), 
+#'     friendship = c(4, 5, 5, 2, 1, 1), advice = c(4, 5, 5, 4, 2, 3))
+#' make_igraph(relations)
+#' 
+#' aa <- data.frame(from = c(1,1,2,2,3,3,4,4), 
+#'     to = c(11, 12, 13, 14, 15, 16, 17, 18))
+#' make_igraph(aa)  # message is given if this should ne bipartite
+#' make_igraph(aa, bipartite = TRUE)  
 make_igraph <- function(x, bipartite = FALSE) {
   UseMethod("make_igraph")
 }
@@ -125,4 +160,35 @@ make_igraph.network <- function (x, bipartite = FALSE) {
 make_igraph.igraph <- function(x, bipartite = FALSE) {
   x
 }
+
+
+
+#' @export
+#' @describeIn make_igraph Make an igraph object from a data.frame or tibble
+make_igraph.data.frame <- function(x,
+                                 bipartite = FALSE) {
+  # just in case this is done by a tidyverse user
+  if (inherits(x, "tbl_df")) object <- as.data.frame(x)
+  graph <- igraph::graph_from_data_frame(x, directed = TRUE)
+  # make bipartite 
+  if (bipartite) {
+    if (length(intersect(c(x[,1]), c(x[, 2]))) == 0) { 
+      igraph::V(graph)$type <- igraph::V(graph)$name %in% x[, 2]
+    } else {
+      stop("'You asked for a bipartite network, but there are overlapping 
+           sender and receiver names. 
+           Please correct this.'")
+    }
+  } else {
+    if (length(intersect(c(x[,1]), c(x[, 2]))) == 0) { 
+      message("You ask for a unipartite network, but you have non-overlapping 
+              senders and receivers. 
+              This is fine if the network should indeed not be bipartite. 
+              If it should, please specify 'bipartite == TRUE'.")
+    }
+  }
+  return(graph)
+}
+
+
 

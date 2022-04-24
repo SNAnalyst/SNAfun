@@ -85,12 +85,29 @@ expect_equal(igraph::vcount(ig2), nrow(mat2) + ncol(mat2))
 expect_equal(igraph::ecount(ig2), sum(mat2))
 
 
+#### EDGELIST TO IGRAPH
+relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 
+    "David", "Esmeralda"), 
+    to = c("Alice", "Bob", "Alice", "Alice", "Bob", "Alice"),
+    same.dept = c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE), 
+    friendship = c(4, 5, 5, 2, 1, 1), advice = c(4, 5, 5, 4, 2, 3))
+make_igraph(relations)
+
+aa <- data.frame(from = c(1,1,2,2,3,3,4,4), 
+    to = c(11, 12, 13, 14, 15, 16, 17, 18))
 
 
+ig_rel <- make_igraph(relations)
+make_igraph(aa)  # message is given if this should be bipartite
+ig_aa <- make_igraph(aa, bipartite = TRUE)
 
-
-
-
-
+expect_error(make_igraph(relations, TRUE))
+expect_false(igraph::is.bipartite(ig_rel))
+expect_true(igraph::vcount(ig_rel) == 5)
+expect_true(igraph::ecount(ig_rel) == 6)
+expect_message(make_igraph(aa, FALSE))
+expect_true(igraph::is.bipartite(ig_aa))
+expect_true(igraph::vcount(ig_aa) == 12)
+expect_true(igraph::ecount(ig_aa) == 8)
 
 
