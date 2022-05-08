@@ -96,13 +96,13 @@ GOF_and_plot_as_btergm <- function(m,
   }
   
   if (silent) {
-    g <- suppressMessages(btergm:::gof.btergm(m, statistics = btergm_statistics, ...,
+    g <- suppressMessages(gof_btergm(m, statistics = btergm_statistics, ...,
                                               verbose = verbose),
                           classes = c("message", "warning"))
   }
-  g <- suppressWarnings(btergm:::gof.btergm(m, statistics = btergm_statistics, ...,
+  g <- suppressWarnings(gof_btergm(m, statistics = btergm_statistics, ...,
                                             verbose = verbose))
-  btergm:::plot.gof(g)
+  plot_gof_btergm(g)
   invisible(g)
 }
 
@@ -148,14 +148,14 @@ GOF_and_plot_as_btergm <- function(m,
 #'   parallel = "snow", ncpus = 16  # optional line
 #' )
 #' 
-#' gof_btergm <- btergm:::gof.btergm(m_btergm)
+#' gof_btergm <- gof_btergm(m_btergm)
 #' GOF_plot(gof_btergm)
 #' }
 GOF_plot <- function(gof) {
   if (inherits(gof, "gof.ergm")) {
-    ergm:::plot.gof(gof)
+    plot_gof_ergm(gof)
   } else if (inherits(gof, "gof")) {
-    btergm:::plot.gof(gof)
+    plot_gof_btergm(gof)
   } else {
     stop("The input for 'm' has to be a gof object from a 'ergm' or a 'btergm' model")
   }

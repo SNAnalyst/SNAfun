@@ -46,7 +46,7 @@ m_btergm <- btergm::btergm(allianceNets ~ edges +
   parallel = "snow", ncpus = 16  # optional line
 )
 
-gof_btergm <- btergm:::gof.btergm(m_btergm)
+gof_btergm <- gof_btergm(m_btergm)
 GOF_plot(gof_btergm)
 }
 }

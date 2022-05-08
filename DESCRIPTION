@@ -1,7 +1,7 @@
 Package: SNAfun
 Type: Package
-Title: Cool functions for the Social Network Analysis for Data Science course
-Version: 0.2022.1
+Title: Cool FUNctions for the Social Network Analysis for Data Science course
+Version: 0.2022.2
 Authors@R:
 	c(person(given = "Roger",
 					family = "Leenders",
@@ -28,11 +28,12 @@ Imports:
 	network,
 	networkDynamic,
 	sna,
-	tinytest
+	utils
 Remotes:
 	github::SNAnalyst/SNA4DSData
 Suggests:
 	desc,
+	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE
 RoxygenNote: 7.1.2

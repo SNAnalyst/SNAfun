@@ -44,8 +44,15 @@ make_edgelist <- function(x, sort = "from") {
   UseMethod("make_edgelist")
 }
 
+
 #' @export
-#' @describeIn make_edgelist Make an edgelist from an igraph object.
+make_edgelist.default <- function(x, sort = "from") {
+  stop("'x' needs to be an 'igraph' object, a 'network' object, or a network 'matrix'")
+}
+
+
+#' @export
+#' @describeIn make_edgelist
 make_edgelist.igraph <- function(x, sort = "from") {
   el <- igraph::get.data.frame(x)
   if (!sort %in% colnames(el)) {
@@ -56,7 +63,7 @@ make_edgelist.igraph <- function(x, sort = "from") {
 
 
 #' @export
-#' @describeIn make_edgelist Make an edgelist from a network object.
+#' @describeIn make_edgelist
 make_edgelist.network <- function(x, sort = "from") {
   out <- sna::as.edgelist.sna(x)
   edges <- as.data.frame(out)
@@ -87,7 +94,7 @@ make_edgelist.network <- function(x, sort = "from") {
 
 
 #' @export
-#' @describeIn make_edgelist Make an edgelist from a matrix
+#' @describeIn make_edgelist
 make_edgelist.matrix <- function(x, sort = "from"){
   el <- make_edgelist.igraph(make_igraph(x))
   if (!sort %in% colnames(el)) {

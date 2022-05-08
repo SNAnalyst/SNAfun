@@ -2,21 +2,9 @@
 % Please edit documentation in R/make_igraph.R
 \name{make_igraph}
 \alias{make_igraph}
-\alias{make_igraph.matrix}
-\alias{make_igraph.network}
-\alias{make_igraph.igraph}
-\alias{make_igraph.data.frame}
 \title{Make igraph object}
 \usage{
 make_igraph(x, bipartite = FALSE)
-
-\method{make_igraph}{matrix}(x, bipartite = FALSE)
-
-\method{make_igraph}{network}(x, bipartite = FALSE)
-
-\method{make_igraph}{igraph}(x, bipartite = FALSE)
-
-\method{make_igraph}{data.frame}(x, bipartite = FALSE)
 }
 \arguments{
 \item{x}{input object}
@@ -58,17 +46,6 @@ the \code{bipartite} argument.
 #### add vertices = NULL argument!!!!!
 #### add directed = F argument???
 }
-\section{Methods (by class)}{
-\itemize{
-\item \code{matrix}: Make an igraph object from a matrix
-
-\item \code{network}: Make an igraph object from a network object
-
-\item \code{igraph}: In case you feed an igraph object to this function: the object is returned unaltered
-
-\item \code{data.frame}: Make an igraph object from a data.frame or tibble
-}}
-
 \note{
 The functions are largely based upon the \code{\link[migraph]{as_igraph}} 
 functions. The versions in this package do not require tidyverse dependencies 

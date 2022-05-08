@@ -42,7 +42,7 @@
 #' }
 makeEdgeList <- function(names = NULL , attribute = NULL) {
 
-if (class(names) == "data.frame") {
+if (inherits(names, "data.frame")) {
   
   colNodes <- names[!is.na(names[ , 1]), ]
   
@@ -86,7 +86,7 @@ if (class(names) == "data.frame") {
   
   } else {
     
-    cat('ERROR: The argument names needs to be a data frame')
+    cat("ERROR: The argument 'names' needs to be a data frame")
   }
 }
 

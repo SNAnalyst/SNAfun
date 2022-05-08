@@ -2,18 +2,9 @@
 % Please edit documentation in R/make_edgelist.R
 \name{make_edgelist}
 \alias{make_edgelist}
-\alias{make_edgelist.igraph}
-\alias{make_edgelist.network}
-\alias{make_edgelist.matrix}
 \title{Make edgelist}
 \usage{
 make_edgelist(x, sort = "from")
-
-\method{make_edgelist}{igraph}(x, sort = "from")
-
-\method{make_edgelist}{network}(x, sort = "from")
-
-\method{make_edgelist}{matrix}(x, sort = "from")
 }
 \arguments{
 \item{x}{input object}
@@ -31,15 +22,6 @@ do. The usefulness of this function is its consistent API.
 \details{
 Currently, input can be a matrix, \code{igraph} object or \code{network} object.
 }
-\section{Methods (by class)}{
-\itemize{
-\item \code{igraph}: Make an edgelist from an igraph object.
-
-\item \code{network}: Make an edgelist from a network object.
-
-\item \code{matrix}: Make an edgelist from a matrix
-}}
-
 \examples{
 ## from an igraph object
 g_i <- igraph::sample_gnp(10, 2/10)

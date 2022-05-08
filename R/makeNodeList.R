@@ -38,7 +38,7 @@
 #' }
 makeNodeList <- function(names = NULL, attribute = NULL ) {
 
-if (class(names) == "data.frame") {
+if (inherits(names, "data.frame")) {
 
   namelist <- sort(stats::na.omit(unique(as.vector(t(names)))))
 

@@ -18,3 +18,9 @@
 }
 
 
+
+
+gof_btergm <- utils::getFromNamespace("gof.btergm", "btergm")
+plot_gof_btergm <- utils::getFromNamespace("plot.gof", "btergm")
+plot_gof_ergm <- utils::getFromNamespace("plot.gof", "ergm")
+

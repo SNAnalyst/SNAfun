@@ -79,7 +79,14 @@ make_igraph <- function(x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph Make an igraph object from a matrix
+make_igraph.default <- function(x, bipartite = FALSE) {
+  stop("'x' should be of class 'matrix', 'network', 'igraph', or 'data.frame'")
+}
+
+
+
+#' @export
+#' @describeIn make_igraph
 make_igraph.matrix <- function(x, bipartite = FALSE) {
   if (nrow(x) != ncol(x) | bipartite) {
     if (!(all(x %in% c(0, 1)))) {
@@ -104,7 +111,7 @@ make_igraph.matrix <- function(x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph Make an igraph object from a network object
+#' @describeIn make_igraph
 make_igraph.network <- function (x, bipartite = FALSE) {
   if (network::is.hyper(x)) 
     stop("hypergraphs are not supported")
@@ -156,7 +163,7 @@ make_igraph.network <- function (x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph In case you feed an igraph object to this function: the object is returned unaltered
+#' @describeIn make_igraph
 make_igraph.igraph <- function(x, bipartite = FALSE) {
   x
 }
@@ -164,7 +171,7 @@ make_igraph.igraph <- function(x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph Make an igraph object from a data.frame or tibble
+#' @describeIn make_igraph
 make_igraph.data.frame <- function(x,
                                  bipartite = FALSE) {
   # just in case this is done by a tidyverse user
