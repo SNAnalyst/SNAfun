@@ -23,21 +23,22 @@ remove_vertices <- function(x, vertices) {
 }
 
 
-#' @describeIn remove_vertices
+
 #' @export
 remove_vertices.default <- function(x, vertices) {
-  stop("'x' should be an 'igraph' object or a 'network' object")
+  txt <- methods_error_message("x", "remove_vertices")
+  stop(txt)
 }
 
 
 
-#' @describeIn remove_vertices
+
 #' @export
 remove_vertices.igraph <- function(x, vertices) {
   igraph::delete_vertices(x, v = vertices)
 }
 
-#' @describeIn remove_vertices
+
 #' @export
 remove_vertices.network <- function(x, vertices) {
   namen <- network::get.vertex.attribute(x, "vertex.names")
@@ -77,16 +78,16 @@ remove_isolates <- function(x, loops = FALSE) {
 
 
 
-#' @describeIn remove_isolates
+
 #' @export
 remove_isolates.default <- function(x, loops = FALSE) {
-  stop("'x' should be an 'igraph' object or a 'network' object")
+  txt <- methods_error_message("x", "remove_isolates")
+  stop(txt)
 }
 
 
 
 #' @export
-#' @describeIn remove_isolates
 remove_isolates.igraph <- function(x, loops = FALSE) {
   isols <- find_isolates.igraph(x, names = FALSE, loops = loops)
   if (length(isols) > 0) {
@@ -98,7 +99,6 @@ remove_isolates.igraph <- function(x, loops = FALSE) {
 
 
 #' @export
-#' @describeIn remove_isolates
 remove_isolates.network <- function(x, loops = FALSE) {
   isols <- find_isolates.network(x, names = FALSE, loops = loops)
   if (length(isols) > 0) {

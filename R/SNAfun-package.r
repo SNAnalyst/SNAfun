@@ -9,13 +9,13 @@ NULL
 
 
 
-#' SNAfun
+#' snafun
 #'
-#' Package supporting the SNAfun course
+#' Package supporting the SNA4DScourse
 #'
-#' Functions, useful for the SNAfun course.
+#' Functions, useful for the SNA4DS course.
 #'
-#' @name SNAfun
+#' @name snafun
 #' @keywords package
 #' @docType package
 NULL

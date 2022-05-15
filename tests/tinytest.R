@@ -1,1 +1,1 @@
-tinytest::test_package("SNAfun")
+tinytest::test_package("snafun")

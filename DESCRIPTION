@@ -1,6 +1,6 @@
-Package: SNAfun
+Package: snafun
 Type: Package
-Title: Cool FUNctions for the Social Network Analysis for Data Science course
+Title: Cool FUNctions for the Social Network Analysis for Data Science Course
 Version: 0.2022.2
 Authors@R:
 	c(person(given = "Roger",

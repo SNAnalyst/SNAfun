@@ -17,7 +17,7 @@ nothing
 Open a SNA4DS vignette in your browser
 }
 \details{
-Shows a list of currently available online vignettes for the #' \code{SNAfun} package.
+Shows a list of currently available online vignettes for the #' \code{snafun} package.
 The user can pick the preferred vignette by entering the number that corresponds
 to the preferred vignette. The vignette will then open in the user's default
 web browser.

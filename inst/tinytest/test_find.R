@@ -8,8 +8,7 @@ mat <- matrix(0, nrow = 4, ncol = 4)
 mat[1, 3] <- mat[4,4] <- 1
 ig <- igraph::graph_from_adjacency_matrix(mat)
 
-expect_error(find_isolates(mat), 
-             pattern = "'x' should be of class 'igraph' or 'network'")
+expect_error(find_isolates(mat))
 
 
 expect_equivalent(find_isolates(ig), c(2, 4))

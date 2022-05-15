@@ -10,6 +10,10 @@ ig <- igraph::graph_from_adjacency_matrix(mat)
 nw <- network::as.network.matrix(mat, loops = TRUE)
 nw2 <- network::delete.vertex.attribute(nw, "vertex.names")
 
+expect_error(has_vertexnames(mat), "class")
+expect_error(has_vertexnames(mat), "igraph")
+expect_error(has_vertexnames(mat), "network")
+
 # without names
 expect_false(has_vertexnames(ig))
 expect_false(has_vertexnames(nw))

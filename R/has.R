@@ -21,19 +21,29 @@
 #'
 #' @return \code{TRUE} or \code{FALSE}
 #' @export
+#' @example 
+#' data(florentine, package = "snafun")
+#' has_vertexnames(florentine$flobusiness)
 has_vertexnames <- function(x) {
   UseMethod("has_vertexnames")
 }
 
+
 #' @export
-#' @describeIn has_vertexnames
+has_vertexnames.default <- function(x) {
+  txt <- methods_error_message("x", "has_vertexnames")
+  stop(txt)
+}
+
+
+
+#' @export
 has_vertexnames.igraph <- function(x) {
   "name" %in% igraph::list.vertex.attributes(x)
 }
 
 
 #' @export
-#' @describeIn has_vertexnames
 has_vertexnames.network <- function(x) {
   "vertex.names" %in% network::list.vertex.attributes(x)
 }

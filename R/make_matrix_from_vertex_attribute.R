@@ -83,26 +83,35 @@ make_matrix_from_vertex_attribute <- function (x, name,
   kall <- as.list(match.call())
 
   if (inherits(x, "igraph")) {
-    X <- igraph::get.vertex.attribute(graph = x, name = name)
+    all_att <- igraph::list.vertex.attributes(x)
+    if (!name %in% all_att) {
+      stop("The attribute ", name, " does not occur in the graph")
+    }
+    att <- igraph::get.vertex.attribute(graph = x, name = name)
+    att <- fix_list_attribute(att)
   } else if (inherits(x, "network")) {
-      X <- network::get.vertex.attribute(x, name)
+    all_att <- network::list.vertex.attributes(x)
+    if (!name %in% all_att) {
+      stop("The attribute ", name, " does not occur in the graph")
+    }
+      att <- network::get.vertex.attribute(x, name)
   } else if (is.null(dim(x)) || max(dim(x)) == 1) {
-      X <- x
+      att <- x
   } else (
     stop ("'x' has to be an igraph object, a network object, or a vector")
   )
-  if (any(is.na(X))) stop("The attribute contains missing data, which can not
+  if (any(is.na(att))) stop("The attribute contains missing data, which can not
                           logically be handled by this function.")
 
-  dX <- length(X)
-  Y <- X
+  dX <- length(att)
+  Y <- att
   FUN <- match.arg(measure)
-  Y <- rep(Y, rep.int(length(X), length(Y)))
-  X <- rep(X, times = ceiling(length(Y)/length(X)))
+  Y <- rep(Y, rep.int(length(att), length(Y)))
+  X <- rep(att, times = ceiling(length(Y)/length(att)))
 
-  XY <- cbind(X, Y)
+  XY <- cbind(att, Y)
   if (FUN == "diff") {
-    if (!is.numeric(X)) stop("The data should be numeric for this measure.")
+    if (!is.numeric(att)) stop("The data should be numeric for this measure.")
     robj <- X - Y
   } else if (FUN == "absdiff") {
     if (!is.numeric(X)) stop("The data should be numeric for this measure.")
@@ -140,3 +149,30 @@ make_matrix_from_vertex_attribute <- function (x, name,
 
   robj
 }
+
+
+
+# if an attribute is really a list, this is turned into a vector
+# if multiple occur for the attribute for some vertex/edge, the first value is used 
+# and a warning is triggered.
+fix_list_attribute <- function(att) {
+  if (is.list(att)) {
+    islistlist <- any(sapply(att, is.list))
+    if (islistlist) {
+      stop("The attribute may be a list of lists, please fix before progressing.")
+    }
+    lens <- sapply(att, length)
+    multiple <- which(lens > 1)
+    if (length(multiple) > 0) {
+      warning("Vertex/vertices ", paste(multiple, collapse = ","), " have more than one value for this attribute: only their first value will be used!")
+      for (at in multiple) {
+        att[[at]] <- att[[at]][1]
+      }
+      att <- unlist(att)
+    }
+  }
+  att
+}
+
+
+

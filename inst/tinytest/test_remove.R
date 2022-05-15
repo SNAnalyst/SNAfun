@@ -32,13 +32,15 @@ expect_true(igraph::ecount(remove_isolates(ig, loops = TRUE)) == 15)
 ig_no_isolates <- remove_isolates(ig)
 expect_identical(ig_no_isolates, remove_isolates(ig_no_isolates))
 
-expect_error(remove_isolates(mat), 
-                       pattern = "'x' should be an 'igraph' object or a 'network' object")
+expect_error(remove_isolates(mat), "class")
+expect_error(remove_isolates(mat), "igraph")
+expect_error(remove_isolates(mat), "network")
+
 
 expect_true(igraph::vcount(remove_vertices(ig, c(1, 2, 4))) == 7)
 expect_true(igraph::ecount(remove_vertices(ig, c(1, 2, 4))) == 7)  # self-loop counts too
 expect_true(igraph::ecount(remove_vertices(ig, c(1, 2, 8))) == 8)
-expect_error(remove_vertices(ig, c("A", "B", "C")))
+expect_error(suppressWarnings(remove_vertices(ig, c("A", "B", "C"))), "Invalid")
 
 
 # named vertices

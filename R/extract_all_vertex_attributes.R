@@ -35,7 +35,7 @@
 #' extract_all_vertex_attributes(flomar_nw)
 #' }
 extract_all_vertex_attributes <- function(g) {
-  if (network::is.network(g)) {
+  if (inherits(g, "network")) {
     attrs <- network::list.vertex.attributes(g)
     if (length(attrs) > 0) {
       mat <- data.frame(matrix(ncol = length(attrs), nrow = network::network.size(g)))
@@ -45,12 +45,14 @@ extract_all_vertex_attributes <- function(g) {
     } else {
       return(NULL)
     }
-  } else if (igraph::is.igraph(g)) {
+  } else if (inherits(g, "igraph")) {
     attrs <- igraph::list.vertex.attributes(g)
     if (length(attrs) > 0) {
       mat <- data.frame(matrix(ncol = length(attrs), nrow = igraph::gorder(g)))
       for (att in 1:length(attrs)) {
-        mat[, att] <- igraph::get.vertex.attribute(g, attrs[att])
+        atje <- igraph::get.vertex.attribute(g, attrs[att]) |> 
+          fix_list_attribute()
+        mat[, att] <- atje
       }
     } else {
       return(NULL)

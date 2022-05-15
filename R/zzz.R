@@ -8,11 +8,11 @@
 
 .onAttach <- function(lib, pkg,...){
   print_message <-  paste("\n",
-                          "Welcome to SNAfun version ", utils::packageDescription("SNAfun")$Version,
+                          "Welcome to snafun version ", utils::packageDescription("snafun")$Version,
                           "\n",
-                          "Type ?SNAfun to access the package documentation\n\n",
+                          "Type help(package = 'snafun') to access the package documentation\n\n",
                           "To suppress this message use:\n",
-                          "\tsuppressPackageStartupMessages(library(SNAfun))\n\n",
+                          "\tsuppressPackageStartupMessages(library(snafun))\n\n",
                           sep = "")
   packageStartupMessage(print_message)
 }

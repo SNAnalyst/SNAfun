@@ -55,16 +55,15 @@ find_isolates <- function(x, names = TRUE, loops = FALSE) {
 
 
 #' @export
-#' @describeIn find_isolates
 find_isolates.default <- function(x, names = TRUE, loops = FALSE) {
-  stop("'x' should be of class 'igraph' or 'network'")
+  txt <- methods_error_message("x", "find_isolates")
+  stop(txt)
 }
 
 
 
 
 #' @export
-#' @describeIn find_isolates
 find_isolates.igraph <- function(x, names = TRUE, loops = FALSE) {
   degs <- igraph::degree(x, mode = "all", loops = loops)
   isols <- which(degs == 0)
@@ -78,7 +77,6 @@ find_isolates.igraph <- function(x, names = TRUE, loops = FALSE) {
 
 
 #' @export
-#' @describeIn find_isolates
 find_isolates.network <- function(x, names = TRUE, loops = FALSE) {
   welke <- sna::isolates(x, diag = loops)
   if (names & has_vertexnames.network(x)) {

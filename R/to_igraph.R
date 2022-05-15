@@ -38,56 +38,58 @@
 #' network. Forces the creation of a bipartite igraph x. This argument is 
 #' only used when a matrix is converted to an \code{igraph} object and is 
 #' ignored otherwise.
-#' @#rdname make_igraph
 #' @export
 #' @note The functions are largely based upon the \code{\link[migraph]{as_igraph}} 
-#' functions. The versions in this package do not require tidyverse dependencies 
+#' functions. The versions in the \code{snafun} package do not require 
+#' the tidyverse dependencies of \code{migraph}
 #' and do not deal with tidygraph.
 #' @examples
 #' # from a matrix
 #' g <- igraph::sample_gnp(10, 2/10)
 #' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
-#' make_igraph(mat)
+#' to_igraph(mat)
 #' 
 #' g <- igraph::make_ring(10)
 #' igraph::E(g)$weight <- seq_len(igraph::ecount(g))
 #' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE, attr = "weight")
-#' make_igraph(mat)
+#' to_igraph(mat)
 #' 
 #' # bipartite network, even nodes are one type, odd vertices another type
 #' g <- igraph::make_bipartite_graph( rep(0:1,length=10), c(1:10))
 #' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
-#' make_igraph(mat)  # same network, but not officially bipartite
+#' to_igraph(mat)  # same network, but not officially bipartite
 #' mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
-#' make_igraph(mat, bipartite = TRUE)
+#' to_igraph(mat, bipartite = TRUE)
 #' 
 #' relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 
 #'     "David", "Esmeralda"), 
 #'     to = c("Alice", "Bob", "Alice", "Alice", "Bob", "Alice"),
 #'     same.dept = c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE), 
 #'     friendship = c(4, 5, 5, 2, 1, 1), advice = c(4, 5, 5, 4, 2, 3))
-#' make_igraph(relations)
+#' to_igraph(relations)
 #' 
+#' \dontrun{
 #' aa <- data.frame(from = c(1,1,2,2,3,3,4,4), 
 #'     to = c(11, 12, 13, 14, 15, 16, 17, 18))
-#' make_igraph(aa)  # message is given if this should ne bipartite
-#' make_igraph(aa, bipartite = TRUE)  
-make_igraph <- function(x, bipartite = FALSE) {
-  UseMethod("make_igraph")
+#' to_igraph(aa)  # message is given if this should ne bipartite
+#' to_igraph(aa, bipartite = TRUE)  
+#' }
+to_igraph <- function(x, bipartite = FALSE) {
+  UseMethod("to_igraph")
 }
 
 
 
 #' @export
-make_igraph.default <- function(x, bipartite = FALSE) {
-  stop("'x' should be of class 'matrix', 'network', 'igraph', or 'data.frame'")
+to_igraph.default <- function(x, bipartite = FALSE) {
+  txt <- methods_error_message("x", "to_igraph")
+  stop(txt)
 }
 
 
 
 #' @export
-#' @describeIn make_igraph
-make_igraph.matrix <- function(x, bipartite = FALSE) {
+to_igraph.matrix <- function(x, bipartite = FALSE) {
   if (nrow(x) != ncol(x) | bipartite) {
     if (!(all(x %in% c(0, 1)))) {
       graph <- igraph::graph_from_incidence_matrix(x,
@@ -111,8 +113,7 @@ make_igraph.matrix <- function(x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph
-make_igraph.network <- function (x, bipartite = FALSE) {
+to_igraph.network <- function (x, bipartite = FALSE) {
   if (network::is.hyper(x)) 
     stop("hypergraphs are not supported")
   attr <- names(x[[3]][[1]])
@@ -120,7 +121,6 @@ make_igraph.network <- function (x, bipartite = FALSE) {
   if (length(isna) > 0) {
     attr <- attr[-isna]
   }
-  
   
   if (network::is.bipartite(x)) {
     if ("weight" %in% network::list.edge.attributes(x)) {
@@ -148,7 +148,7 @@ make_igraph.network <- function (x, bipartite = FALSE) {
   }
   
   if (!inherits(graph, "igraph")) {
-    graph <- make_igraph(graph)
+    graph <- to_igraph(graph)
   }
   
   if (length(attr) > 1) {
@@ -163,19 +163,17 @@ make_igraph.network <- function (x, bipartite = FALSE) {
 
 
 #' @export
-#' @describeIn make_igraph
-make_igraph.igraph <- function(x, bipartite = FALSE) {
+to_igraph.igraph <- function(x, bipartite = FALSE) {
   x
 }
 
 
 
 #' @export
-#' @describeIn make_igraph
-make_igraph.data.frame <- function(x,
+to_igraph.data.frame <- function(x,
                                  bipartite = FALSE) {
   # just in case this is done by a tidyverse user
-  if (inherits(x, "tbl_df")) object <- as.data.frame(x)
+  if (inherits(x, "tbl_df")) x <- as.data.frame(x)
   graph <- igraph::graph_from_data_frame(x, directed = TRUE)
   # make bipartite 
   if (bipartite) {

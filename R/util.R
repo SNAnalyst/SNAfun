@@ -484,3 +484,98 @@ find_package_root_file <- function (..., path = ".") {
   find_root_file(..., criterion = criterion, path = path)
 }
 
+
+
+
+
+
+
+
+
+
+which_methods <- function(name) {
+  methods <- format(utils::.S3methods(name, envir = getNamespace("snafun")))
+  methods <- sub(paste0(name, "."), "", methods)
+  methods <- sub("\\*", "", methods)
+  if ("default" %in% methods) {
+    methods <- methods[-which(methods == "default")]
+  }
+  methods
+}
+
+
+methods_error_message <- function(what, method) {
+  implemented <- paste0("`", which_methods(method), "`") |> 
+    paste0(collapse = ", ")
+  txt <- paste0("'", what, "' should be of class ", implemented)
+}
+
+
+# return a list with two elements: 
+# 'value' has the result from the evaluation of the expression
+# 'warnings' holds any warnings that resulted from the expression
+# 
+# the warnings are not returned to the console
+
+
+
+#' Catch output and warnings
+#' 
+#' Catch the output and any warnings from evaluating an expression
+#' 
+#' Some expressions generate a warning, besides some output. 
+#' In some cases, it is profitable to not print the warning to the console, 
+#' but still capture the warning. You can not use \code{\link{suppressWarnings}},
+#' because that suppresses the warning altogether and it can't be checked 
+#' programatically whether a warning was triggered (and which warning).
+#' 
+#' This little function evaluates the expression and stores the result in 
+#' a list with two entries: 
+#' 
+#' \describe{
+#' \item{value}{the object that is returned by 
+#' evaluating the expression}
+#' \item{warnings}{a list of lists that contains 
+#' the warnings; each warning is a separate list within this overall list. 
+#' \code{warnings} is NULL is no warnings were generated.}
+#' }
+#' 
+#' No warning is printed to the console, but errors and messages are.
+#' 
+#' This function is intended for internal use and is not openly exposed to 
+#' the user (but it is exported for potential use elsewhere).
+#'
+#' @param expr a valied R expression
+#'
+#' @return list, see above for the contents
+#' @export
+#' @keywords internal
+#'
+#' @examples
+#' uit <- withWarnings(sum(c(1:3)))
+#' uit$value   # 6
+#' class(uit$value)  # integer
+#' class(uit$warnings)  # NULL
+#' is.null(uit$warnings)   # TRUE
+#' 
+#' testit <- function(x) {
+#'     warning("testit_warning")
+#'     sum(x)
+#' }
+#' uit <- withWarnings(testit(1:3))
+#' uit$value   # 6
+#' is.list(uit$warnings)  # TRUE
+#' uit$warnings[[1]]   # <simpleWarning in testit(1:3): testit_warning>
+#' inherits(uit$warnings[[1]], "simpleWarning")  # TRUE
+#' # check for this specific warning
+#' grepl("testit_warning", uit$warnings[[1]])  # TRUE
+withWarnings <- function(expr) {
+  myWarnings <- NULL
+  wHandler <- function(w) {
+    myWarnings <<- c(myWarnings, list(w))
+    invokeRestart("muffleWarning")
+  }
+  val <- withCallingHandlers(expr, warning = wHandler)
+  list(value = val, warnings = myWarnings)
+}
+

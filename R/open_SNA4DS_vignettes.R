@@ -7,7 +7,7 @@
 #'
 #' Open a SNA4DS vignette in your browser
 #'
-#' Shows a list of currently available online vignettes for the #' \code{SNAfun} package.
+#' Shows a list of currently available online vignettes for the #' \code{snafun} package.
 #' The user can pick the preferred vignette by entering the number that corresponds
 #' to the preferred vignette. The vignette will then open in the user's default
 #' web browser.
@@ -27,7 +27,7 @@
 #' open_SNA4DS_vignettes()
 #' }
 open_SNA4DS_vignettes <- function(graphics = TRUE) {
-  paths <- find.package("SNAfun", lib.loc = NULL, quiet = TRUE)
+  paths <- find.package("snafun", lib.loc = NULL, quiet = TRUE)
 
   if (dir.exists(file.path(paths, "doc"))) {
     paths <- file.path(paths, "doc")
