@@ -17,7 +17,7 @@ The following API is used (for now):
 
 Then, there are indices/measures at three levels:
 - e_* : edge level indices
-- g_* : graph level indices, such as betweenne`ss cent`ralization
+- g_* : graph level indices, such as betweenness centralization
 - v_* : vertex level indices, such as betweenness
 
 Then, there are some other functions for which there is no specific entry in the API yet. But, hey, naming may just all change again anyway...
