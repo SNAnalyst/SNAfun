@@ -24,13 +24,20 @@
 #' on the output from this function.}
 #' }
 #' 
+#' The argument \code{bipartite} is used to tell the function whether the input 
+#' represents a bipartite network or not. If it does, then set \code{bipartite} 
+#' to \code{TRUE} and the function will attempt to convert the input to a 
+#' bipartite network. 
+#' However, the argument is NOT intended to convert a bipartite network to 
+#' a unipartite network and will NOT do that conversion! 
+#' 
 #' NOTE: as far as we know, this function is the only function that correctly 
 #' deals with vertex attributes that themselves are lists in the conversion 
 #' from \code{igraph} (which allows lists) to \code{network} (which can not 
 #' deal with lists as attributes).
 #' 
 #' @param x graph data object
-#' @param bipartite logical, should the graph be considered to be bipartite? 
+#' @param bipartite logical, should \code{x} be considered to be bipartite? 
 #' This overrides the function's default choices.
 #'
 #' @return a \code{network} object
@@ -49,7 +56,7 @@ to_network.default <- function(x, bipartite = FALSE) {
 
 #' @export
 to_network.network <- function(x, bipartite = FALSE) {
-  x
+  network::network(x, bipartite = bipartite, directed = is_directed(x))
 }
 
 
@@ -78,6 +85,10 @@ to_network.matrix <- function(x, bipartite = FALSE) {
 
 
 
+
+
+
+
 ##############################
 ##############################edge attributes aren't copied over yet!!!
 
@@ -85,7 +96,8 @@ to_network.matrix <- function(x, bipartite = FALSE) {
 to_network.igraph <- function(x, bipartite = NULL) {
   bip <- (snafun::is_bipartite(x) || isTRUE(bipartite))
   name <- type <- NULL
-  attrs <- extract_all_vertex_attributes(x)
+  vattrs <- extract_all_vertex_attributes(x)
+  eattrs <- to_edgelist(x)
   
   mat <- withWarnings(to_matrix(x))
   if (!is.null(mat$warnings)) {
@@ -102,17 +114,18 @@ to_network.igraph <- function(x, bipartite = NULL) {
     res <- to_network(mat, bipartite = FALSE)
   }
   
-  if (is.null(attrs)) {
+  if (is.null(vattrs)) {
     res <- mat
   } else {
-    already_included <- which(colnames(attrs) %in% c("name", "type"))
+    already_included <- which(colnames(vattrs) %in% c("name", "type"))
     if (length(already_included) > 0) {
-      attrs <- attrs[-which(colnames(attrs) %in% c("name", "type"))]
+      vattrs <- vattrs[-which(colnames(vattrs) %in% c("name", "type"))]
     }
-    if (ncol(attrs) > 0) {
-      res <- network::set.vertex.attribute(res, names(attrs), attrs)
+    if (ncol(vattrs) > 0) {
+      res <- network::set.vertex.attribute(res, names(vattrs), vattrs)
     }
   }
+  #################################################################
   if (inherits(res, "matrix")) {res <- network::as.network.matrix(res)}
   res
 }

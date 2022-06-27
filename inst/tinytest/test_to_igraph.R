@@ -2,7 +2,8 @@
 report_side_effects()
 
 
-# NETWORK TO IGRAPH
+# NETWORK TO IGRAPH ----
+# ## unipartite
 g_n <- sapply(runif(10, 0, 1), rep, 10)
 g_n <- sna::rgraph(10, tprob = g_n)
 g2_n <- network::as.network.matrix(g_n)
@@ -54,8 +55,18 @@ ig <- to_igraph(mat)
 expect_true(inherits(ig, "igraph"))
 expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat)/2)  # undirected
+expect_false(snafun::is_directed(ig)) # undirected
 expect_true(length(igraph::list.edge.attributes(ig)) == 0)
 expect_true(length(igraph::list.vertex.attributes(ig)) == 0)
+
+# directed matrix
+g <- igraph::sample_gnp(10, 2/10, directed = TRUE)
+mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
+ig <- to_igraph(mat)
+expect_true(inherits(ig, "igraph"))
+expect_true(snafun::is_directed(ig)) # directed
+
+
 
 g <- igraph::make_ring(10)
 igraph::E(g)$weight <- seq_len(igraph::ecount(g))
@@ -85,7 +96,7 @@ expect_equal(igraph::vcount(ig2), nrow(mat2) + ncol(mat2))
 expect_equal(igraph::ecount(ig2), sum(mat2))
 
 
-#### EDGELIST TO IGRAPH
+# EDGELIST TO IGRAPH ----
 relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 
     "David", "Esmeralda"), 
     to = c("Alice", "Bob", "Alice", "Alice", "Bob", "Alice"),
@@ -108,4 +119,98 @@ expect_true(igraph::is.bipartite(ig_aa))
 expect_true(igraph::vcount(ig_aa) == 12)
 expect_true(igraph::ecount(ig_aa) == 8)
 
+### check the vertices argument
+verts <- data.frame(c(1:4, 11:18), 
+                    role = c(rep("person", 4), rep("firm", 8)),
+                    attr1 = LETTERS[1:12],
+                    attr2 = letters[11:22])
+ig_vert <- suppressMessages(to_igraph(aa, vertices = verts))
+
+expect_equal(igraph::V(ig_vert)$role, c("person", "person", "person", "person", "firm", "firm", "firm", "firm", "firm", "firm", "firm", "firm"))
+expect_equal(igraph::V(ig_vert)$attr1, LETTERS[1:12])
+# include a vertex that does not occur in the vertex list
+verts2 <- data.frame(c(1:4, 11:19), 
+                    role = c(rep("person", 4), rep("firm", 9)),
+                    attr1 = LETTERS[1:13],
+                    attr2 = letters[11:23])
+ig_vert2 <- suppressMessages(to_igraph(aa, vertices = verts2))
+expect_true(igraph::vcount(ig_vert2) == 13)
+
+# 1 vertex that does not occur in the vertices and 
+# 4 vertices are missing in verts3
+verts3 <- data.frame(c(1:4, 15:18), 
+                     role = c(rep("person", 4), rep("firm", 4)),
+                     attr1 = LETTERS[1:8],
+                     attr2 = letters[11:18])
+expect_error(to_igraph(aa, vertices = verts3))
+# check if the correct error is triggered
+fout <- tryCatch(to_igraph(aa, vertices = verts3), error = function(e) e)
+expect_true(grepl("^Some vertices that occur in your edgelist are", x = fout$message))
+
+# MATRIX TO IGRAPH ----
+### random directed matrix
+mat <- matrix(sample(c(0, 1), 100, replace = TRUE), nrow = 10)
+diag(mat) <- 0
+ig <- to_igraph(mat)
+expect_equal(igraph::vcount(ig), nrow(mat))
+expect_equal(igraph::ecount(ig), sum(mat))
+expect_true(snafun::is_directed(ig))
+## add names
+rownames(mat) <- colnames(mat) <- LETTERS[1:nrow(mat)]
+ig <- to_igraph(mat)
+expect_equal(igraph::vcount(ig), nrow(mat))
+expect_equal(igraph::ecount(ig), sum(mat))
+expect_true(snafun::is_directed(ig))
+expect_true(has_vertexnames(ig))
+expect_identical(igraph::get.vertex.attribute(ig, "name"), LETTERS[1:nrow(mat)])
+
+
+# random undirected matrix
+mat <- matrix(0, nrow = 10, ncol = 10)
+mat[upper.tri(mat)] <- sample(c(0, 1), 10*9/2, replace = TRUE)
+mat <- sna::symmetrize(mat, rule = "upper")
+expect_true(isSymmetric(mat))
+ig <- to_igraph(mat)
+expect_equal(igraph::vcount(ig), nrow(mat))
+expect_equal(igraph::ecount(ig), sum(mat)/2)
+expect_false(snafun::is_directed(ig))
+## add names
+rownames(mat) <- colnames(mat) <- LETTERS[1:nrow(mat)]
+ig <- to_igraph(mat)
+expect_equal(igraph::vcount(ig), nrow(mat))
+expect_equal(igraph::ecount(ig), sum(mat)/2)
+expect_false(snafun::is_directed(ig))
+expect_true(has_vertexnames(ig))
+expect_identical(igraph::get.vertex.attribute(ig, "name"), LETTERS[1:nrow(mat)])
+
+
+# random bipartite matrix
+g <- igraph::make_bipartite_graph(c(rep(0, times = 5), rep(1, times = 10)), 
+                                  c(1, 10, 1, 11, 2, 12, 3, 14, 3, 15, 4, 13, 5, 15))
+mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
+## has row and column names
+ig <- to_igraph(mat) # automatically bipartite
+expect_equal(igraph::vcount(ig), nrow(mat) + ncol(mat))
+expect_equal(igraph::ecount(ig), sum(mat))
+expect_true(is_bipartite(ig))
+expect_identical(igraph::get.vertex.attribute(ig, "name"), as.character(1:15))
+
+ig2 <- to_igraph(mat, bipartite = TRUE)
+expect_equal(igraph::vcount(ig2), nrow(mat) + ncol(mat))
+expect_equal(igraph::ecount(ig2), sum(mat))
+expect_true(is_bipartite(ig2))
+expect_identical(igraph::get.vertex.attribute(ig2, "name"), as.character(1:15))
+
+ig3 <- to_igraph(mat, bipartite = FALSE)
+expect_equal(igraph::vcount(ig3), nrow(mat) + ncol(mat))
+expect_equal(igraph::ecount(ig3), sum(mat))
+expect_true(is_bipartite(ig3))  # this is odd, it should be false?????
+expect_identical(igraph::get.vertex.attribute(ig3, "name"), as.character(1:15))
+
+rownames(mat) <- colnames(mat) <- NULL
+ig <- to_igraph(mat)
+expect_equal(igraph::vcount(ig), nrow(mat) + ncol(mat))
+expect_equal(igraph::ecount(ig), sum(mat))
+expect_true(is_bipartite(ig))
+expect_null(igraph::get.vertex.attribute(ig, "name"))
 

@@ -29,3 +29,7 @@ whether these are names the researcher want to use as names, or purely
 the result of the default behavior of the \code{network} package (and 
 not meaningful names per se).
 }
+\examples{
+data(florentine, package = "snafun")
+has_vertexnames(florentine$flobusiness)
+}

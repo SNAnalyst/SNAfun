@@ -9,7 +9,7 @@ to_network(x, bipartite = FALSE)
 \arguments{
 \item{x}{graph data object}
 
-\item{bipartite}{logical, should the graph be considered to be bipartite? 
+\item{bipartite}{logical, should \code{x} be considered to be bipartite? 
 This overrides the function's default choices.}
 }
 \value{
@@ -37,6 +37,13 @@ NOTE: The created \code{network} object is considered to be directed.
 If an undirected network is required, run \code{\link[igraph]{as.undirected}} 
 on the output from this function.}
 }
+
+The argument \code{bipartite} is used to tell the function whether the input 
+represents a bipartite network or not. If it does, then set \code{bipartite} 
+to \code{TRUE} and the function will attempt to convert the input to a 
+bipartite network. 
+However, the argument is NOT intended to convert a bipartite network to 
+a unipartite network and will NOT do that conversion! 
 
 NOTE: as far as we know, this function is the only function that correctly 
 deals with vertex attributes that themselves are lists in the conversion 

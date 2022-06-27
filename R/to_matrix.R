@@ -9,17 +9,23 @@
 #' 
 #' \describe{
 #' \item{igraph}{a bipartite network is turned into an incidence matrix, 
-#' any other network becomes an adjacency matrix}
+#' any other network becomes an adjacency matrix. If the original graph is 
+#' weighted (ie. it has an edge attribute called 'weight'), the resulting 
+#' matrix is weighted as well.}
 #' \item{network}{a bipartite network is turned into an incidence matrix, 
-#' any other network becomes an adjacency matrix (non-sparse)}
+#' any other network becomes an adjacency matrix (non-sparse).
+#' If the original graph is 
+#' weighted (ie. it has an edge attribute called 'weight'), the resulting 
+#' matrix is weighted as well.}
 #' \item{data.frame}{the first two columns are taken as, respectively, denoting 
-#' 'from' and 'to'. The third column is then used for the values of the cells 
-#' in the matrix.}
+#' 'from' and 'to'. If it exists, the third column is used for the values of the 
+#' cells in the matrix. If there are only two columns in the edgelist, 
+#' the matrix is weighted in case an edge occurs multiple times.
+#' The graph is assumed to be directed, so one needs to symmetrize the matrix 
+#' afterwards if the graph is undirected. In case the senders and receivers have 
+#' no overlap in the edgelist, the graph is assumed to be bipartite and an 
+#' incidence matrix (potentially weighted) is returned}
 #' }
-#' 
-#' If the input graph is bipartite, the resulting matrix will be an incidence 
-#' matrix, otherwise it will be an adjacency natrix (weighted if the original 
-#' graph is weighted).
 #' 
 #' @param x graph object
 #'
@@ -45,6 +51,13 @@ to_matrix <- function(x) {
 to_matrix.default <- function(x) {
   txt <- methods_error_message("x", "to_matrix")
   stop(txt)
+}
+
+
+
+#' @export
+to_matrix.matrix <- function(x) {
+  x
 }
 
 
@@ -90,50 +103,46 @@ to_matrix.network <- function(x) {
 
 
 
-#' 
-#' #' @export
-#' to_matrix.data.frame <- function(x){
-#'   if (inherits(x, "tbl_df")) x <- as.data.frame(x)
-#'   
-#'   if (ncol(x) == 1) stop("'x' should have at least two columns")
-#'   
-#'   if (ncol(x) == 2 | !is_weighted(x)) {
-#'     x <- data.frame(x) # in case it's a tibble
-#'     x <- as.data.frame(table(c(x[,1]), c(x[,2])))
-#'     names(x) <- c("from","to","weight")
-#'   }
-#'   
-#'   if (ncol(x) > 3) {
-#'     warning("There are more than 3 columns, note that only column 3 will be used to fill the elements of the matrix")
-#'     x <- x[, 1:3]
-#'   } ############################################################################# BIPARTITE????
-#'   if (ncol(x) == 3) {
-#'     # Adds a third (weight) column to a two-column edgelist
-#'     # x <- x[order(x[,1], x[,2]),]
-#'     nodes1 <- as.character(unique(x[,1]))
-#'     nodes1 <- sort(nodes1)
-#'     nodes2 <- as.character(unique(x[,2]))
-#'     nodes2 <- sort(nodes2)
-#'     if(length(intersect(nodes1, nodes2)) > 0 &
-#'        !setequal(nodes1, nodes2))
-#'       nodes1 <- nodes2 <- sort(unique(c(nodes1,nodes2)))
-#'     if (nrow(x) != length(nodes1)*length(nodes2)) {
-#'       allcombs <- expand.grid(nodes1, nodes2, stringsAsFactors = FALSE)
-#'       allcombs <- subset(allcombs, !duplicated(allcombs))
-#'       names(allcombs) <- c("from","to")
-#'       x <- merge(allcombs, x, all.x = TRUE)
-#'       x <- x[order(x[,2], x[,1]),]
-#'       x[is.na(x)] <- 0
-#'     }
-#'     
-#'     
-#'     
-#'     x <- dplyr::arrange(x, as.character(.data$to), 
-#'                              as.character(.data$from))
-#'     out <- structure(as.numeric(x[,3]),
-#'                      .Dim = c(as.integer(length(nodes1)),
-#'                               as.integer(length(nodes2))),
-#'                      .Dimnames = list(nodes1, nodes2))
-#'   }
-#'   out
-#' }
+
+#' @export
+to_matrix.data.frame <- function(x){
+  if (inherits(x, "tbl_df")) x <- as.data.frame(x)
+  if (ncol(x) == 1) stop("'x' should have at least two columns")
+  if (ncol(x) == 2) {
+    x <- as.data.frame(table(c(x[,1]), c(x[,2])))
+    names(x) <- c("from","to","weight")
+  }
+
+  if (ncol(x) > 3) {
+    warning("There are more than 3 columns, 
+            note that only column 3 will be used to fill the elements of the matrix")
+    x <- x[, 1:3]
+  }
+  if (ncol(x) == 3) {
+    x <- x[order(x[,1], x[,2]),]
+    sender <- as.character(unique(x[,1])) |> sort()
+    receiver <- as.character(unique(x[,2])) |> sort()
+    # make sender and receiver sets the same if there is some overlap between 
+    # senders and receivers
+    if (length(intersect(sender, receiver)) > 0 & !setequal(sender, receiver)) {
+      sender <- receiver <- sort(unique(c(sender,receiver)))
+    }
+    # expand the edgelist to include all possible dyads (incl loops)
+    if (nrow(x) != length(sender)*length(receiver)) {
+      allcombs <- expand.grid(sender, receiver, stringsAsFactors = FALSE)
+      allcombs <- subset(allcombs, !duplicated(allcombs))
+      names(allcombs) <- c("from","to")
+      x <- merge(allcombs, x, all.x = TRUE)
+      x <- x[order(x[,2], x[,1]),]
+      x[is.na(x)] <- 0
+    }
+
+    x <- x[order(as.character(x[,2]), as.character(x[,1])), ]
+
+    out <- structure(as.numeric(x[,3]),
+                     .Dim = c(as.integer(length(sender)),
+                              as.integer(length(receiver))),
+                     .Dimnames = list(sender, receiver))
+  }
+  out
+}

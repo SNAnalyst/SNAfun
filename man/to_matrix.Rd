@@ -20,17 +20,23 @@ Create the appropriate matrix from various inputs:
 
 \describe{
 \item{igraph}{a bipartite network is turned into an incidence matrix, 
-any other network becomes an adjacency matrix}
+any other network becomes an adjacency matrix. If the original graph is 
+weighted (ie. it has an edge attribute called 'weight'), the resulting 
+matrix is weighted as well.}
 \item{network}{a bipartite network is turned into an incidence matrix, 
-any other network becomes an adjacency matrix (non-sparse)}
+any other network becomes an adjacency matrix (non-sparse).
+If the original graph is 
+weighted (ie. it has an edge attribute called 'weight'), the resulting 
+matrix is weighted as well.}
 \item{data.frame}{the first two columns are taken as, respectively, denoting 
-'from' and 'to'. The third column is then used for the values of the cells 
-in the matrix.}
+'from' and 'to'. If it exists, the third column is used for the values of the 
+cells in the matrix. If there are only two columns in the edgelist, 
+the matrix is weighted in case an edge occurs multiple times.
+The graph is assumed to be directed, so one needs to symmetrize the matrix 
+afterwards if the graph is undirected. In case the senders and receivers have 
+no overlap in the edgelist, the graph is assumed to be bipartite and an 
+incidence matrix (potentially weighted) is returned}
 }
-
-If the input graph is bipartite, the resulting matrix will be an incidence 
-matrix, otherwise it will be an adjacency natrix (weighted if the original 
-graph is weighted).
 }
 \examples{
 actors <- data.frame(name=c("Alice", "Bob", "Cecil", "David", "Esmeralda"), 

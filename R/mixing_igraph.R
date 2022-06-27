@@ -28,13 +28,12 @@
 #' 
 #' The mixing matrix is created for the \code{igraph} network in 
 #' \code{object} based on vertex attributes supplied in arguments
-#' \code{rattr} and, optionally, \code{cattr}.
+#' \code{attrname}.
 #'
-#' If only \code{rattr} is specified (or, equivalently, \code{rattr} and
-#' \code{cattr} are identical), the result will be a mixing matrix \eqn{G
+#' The result will be a mixing matrix \eqn{G
 #' \times G} if \code{full} is \code{FALSE} or \eqn{G \times G \times 2}{GxGx2}
 #' if \code{full} is \code{TRUE}. Where \eqn{G} is the number of categories of
-#' vertex attribute specified by \code{rattr}.
+#' vertex attribute specified by \code{attrname}.
 #'
 #' If \code{rattr} and \code{cattr} can be used to specify different vertex
 #' attributes for tie sender and tie receiver.
@@ -46,12 +45,10 @@
 #' 
 #' @param object \code{igraph} object
 #' 
-#' @param rattr name of the vertex attribute or an attribute itself as a
-#' vector. If \code{cattr} is not NULL, \code{rattr} is used for rows of the
-#' resulting mixing matrix.
-#'
-#' @param cattr name of the vertex attribute or an attribute itself as a
-#' vector. If supplied, used for columns in the mixing matrix.
+#' @param attrname name of the vertex attribute or an attribute itself as a
+#' vector. 
+#' 
+#' @param useNA what to do with \code{NA}'s. See \code{\link{table}} for details.
 #'
 #' @param full logical, whether two- or three-dimensional mixing matrix
 #' should be returned.
@@ -64,7 +61,8 @@
 #' whenever there is at least one loop in \code{object}.
 #' 
 #' @source This is a slightly modified version of the \code{mixingm.igraph} method 
-#' from the \code{isnar} package from \href{https://github.com/mbojan/isnar/blob/master/R/mixingm.R}{isnar}.
+#' from the \code{isnar} package from 
+#' \href{https://github.com/mbojan/isnar/blob/master/R/mixingm.R}{isnar}.
 #' 
 #' @return
 #' Depending on \code{full} argument a table or a list
@@ -84,40 +82,37 @@
 #' # dyads seperately
 #' mixing_igraph(judge_net, "JudgeSex", full = TRUE)
 #' }
-mixing_igraph <- function (object, rattr, 
-                           cattr = rattr, full = FALSE, 
+mixing_igraph <- function (object, 
+                           attrname, 
+                           useNA = "ifany",
+                           full = FALSE, 
                            directed = igraph::is.directed(object), 
                            loops = any(igraph::is.loop(object))) {
-  if (is.character(rattr) && length(rattr) == 1) {
-    ra <- igraph::get.vertex.attribute(object, rattr)
+  if (is.character(attrname)) {
+    ra <- igraph::get.vertex.attribute(object, attrname)
   }
   else {
-    stopifnot(length(rattr) == igraph::vcount(object))
-    ra <- rattr
+    stopifnot(length(attrname) == igraph::vcount(object))
+    ra <- attrname
   }
-  if (is.character(cattr) && length(cattr) == 1) {
-    ca <- igraph::get.vertex.attribute(object, cattr)
-  }
-  else {
-    stopifnot(length(cattr) == igraph::vcount(object))
-    ca <- cattr
-  }
+
   el <- igraph::get.edgelist(object, names = FALSE)
   
   ego <- try(factor(ra[el[, 1]], levels = sort(unique(ra))), silent = TRUE)
   if (inherits(ego, "try-error")) stop("This attribute can not be turned into a factor, so a mixing matrix cannot be determined")
-  alter <- try(factor(ca[el[, 2]], levels = sort(unique(ca))), silent = TRUE)
+  alter <- try(factor(ra[el[, 2]], levels = sort(unique(ra))), silent = TRUE)
   if (inherits(alter, "try-error")) stop("This attribute can not be turned into a factor, so a mixing matrix cannot be determined")
   
-  con <- table(ego = ego, alter = alter)
+  con <- table(ego = ego, alter = alter, useNA = useNA)
 
   if (!directed) {
-    con <- fold(con, "upper")
-    # con[lower.tri(con)] <- con[upper.tri(con)]
+    con <- t(con) + con
+    diag(con) <- diag(con)
+    con[lower.tri(con)] <- 0
   }
   
   if (full) {
-    tussen <- full_mm(con, gsizes = table(ra, ca), directed = directed, 
+    tussen <- full_mm(con, gsizes = table(ra, ra), directed = directed, 
                    loops = loops)
     
     namen <- dimnames(tussen)
@@ -130,13 +125,16 @@ mixing_igraph <- function (object, rattr,
     
     TIE <- tussen[, , waar_TRUE]
     TIE[lower.tri(TIE)] <- TIE[upper.tri(TIE)]
+    TIE <- stats::addmargins(TIE)
     NO_TIE <- tussen[, , waar_FALSE]
     NO_TIE[lower.tri(NO_TIE)] <- NO_TIE[upper.tri(NO_TIE)]
+    NO_TIE <- stats::addmargins(NO_TIE)
     
     return(list(tie_present = TIE, no_tie_present = NO_TIE))
   }
   else {
     con[lower.tri(con)] <- con[upper.tri(con)]
+    con <- stats::addmargins(con)
     return(con)
   }
 }
@@ -144,34 +142,11 @@ mixing_igraph <- function (object, rattr,
 
 
 
-fold <- function (x, direction = c("upper", "lower")) {
-  stopifnot(is.matrix(x))
-  stopifnot(dim(x)[1] == dim(x)[2])
-  m <- t(x) + x
-  diag(m) <- diag(x)
-  d <- match.arg(direction)
-  if (d == "upper") 
-    m[lower.tri(m)] <- 0
-  else m[upper.tri(m)] <- 0
-  m
-}
-
-
 full_mm <- function (cl, gsizes, directed = TRUE, loops = FALSE) {
-  if (length(dim(cl)) == 3) {
-    stopifnot(dim(cl)[3] == 2)
-    return(cl)
-  }
-  gsizes <- as.table(gsizes)
-  ndims <- length(dim(gsizes))
-  stopifnot(ndims %in% 1:2)
-  if (ndims == 1) {
-    gs <- gsizes
-  }
-  else {
-    dtab <- as.data.frame(as.table(gsizes))
-    gs <- dtab$Freq
-  }
+  # gsizes <- as.table(gsizes)
+  dtab <- as.data.frame(gsizes)
+  gs <- dtab$Freq
+  
   o <- outer(gs, gs, "*")
   if (directed) {
     mar <- o
@@ -189,12 +164,9 @@ full_mm <- function (cl, gsizes, directed = TRUE, loops = FALSE) {
       diag(mar) <- (diag(o) - gs)/2
     }
   }
-  if (ndims == 2) {
-    a1 <- apply(mar, 1, function(r) tapply(r, dtab[, 2], 
-                                           sum))
-    mar <- apply(a1, 1, function(k) tapply(k, dtab[, 1], 
-                                           sum))
-  }
+  a1 <- apply(mar, 1, function(r) tapply(r, dtab[, 2], sum))
+  mar <- apply(a1, 1, function(k) tapply(k, dtab[, 1], sum))
+  
   rval <- array(NA, dim = c(dim(cl), 2))
   rval[, , 1] <- mar - cl
   rval[, , 2] <- cl
@@ -202,8 +174,7 @@ full_mm <- function (cl, gsizes, directed = TRUE, loops = FALSE) {
     dimnames(rval) <- list(NULL, NULL, tie = c(FALSE, TRUE))
   }
   else {
-    dimnames(rval) <- c(dimnames(cl)[1:2], list(tie = c(FALSE, 
-                                                        TRUE)))
+    dimnames(rval) <- c(dimnames(cl)[1:2], list(tie = c(FALSE, TRUE)))
   }
   rval
 }

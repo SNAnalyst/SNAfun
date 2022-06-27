@@ -4,7 +4,7 @@
 \alias{to_igraph}
 \title{Make igraph object}
 \usage{
-to_igraph(x, bipartite = FALSE)
+to_igraph(x, bipartite = FALSE, vertices = NULL)
 }
 \arguments{
 \item{x}{input object}
@@ -13,6 +13,8 @@ to_igraph(x, bipartite = FALSE)
 network. Forces the creation of a bipartite igraph x. This argument is 
 only used when a matrix is converted to an \code{igraph} object and is 
 ignored otherwise.}
+
+\item{vertices}{A data frame with vertex metadata, or \code{NULL}. See details below.}
 }
 \description{
 Make an igraph object from various input types.
@@ -30,21 +32,31 @@ The data.frame requires the first column to contain the senders and the
 second column contains the receivers. If there are any additional 
 columns, these are considered to be edge attributes.
 
-NOTE: The created \code{igraph} object is considered to be directed. 
-If an undirected network is required, run \code{\link[igraph]{as.undirected}} 
-on the output from this function.}
+NOTE: The created \code{igraph} object is considered to be directed, 
+depending on the structure of the input. 
+If an undirected network is required, 
+run \code{\link[igraph]{as.undirected}} on the output from this function.}
 }
-
-
 
 When a matrix is used as input, the function the number of rows is equal  
 to the number of columns. If they do not, the function assumes the matrix 
 refers to a bipartite network. This assumption can be overridden by 
 the \code{bipartite} argument.
 
+The \code{vertices} argument is only used when \code{x} is a 
+\code{data.frame} and is ignored otherwise. 
+If \code{vertices} is NULL, then the first two columns of \code{x} are used 
+as a symbolic edge list and additional columns as edge attributes. 
+The names of the attributes are taken from the names of the columns.
 
-#### add vertices = NULL argument!!!!!
-#### add directed = F argument???
+If \code{vertices} is not \code{NULL}, then it must be a data frame 
+giving vertex metadata. The first column of vertices is assumed to contain
+symbolic vertex names, this will be added to the graphs as the \code{‘name’} 
+vertex attribute. Other columns will be added as additional 
+vertex attributes. If \code{vertices} is not \code{NULL} 
+then the symbolic edge list given in \code{x} is checked to contain only
+vertex names listed in vertices. 
+See \code{\link[igraph]{graph_from_data_frame}} for the underlying function.
 }
 \note{
 The functions are largely based upon the \code{\link[migraph]{as_igraph}} 

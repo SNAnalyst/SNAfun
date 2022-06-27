@@ -235,7 +235,13 @@ count_triads.network <- function(x, echo = TRUE) {
     if (snafun::is_directed(x)) {
       out <- suppressWarnings(sna::triad.census(x, mode = "digraph")) |> as.data.frame()
     } else {
-      out <- suppressWarnings(sna::triad.census(x, mode = "graph")) |> as.data.frame()
+      triads <- suppressWarnings(sna::triad.census(x, mode = "graph")) |> as.data.frame()
+      out <- data.frame(matrix(0, ncol = 16, nrow = 1))
+      names(out) <- c("003", "012", "102", "021D",
+                      "021U", "021C", "111D", "111U",
+                      "030T", "030C", "201", "120D",
+                      "120U", "120C", "210", "300")
+      out[1, c("003", "102", "201", "300")] <- triads
     }
     if (echo) print(out, row.names = FALSE)
     invisible(out)

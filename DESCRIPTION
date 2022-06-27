@@ -24,6 +24,7 @@ Imports:
 	ergm,
 	igraph,
 	intergraph,
+	methods,
 	ndtv,
 	network,
 	networkDynamic,
@@ -36,4 +37,4 @@ Suggests:
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0

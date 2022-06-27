@@ -18,23 +18,24 @@ rename_name <- function(x) {
 }
 
 
-### from igraph ----
+### from igraph to matrix----
 
 flobus_i <- florentine$flobusiness
 flomar_i <- florentine$flomarriage
 flobus_m <- to_matrix(flobus_i)
 flomar_m <- to_matrix(flomar_i)
-flobus_n <- to_network(flobus_i)
-flomar_n <- to_network(flomar_i)
 judge_i <- judge_net
 judge_m <- to_matrix(judge_i)
-judge_n <- suppressWarnings(to_network(judge_i))
+flobus_n <- to_network(flobus_i)
+flomar_n <- to_network(flomar_i)
+judge_n <- to_network(judge_i)
+
 
 
 expect_equal(network::network.size(flobus_n), igraph::vcount(flobus_i))
 expect_equal(network::network.size(flomar_n), igraph::vcount(flomar_i))
 expect_equal(network::network.size(judge_n), igraph::vcount(judge_i))
-expect_equal(network::network.edgecount(flobus_n), igraph::ecount(flobus_i)*2)
+expect_equal(network::network.edgecount(flobus_n), igraph::ecount(flobus_i))
 expect_equal(network::network.size(flomar_n), igraph::vcount(flomar_i))
 expect_equal(network::network.size(judge_n), igraph::vcount(judge_i))
 # check if all vertex attrs are carried over
@@ -77,6 +78,17 @@ expect_equal(
   igraph::get.vertex.attribute(flomar_i, "name")
 )
 
+
+### graph with edge attributes
+edges <- data.frame(from = c(1, 1, 2, 2, 3, 3, 4), 
+                    to = c(2, 3, 1, 4, 4, 5, 1),
+                    weight = 1:7,
+                    code = LETTERS[1:7])
+ig <- igraph::graph_from_data_frame(edges)
+object <- to_network(ig)
+
+
+
 ### bipartite
 b_i <- igraph::bipartite.random.game(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
 b_n <- to_network(b_i)
@@ -90,7 +102,7 @@ expect_equal(network::network.edgecount(b_n), igraph::ecount(b_i))
 
 
 
-print("edge attributes are not copied over from igraph to network!!!")
+# print("edge attributes are not copied over from igraph to network!!!")
 ##############################
 ##############################edge attributes aren't copied over yet!!!
 

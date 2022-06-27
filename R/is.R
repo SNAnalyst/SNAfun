@@ -183,7 +183,7 @@ is_directed.igraph <- function(x) {
 
 #' @export
 is_directed.matrix <- function(x) {
-  isSymmetric(x)
+  !isSymmetric(x)
 }
 
 

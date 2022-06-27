@@ -22,9 +22,10 @@ expect_error(count_dyads(florentine), "network")
 expect_true(all(count_dyads(flobus_i, echo = FALSE) == c(15, 105)))
 expect_true(all(count_dyads(flomar_i, echo = FALSE) == c(20, 100)))
 expect_true(all(count_dyads(judge_i, echo = FALSE) == c(94, 686)))
-expect_true(all(count_dyads(flobus_n, echo = FALSE) == c(15, 0, 105)))
-expect_true(all(count_dyads(flomar_n, echo = FALSE) == c(20, 0, 100)))
-expect_true(all(count_dyads(judge_n, echo = FALSE) == c(94, 0, 686)))
+
+expect_true(all(count_dyads(flobus_n, echo = FALSE) == c(15, 105)))
+expect_true(all(count_dyads(flomar_n, echo = FALSE) == c(20, 100)))
+expect_true(all(count_dyads(judge_n, echo = FALSE) == c(94, 686)))
 
 i1 <- igraph::random.graph.game(100, p.or.m = .1, type = "gnp", directed = TRUE)
 n1 <- to_network(i1)

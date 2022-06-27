@@ -5,13 +5,14 @@
 \title{igraph mixing matrix}
 \source{
 This is a slightly modified version of the \code{mixingm.igraph} method 
-from the \code{isnar} package from \href{https://github.com/mbojan/isnar/blob/master/R/mixingm.R}{isnar}.
+from the \code{isnar} package from 
+\href{https://github.com/mbojan/isnar/blob/master/R/mixingm.R}{isnar}.
 }
 \usage{
 mixing_igraph(
   object,
-  rattr,
-  cattr = rattr,
+  attrname,
+  useNA = "ifany",
   full = FALSE,
   directed = igraph::is.directed(object),
   loops = any(igraph::is.loop(object))
@@ -20,12 +21,10 @@ mixing_igraph(
 \arguments{
 \item{object}{\code{igraph} object}
 
-\item{rattr}{name of the vertex attribute or an attribute itself as a
-vector. If \code{cattr} is not NULL, \code{rattr} is used for rows of the
-resulting mixing matrix.}
+\item{attrname}{name of the vertex attribute or an attribute itself as a
+vector.}
 
-\item{cattr}{name of the vertex attribute or an attribute itself as a
-vector. If supplied, used for columns in the mixing matrix.}
+\item{useNA}{what to do with \code{NA}'s. See \code{\link{table}} for details.}
 
 \item{full}{logical, whether two- or three-dimensional mixing matrix
 should be returned.}
@@ -70,13 +69,12 @@ of the list version.
 
 The mixing matrix is created for the \code{igraph} network in 
 \code{object} based on vertex attributes supplied in arguments
-\code{rattr} and, optionally, \code{cattr}.
+\code{attrname}.
 
-If only \code{rattr} is specified (or, equivalently, \code{rattr} and
-\code{cattr} are identical), the result will be a mixing matrix \eqn{G
+The result will be a mixing matrix \eqn{G
 \times G} if \code{full} is \code{FALSE} or \eqn{G \times G \times 2}{GxGx2}
 if \code{full} is \code{TRUE}. Where \eqn{G} is the number of categories of
-vertex attribute specified by \code{rattr}.
+vertex attribute specified by \code{attrname}.
 
 If \code{rattr} and \code{cattr} can be used to specify different vertex
 attributes for tie sender and tie receiver.

@@ -21,7 +21,7 @@
 #'
 #' @return \code{TRUE} or \code{FALSE}
 #' @export
-#' @example 
+#' @examples
 #' data(florentine, package = "snafun")
 #' has_vertexnames(florentine$flobusiness)
 has_vertexnames <- function(x) {
