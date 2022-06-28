@@ -88,10 +88,6 @@ to_network.matrix <- function(x, bipartite = FALSE) {
 
 
 
-
-##############################
-##############################edge attributes aren't copied over yet!!!
-
 #' @export
 to_network.igraph <- function(x, bipartite = NULL) {
   bip <- (snafun::is_bipartite(x) || isTRUE(bipartite))
@@ -125,7 +121,25 @@ to_network.igraph <- function(x, bipartite = NULL) {
       res <- network::set.vertex.attribute(res, names(vattrs), vattrs)
     }
   }
-  #################################################################
+# browser() ###---###---###---###---###---###---###---###---
+  # add edge attributes if they are present in the data
+  if (ncol(eattrs) > 2) {
+    edges <- eattrs[, c("from", "to")]
+    namen <- network::get.vertex.attribute(res, "vertex.names")
+    if (!is.numeric(edges$from)) {
+      edges$from <- match(edges$from, namen)
+    }
+    if (!is.numeric(edges$to)) {
+      edges$to <- match(edges$to, namen)
+    }
+    eids <- extract_edge_id(res, edgelist = edges)[, "eid"]
+    
+    eatt_names <- setdiff(colnames(eattrs), c("from", "to"))
+    for (eat in eatt_names) {
+      network::set.edge.attribute(res, attrname = eat, value = eattrs[, eat], e = eids)
+    }
+  }
+  
   if (inherits(res, "matrix")) {res <- network::as.network.matrix(res)}
   res
 }

@@ -18,26 +18,28 @@ rename_name <- function(x) {
 }
 
 
-### from igraph to matrix----
-
 flobus_i <- florentine$flobusiness
 flomar_i <- florentine$flomarriage
+# add two edge attributes
+flomar_i <- igraph::set.edge.attribute(flomar_i, "att1", value = round(runif(igraph::ecount(flomar_i)), digits = 2))
+flomar_i <- igraph::set.edge.attribute(flomar_i, "att2", value = 10*round(runif(igraph::ecount(flomar_i)), digits = 2))
+
 flobus_m <- to_matrix(flobus_i)
 flomar_m <- to_matrix(flomar_i)
 judge_i <- judge_net
 judge_m <- to_matrix(judge_i)
 flobus_n <- to_network(flobus_i)
 flomar_n <- to_network(flomar_i)
-judge_n <- to_network(judge_i)
+judge_n <- suppressWarnings(to_network(judge_i))
 
 
-
+# from igraph to network ----
 expect_equal(network::network.size(flobus_n), igraph::vcount(flobus_i))
 expect_equal(network::network.size(flomar_n), igraph::vcount(flomar_i))
 expect_equal(network::network.size(judge_n), igraph::vcount(judge_i))
 expect_equal(network::network.edgecount(flobus_n), igraph::ecount(flobus_i))
-expect_equal(network::network.size(flomar_n), igraph::vcount(flomar_i))
-expect_equal(network::network.size(judge_n), igraph::vcount(judge_i))
+expect_equal(network::network.edgecount(flomar_n), igraph::ecount(flomar_i))
+expect_equal(network::network.edgecount(judge_n), igraph::ecount(judge_i))
 # check if all vertex attrs are carried over
 expect_true(all(
   network::list.vertex.attributes(flobus_n) |> remove_na_attr()|> rename_vertex.names() %in%
@@ -84,9 +86,35 @@ edges <- data.frame(from = c(1, 1, 2, 2, 3, 3, 4),
                     to = c(2, 3, 1, 4, 4, 5, 1),
                     weight = 1:7,
                     code = LETTERS[1:7])
-ig <- igraph::graph_from_data_frame(edges)
-object <- to_network(ig)
+i_g <- igraph::graph_from_data_frame(edges)
+i_n <- to_network(i_g)
+expect_equal(network::network.size(i_n), igraph::vcount(i_g))
+expect_equal(network::network.edgecount(i_n), igraph::ecount(i_g))
+# to properly check the edge values, we need to make sure we evaluate them 
+# in the same order for both i_n and i_g
+eid_i <- extract_edge_id(i_g, edgelist = edges[, 1:2])
+eid_n <- extract_edge_id(i_n, edgelist = edges[, 1:2])
+expect_equal(eid_n[, 1:2], eid_i[, 1:2])
+reorder <- match(eid_n$eid, eid_i$eid)
+expect_equal(network::get.edge.attribute(i_n, "weight")[reorder], 
+             igraph::get.edge.attribute(i_g, "weight"))
+expect_equal(network::get.edge.attribute(i_n, "code")[reorder], 
+             igraph::get.edge.attribute(i_g, "code"))
 
+# flomar has 'weight' edge attribute
+# first remove names to make sure the edgelist uses vertex id's instead of names
+flomar_i <- igraph::remove.vertex.attribute(flomar_i, "name")
+edges <- to_edgelist(flomar_i)
+eid_i <- extract_edge_id(flomar_i, edgelist = edges[, 1:2])
+eid_n <- extract_edge_id(flomar_n, edgelist = edges[, 1:2])
+expect_equal(eid_n[, 1:2], eid_i[, 1:2])
+reorder <- match(eid_n$eid, eid_i$eid)
+expect_equal(network::get.edge.attribute(flomar_n, "weight")[reorder], 
+             igraph::get.edge.attribute(flomar_i, "weight"))
+expect_equal(network::get.edge.attribute(flomar_n, "att1")[reorder], 
+             igraph::get.edge.attribute(flomar_i, "att1"))
+expect_equal(network::get.edge.attribute(flomar_n, "att2")[reorder], 
+             igraph::get.edge.attribute(flomar_i, "att2"))
 
 
 ### bipartite
@@ -98,14 +126,21 @@ expect_equal(igraph::edge_density(b_i), sna::gden(b_n))
 expect_equal(network::network.size(b_n), igraph::vcount(b_i))
 expect_equal(network::network.edgecount(b_n), igraph::ecount(b_i))
 
+# add edge values
+val <- round(runif(igraph::ecount(b_i)), digits = 2)
+b_i2 <- add_edge_attributes(b_i, "new_attr", value = val)
+edges <- to_edgelist(b_i2)
+b_n2 <- to_network(b_i2)
+eid_i <- extract_edge_id(b_i2, edgelist = edges[, 1:2])
+eid_n <- extract_edge_id(b_n2, edgelist = edges[, 1:2])
+expect_equal(eid_n[, 1:2], eid_i[, 1:2])
+reorder <- match(eid_n$eid, eid_i$eid)
+expect_equal(network::get.edge.attribute(b_n2, "new_attr")[reorder], 
+             igraph::get.edge.attribute(b_i2, "new_attr"))
 
 
 
-
-# print("edge attributes are not copied over from igraph to network!!!")
-##############################
-##############################edge attributes aren't copied over yet!!!
-
+# continue with vertex attributes
 expect_equal(
   network::get.vertex.attribute(judge_n, "color"),
   igraph::get.vertex.attribute(judge_i, "color")
@@ -132,15 +167,20 @@ expect_inherits(n2, "network")
 expect_equal(network::network.size(n2), igraph::vcount(i2))
 expect_equal(network::network.edgecount(n2), igraph::ecount(i2) * 2) # undirected
 
+rm(b_i, b_i2, b_n, b_n2, edges, eid_i, eid_n, i_g, i_n, i1, i2, n1, n2, reorder, val)
 
-### from network ----
+
+# from network ----
 i1 <- sna::rgraph(100, tprob = .15, mode = "digraph") |> network::as.network.matrix()
 expect_identical(i1, to_network(i1))
 i1 <- sna::rgraph(100, tprob = .15, mode = "graph") |> network::as.network.matrix(directed = FALSE)
 expect_identical(i1, to_network(i1))
 
+rm(i1)
 
-### from matrix ----
+
+
+# from matrix ----
 data(florentine, package = "snafun") 
 flobus_i <- florentine$flobusiness
 flomar_i <- florentine$flomarriage
@@ -160,6 +200,7 @@ m1 <- sna::rgraph(100, tprob = .15, mode = "digraph")
 n1 <- network::as.network.matrix(m1, directed = TRUE)
 expect_equal(sum(m1), network::network.edgecount(n1))
 
+
 ## bipartite
 b_i <- igraph::bipartite.random.game(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
 b_n <- to_network(b_i)
@@ -168,5 +209,32 @@ expect_equal(sum(b_m), network::network.edgecount(b_n))
 expect_true(b_n$gal$bipartite == nrow(b_m))
 expect_true(is_bipartite(b_n))
 
+rm(b_i, b_m, b_n, j_i, j_m, m1, n1)
 
+
+# from edgelist ----
+i_g <- igraph::erdos.renyi.game(n = 15, p.or.m = .2, type = "gnp", directed = TRUE)
+i_g <- add_edge_attributes(i_g, "att1", value = round(runif(igraph::ecount(i_g)), digits = 2))
+i_g <- add_edge_attributes(i_g, "att2", value = 100*round(runif(igraph::ecount(i_g)), digits = 2))
+edges <- to_edgelist(i_g)
+i_n <- to_network(edges)
+expect_true("att1" %in% network::list.edge.attributes(i_n))
+expect_true("att2" %in% network::list.edge.attributes(i_n))
+expect_equal(nrow(edges), network::network.edgecount(i_n))
+expect_equal(15, network::network.size(i_n))
+eid <- network::get.edgeIDs(i_n, v = edges[10, "from"], alter = edges[10, "to"])
+expect_equal(network::get.edge.value(i_n, attrname = "att1")[eid], edges[10, "att1"])
+expect_equal(network::get.edge.value(i_n, attrname = "att2")[eid], edges[10, "att2"])
+eid <- network::get.edgeIDs(i_n, v = edges[20, "from"], alter = edges[20, "to"])
+expect_equal(network::get.edge.value(i_n, attrname = "att1")[eid], edges[20, "att1"])
+expect_equal(network::get.edge.value(i_n, attrname = "att2")[eid], edges[20, "att2"])
+
+rm(eid, i_g, edges, i_n)
+# bipartite
+b_i <- create_bipartite(n_type1 = 10, n_type2 = 15, strategy = "gnp", p = .2)
+edges <- to_edgelist(b_i)
+b_n <- to_network(edges, bipartite = TRUE)
+expect_true(is_bipartite(b_n))
+expect_equal(network::network.size(b_n), length(unique(unlist(edges))))
+expect_equal(network::network.edgecount(b_n), igraph::ecount(b_i))
 

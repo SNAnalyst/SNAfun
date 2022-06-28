@@ -31,13 +31,13 @@ el2_n <- to_edgelist(g2_n)
 
 report_side_effects()
 
-# igraph
+# igraph ----
 expect_identical(to_edgelist(g_i, sort = "to"), igraph::as_data_frame(g_i))
 expect_identical(to_edgelist(g1_i, sort = "to"), igraph::as_data_frame(g1_i))
 expect_identical(to_edgelist(g2_i, sort = "weight"), igraph::as_data_frame(g2_i))
 expect_identical(colnames(to_edgelist(g3_i)), c("from", "to", "weight", "color"))
 
-# matrix
+# matrix ----
 expect_true(length(unique(el_n$from)) == 10)
 # all edges included?
 expect_true(nrow(el_n) == sum(g_n))
@@ -46,6 +46,6 @@ expect_true(ncol(el_b) == 2)
 expect_true(nrow(el_b) == 6)
 expect_true(length(intersect(el_b$from, el_b$to)) == 0)
 
-# network
+# network ----
 expect_true(ncol(el2_n) == 2)
 expect_true(nrow(el2_n) == network::network.edgecount(g2_n))
