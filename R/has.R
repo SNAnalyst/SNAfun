@@ -1,4 +1,51 @@
 
+
+
+
+#' Check for the existence of edge attributes in the graph
+#' 
+#' Check for the existence of edge attributes in the graph
+#' 
+#' Simple utility function that returns \code{TRUE} if the graph has 
+#' edge attributes and \code{FALSE} otherwise.
+#' 
+#' @param x graph of class \code{igraph} or \code{network}
+#'
+#' @return logical
+#' @export
+has_edge_attributes <- function(x) {
+  UseMethod("has_edge_attributes")
+}
+
+#' @export
+has_edge_attributes.default <- function(x) {
+  txt <- methods_error_message("x", "has_edge_attributes")
+  stop(txt)
+}
+
+
+#' @export
+has_edge_attributes.igraph <- function(x) {
+  eattrs <- igraph::list.edge.attributes(x)
+  length(eattrs) > 0   # TRUE if there is at least one edge attribute
+}
+
+
+#' @export
+has_edge_attributes.network <- function(x) {
+  # there is always a edge attribute called "na"
+  # if that is the only one, then there are no edge attrs
+  !identical(network::list.edge.attributes(x), "na")
+}
+
+
+
+
+
+
+
+
+
 #' has_vertexnames
 #' 
 #' Check whether the object contais vertex names 

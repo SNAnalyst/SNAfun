@@ -4,10 +4,13 @@
 \alias{to_edgelist}
 \title{Make edgelist}
 \usage{
-to_edgelist(x, sort = "from")
+to_edgelist(x, named = TRUE, sort = "from")
 }
 \arguments{
 \item{x}{input object}
+
+\item{named}{logical, should vertex names be returned (if they exist) (\code{TRUE})
+or not (\code{FALSE})}
 
 \item{sort}{character, name of the column to sort on. Defaults to "from".}
 }
