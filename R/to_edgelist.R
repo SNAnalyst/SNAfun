@@ -8,6 +8,8 @@
 #' Currently, input can be a matrix, \code{igraph} object or \code{network} object.
 #' 
 #' @param x input object
+#' @param named logical, should vertex names be returned (if they exist) (\code{TRUE})
+#' or not (\code{FALSE})
 #' @param sort character, name of the column to sort on. Defaults to "from".
 #'
 #' @return data frame
@@ -40,69 +42,61 @@
 #' ## from a network object
 #' g2_n <- network::as.network.matrix(g_n)
 #' to_edgelist(g2_n)
-to_edgelist <- function(x, sort = "from") {
+to_edgelist <- function(x, named = TRUE, sort = "from") {
   UseMethod("to_edgelist")
 }
 
 
 #' @export
-to_edgelist.default <- function(x, sort = "from") {
+to_edgelist.default <- function(x, named = TRUE, sort = "from") {
   txt <- methods_error_message("x", "to_edgelist")
   stop(txt)
 }
 
 
 #' @export
-to_edgelist.igraph <- function(x, sort = "from") {
+to_edgelist.igraph <- function(x, named = TRUE, sort = "from") {
+  if (!named & has_vertexnames(x)) {
+    x <- igraph::remove.vertex.attribute(x, "name")
+  }
   el <- igraph::get.data.frame(x)
+
   if (!sort %in% colnames(el)) {
     stop("You did not provide an appropriate name for the 'sort' column")
   }
+  rownames(el) <- NULL
   el[order(el[, sort]), ]
 }
 
 
 #' @export
-to_edgelist.network <- function(x, sort = "from") {
-  out <- sna::as.edgelist.sna(x)
-  edges <- as.data.frame(out)
-  x1 <- as.matrix(x)
-  if (dim(x1)[1] != dim(x1)[2]) {
-    edges <- edges[((nrow(edges)/2) + 1):nrow(edges),]
+to_edgelist.network <- function(x, named = TRUE, sort = "from") {
+  if (!named) {
+    network::delete.vertex.attribute(x, "vertex.names")
   }
-  names(edges) <- c("from", "to", "weight")
-  # Handle node names
-  if (!is.null(dimnames(x))) {
-    names <- attr(out, "vnames")
-    edges[,1] <- names[edges[,1]]
-    edges[,2] <- names[edges[,2]]
+  el <- network::as.data.frame.network(x, unit = "edges", na.rm = FALSE)
+  colnames(el)[c(1, 2)] <- c("from", "to")
+  if (!named) { # needed for the sorting
+    el$from <- as.integer(el$from)
+    el$to <- as.integer(el$to)
   }
-  # Handle edge weights
-  if ("weight" %in% network::list.edge.attributes(x)) {
-    edges[,3] <- network::get.edge.attribute(x, "weight")
-  }
-  # Remove weight column if only unity weights.
-  if (all(edges$weight == 1)) edges <- edges[, -3]
-  el <- as.data.frame(edges)
-  if (!sort %in% colnames(edges)) {
+  if (!sort %in% colnames(el)) {
     stop("You did not provide an appropriate name for the 'sort' column")
   }
+  rownames(el) <- NULL
   el[order(el[, sort]), ]
 }
 
 
 
 #' @export
-to_edgelist.matrix <- function(x, sort = "from"){
-  el <- to_edgelist.igraph(to_igraph(x))
+to_edgelist.matrix <- function(x, named = TRUE, sort = "from"){
+  x <- to_igraph(x)
+  el <- to_edgelist(x, named = named)
   if (!sort %in% colnames(el)) {
     stop("You did not provide an appropriate name for the 'sort' column")
   }
+  rownames(el) <- NULL
   el[order(el[, sort]), ]
 }
-
-
-
-
-
 

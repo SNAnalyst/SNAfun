@@ -1,4 +1,8 @@
 
+
+
+# has_vertexnames ----
+
 # PREP
 mat <- structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 
                    0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -24,4 +28,25 @@ network::set.vertex.attribute(nw, "vertex.names", value = LETTERS[1:10])
 igraph::V(ig)$name <- LETTERS[1:10]
 expect_true(has_vertexnames(ig))
 expect_true(has_vertexnames(nw))
+
+
+# has_edge_attributes ----
+## igraph
+expect_false(has_edge_attributes(ig))
+ig2 <- igraph::set.edge.attribute(ig, "gewicht", value = runif(igraph::ecount(ig)))
+expect_true(has_edge_attributes(ig2))
+ig3 <- igraph::set.edge.attribute(ig2, "gewicht2", value = runif(igraph::ecount(ig)))
+expect_true(has_edge_attributes(ig3))
+
+## network
+i_n <- to_network(ig)
+expect_false(has_edge_attributes(i_n))
+network::set.edge.attribute(i_n, attrname = "gewicht", value = runif(network::network.edgecount(i_n)))
+expect_true(has_edge_attributes(i_n))
+network::delete.edge.attribute(i_n, "gewicht")
+expect_false(has_edge_attributes(i_n))
+
+
+
+
 
