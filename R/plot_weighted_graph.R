@@ -34,7 +34,7 @@
 #' set.seed(12345)
 #' sociomatrix <- matrix(rnorm(400,0,20),20,20)
 #' colnames(sociomatrix) <- rownames(sociomatrix) <- letters[1:20]
-#' plot_network(sociomatrix)
+#' plot_weighted_graph(sociomatrix)
 #' @export
 plot_weighted_graph <- function(sociomatrix,
                          threshold = 0.5,
