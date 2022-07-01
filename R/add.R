@@ -406,6 +406,49 @@ add_edge_attributes.network <- function(object, attr_name, value, edgelist, over
 
 
 
+
+### add_graph_attributes ------------------------------------------------------
+
+#' Add a graph attribute
+#' 
+#' Add a graph-level attribute to the graph object
+#'
+#' @param x graph of class \code{igraph} or \code{network}
+#' @param attr_name character, name to be used for the attribute
+#' @param value the value to be given to the attribute
+#'
+#' @return graph with the added graph attribute
+#' @export
+add_graph_attribute <- function(x, attr_name = NULL, value) {
+  UseMethod("add_graph_attributes")  
+}
+
+
+#' @export
+add_graph_attribute.default <- function(x, attr_name = NULL, value) {
+  txt <- methods_error_message("x", "add_vertex_attribute")
+  stop(txt) 
+}
+
+
+#' @export
+add_graph_attribute.igraph <- function(x, attr_name = NULL, value) {
+  igraph::set_graph_attr(graph = x, name = attr_name, value = value)
+}
+
+
+
+#' @export
+add_graph_attribute.network <- function(x, attr_name = NULL, value) {
+  network::set.network.attribute(x = x, attrname = attr_name, value = value)
+  return(x)
+}
+
+
+
+
+### separate functions ------------------------------------------------------
+
 lowest_col_first <- function(x) {
   first_larger <- which(x[, 1] > x[, 2])
   for (rij in first_larger) {

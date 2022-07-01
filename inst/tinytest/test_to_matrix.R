@@ -119,7 +119,6 @@ expect_equal(colnames(judge_m), igraph::V(judge_i)$name)
 
 
 ### directed
-rm(net, mat)
 net <- sna::rgnm(1, 10, 20, mode = "graph") |> 
   network::as.network.matrix()
 mat <- to_matrix(net)

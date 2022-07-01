@@ -121,7 +121,7 @@ to_network.igraph <- function(x, bipartite = NULL) {
       res <- network::set.vertex.attribute(res, names(vattrs), vattrs)
     }
   }
-# browser() ###---###---###---###---###---###---###---###---
+
   # add edge attributes if they are present in the data
   if (ncol(eattrs) > 2) {
     edges <- eattrs[, c("from", "to")]

@@ -109,3 +109,130 @@ remove_isolates.network <- function(x, loops = FALSE) {
 }
 
 
+
+
+
+
+
+
+#' Remove parts of the graph
+#' 
+#' Remove parts of the graph
+#' 
+#' @param x input graph (class \code{igraph} or \code{network})
+#' @param attr_name name of the attribute to be removed
+#'
+#' @return graph, without the removed elements
+#' @export
+#'
+#' @examples
+#' data(emon, package = "network")
+#' texas <- emon$Texas
+#' remove_edge_attribute(texas, "Frequency")
+#' remove_vertex_attribute(texas, "Formalization")
+#' remove_graph_attribute(texas, "directed")
+#' 
+#' texas_i <- to_igraph(texas)
+#' remove_edge_attribute(texas_i, "Frequency")
+#' remove_vertex_attribute(texas_i, "Formalization")
+#' @name remove
+NULL
+
+#' @rdname remove
+#' @export
+remove_edge_attribute <- function(x, attr_name) {
+  UseMethod("remove_edge_attribute")
+}
+
+
+#' @export
+remove_edge_attribute.default <- function(x, attr_name) {
+  txt <- methods_error_message("x", "remove_edge_attribute")
+  stop(txt)
+}
+
+
+
+#' @export
+remove_edge_attribute.igraph <- function(x, attr_name) {
+  x <- igraph::delete_edge_attr(graph = x, name = attr_name)
+  x
+}
+
+
+#' @export
+remove_edge_attribute.network <- function(x, attr_name) {
+  network::delete.edge.attribute(x, attrname = attr_name)
+  x
+}
+
+
+
+
+
+
+#' @rdname remove
+#' @export
+remove_vertex_attribute <- function(x, attr_name) {
+  UseMethod("remove_vertex_attribute")
+}
+
+
+#' @export
+remove_vertex_attribute.default <- function(x, attr_name) {
+  txt <- methods_error_message("x", "remove_vertex_attribute")
+  stop(txt)
+}
+
+
+
+#' @export
+remove_vertex_attribute.igraph <- function(x, attr_name) {
+  x <- igraph::delete_vertex_attr(graph = x, name = attr_name)
+  x
+}
+
+
+#' @export
+remove_vertex_attribute.network <- function(x, attr_name) {
+  network::delete.vertex.attribute(x, attrname = attr_name)
+  x
+}
+
+
+
+
+
+
+#' @rdname remove
+#' @export
+remove_graph_attribute <- function(x, attr_name) {
+  UseMethod("remove_graph_attribute")
+}
+
+
+#' @export
+remove_graph_attribute.default <- function(x, attr_name) {
+  txt <- methods_error_message("x", "remove_graph_attribute")
+  stop(txt)
+}
+
+
+
+#' @export
+remove_graph_attribute.igraph <- function(x, attr_name) {
+  x <- igraph::delete_graph_attr(graph = x, name = attr_name)
+  x
+}
+
+
+#' @export
+remove_graph_attribute.network <- function(x, attr_name) {
+  network::delete.network.attribute(x, attrname = attr_name)
+  x
+}
+
+
+
+
+

@@ -160,8 +160,10 @@ to_igraph.network <- function (x, bipartite = FALSE,
     }
   }
   
-  if (!inherits(graph, "igraph")) {
-    graph <- to_igraph(graph)
+  # edge attribs 
+  if (has_edge_attributes(x)) { # there are edge attribs to copy over
+    edges_network <- to_edgelist(x)
+    graph <- add_edge_attributes(graph, edgelist = edges_network)
   }
   
   if (length(attr) > 1) {

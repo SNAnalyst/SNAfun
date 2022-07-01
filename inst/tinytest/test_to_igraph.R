@@ -79,6 +79,33 @@ expect_equal(sum(igraph::E(ig)$weight), sum(mat)/2) # undirected
 expect_true(length(igraph::list.edge.attributes(ig)) == 1)
 expect_true(length(igraph::list.vertex.attributes(ig)) == 0)
 
+
+## edge attributes
+g6_n <- add_edge_attributes(g5_n, "eatt1", runif(network::network.edgecount(g5_n)))
+g6_i <- to_igraph(g6_n)
+expect_true("eatt1" %in% list_edge_attributes(g6_i))
+edges_n <- to_edgelist(g6_n)
+eid_n <- extract_edge_id(g6_n, edgelist = edges_n[, 1:2])$eid
+eid_i <- extract_edge_id(g6_i, edgelist = edges_n[, 1:2])$eid
+reorder <- match(eid_i, eid_n)
+expect_equal(network::get.edge.value(g6_n, "eatt1"), 
+             igraph::get.edge.attribute(g6_i, "eatt1")[reorder])
+g7_n <- add_edge_attributes(g6_n, "eatt2", runif(network::network.edgecount(g5_n)))
+g7_i <- to_igraph(g7_n)
+expect_true("eatt1" %in% list_edge_attributes(g7_i))
+expect_true("eatt2" %in% list_edge_attributes(g7_i))
+edges_n <- to_edgelist(g7_n)
+eid_n <- extract_edge_id(g7_n, edgelist = edges_n[, 1:2])$eid
+eid_i <- extract_edge_id(g7_i, edgelist = edges_n[, 1:2])$eid
+reorder <- match(eid_i, eid_n)
+expect_equal(network::get.edge.value(g7_n, "eatt2"), 
+             igraph::get.edge.attribute(g7_i, "eatt2")[reorder])
+expect_equal(network::get.edge.value(g7_n, "eatt1"), 
+             igraph::get.edge.attribute(g7_i, "eatt1")[reorder])
+
+
+
+
 # bipartite network, even nodes are one type, odd vertices another type
 g <- igraph::make_bipartite_graph( rep(0:1,length=10), c(1:10))
 mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)

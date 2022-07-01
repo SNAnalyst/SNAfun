@@ -10,6 +10,7 @@ The following API is used (for now):
 - find_* : identify specific parts of the network, such as who the isolates are
 - is_* : checks, such as whether a network is bipartite
 - has_* : checks, such as whether a network has loops
+- list_*: list characteristics, such as `list_edge_attributes`
 - make_* : create objects based on graphs, ie. make a matrix from vertex attributes, make a mixing_matrix, etc.
 - plot_* : several plot functions
 - remove_* : delete parts of the network, such as remove the isolates
