@@ -271,6 +271,7 @@ remove_loops.igraph <- function(x) {
 
 #' @export
 remove_loops.network <- function(x) {
+  # sna::diag.remove() might be a suitable alternative
   el <- to_edgelist(x)
   loops <- which(el$from == el$to)
   x <- network::delete.edges(x, eid = loops)
