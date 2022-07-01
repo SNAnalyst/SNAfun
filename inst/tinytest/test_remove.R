@@ -155,3 +155,14 @@ expect_identical(bnw_no_isolates, remove_isolates(bnw_no_isolates))
 
 
 
+
+
+# remove_loops -----------------------------------------------------------------
+
+x <- matrix(c(1, 1, 0, 0, 0, 1, 1, 0, 1), ncol = 3, byrow = TRUE)
+expect_true(all(diag(remove_loops(x)) == c(0, 0, 0)))
+g_n <- snafun::to_network(x)
+expect_true(all(diag(snafun::to_matrix(g_n)) == c(1, 0, 1)))
+expect_true(all(diag(remove_loops(g_n) |> snafun::to_matrix() == c(0, 0, 0))))
+expect_true(all(diag(remove_loops(snafun::to_igraph(x)) |> snafun::to_matrix() == c(0, 0, 0))))
+

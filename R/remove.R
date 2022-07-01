@@ -233,6 +233,55 @@ remove_graph_attribute.network <- function(x, attr_name) {
 }
 
 
+# remove_loops -----------------------------------------------------------------
 
+#' Remove loops
+#' 
+#' Remove loops from the graph
+#' 
+#' Remove loops (ie. a tie from a vertex to itself) from the graph object
+#'
+#' @param x graph of class \code{igraph}, \code{network}, or \code{matrix}
+#'
+#' @return graph with the same class as the input
+#' @export
+#'
+#' @examples
+#' x <- matrix(c(1, 1, 0, 0, 0, 1, 1, 0, 1), ncol = 3, byrow = TRUE)
+#' remove_loops(x)
+#' g_n <- snafun::to_network(x)
+#' snafun::to_matrix(g_n)
+#' remove_loops(g_n) |> snafun::to_matrix()
+#' remove_loops(snafun::to_igraph(x)) |> snafun::to_matrix()
+remove_loops <- function(x) {
+  UseMethod("remove_loops")
+}
+
+#' @export
+remove_loops.default <- function(x) {
+  txt <- methods_error_message("x", "remove_loops")
+  stop(txt)
+}
+
+#' @export
+remove_loops.igraph <- function(x) {
+  igraph::simplify(x, remove.multiple = FALSE, remove.loops = TRUE)
+}
+
+
+#' @export
+remove_loops.network <- function(x) {
+  el <- to_edgelist(x)
+  loops <- which(el$from == el$to)
+  x <- network::delete.edges(x, eid = loops)
+  x
+}
+
+
+#' @export
+remove_loops.matrix <- function(x) {
+  diag(x) <- 0
+  x
+}
 
 
