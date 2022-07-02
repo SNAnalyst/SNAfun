@@ -52,7 +52,7 @@ shapley_centrality <- function (x,
   }
   
   else{
-    x <- intergraph::asIgraph(x)
+    x <- to_igraph(x)
     results <- sapply(igraph::V(x), f)
     if (add.vertex.names && igraph::is_named(x)) {
       names(results) <- igraph::V(x)$name[vids]

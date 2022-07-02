@@ -1,5 +1,5 @@
 
-#' makeEdgeList
+#' Make an edgelist from row data
 #'
 #' Makes an edge list from row data.
 #'
@@ -29,7 +29,7 @@
 #' in the names data frame.
 #'
 #' @return a data frame
-#' @export makeEdgeList
+#' @export make_edgelist
 #'
 #' @examples
 #' \dontrun{
@@ -38,9 +38,9 @@
 #'                       alter2 = c('B', 'A', 'A') )
 #' attributedf <- data.frame(attribute1 = 1:3, attribute2 = 4:6, attribute3 = 2:4)
 #' 
-#' edgelist <-  makeEdgeList(names =  namedf, attribute = attributedf)  
+#' edgelist <-  make_edgelist(names =  namedf, attribute = attributedf)  
 #' }
-makeEdgeList <- function(names = NULL , attribute = NULL) {
+make_edgelist <- function(names = NULL , attribute = NULL) {
 
 if (inherits(names, "data.frame")) {
   

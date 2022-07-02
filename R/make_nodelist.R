@@ -1,4 +1,5 @@
-#' makeNodeList
+
+#' Make a node list from row data
 #'
 #' Makes a node list from row data.
 #'
@@ -25,7 +26,7 @@
 #' in the same order as column one of the names data frame
 #'
 #' @return a vector or a data frame
-#' @export makeNodeList
+#' @export make_nodelist
 #'
 #' @examples
 #' \dontrun{
@@ -34,9 +35,9 @@
 #'                       alter2 = c('B', 'A', 'A') )
 #' attributeV <- c(1:3)
 #'
-#' nodelist <-  makeNodeList(names =  namedf, attribute = attributeV)
+#' nodelist <-  make_nodelist(names =  namedf, attribute = attributeV)
 #' }
-makeNodeList <- function(names = NULL, attribute = NULL ) {
+make_nodelist <- function(names = NULL, attribute = NULL ) {
 
 if (inherits(names, "data.frame")) {
 

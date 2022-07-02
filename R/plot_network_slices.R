@@ -54,7 +54,7 @@ plot_network_slices <- function (x, number = 9, start = NULL, end = NULL,
   mf <- ceiling(sqrt(number))
   par(mfrow = c(mf, mf))
 
-  coords <- ndtv::network.layout.animate.kamadakawai(x)
+  coords <- network.layout.animate.kamadakawai(x)
 
   lapply(1:length(sliced_nets), function(z) {
     xx <- paste0("[", round(times[z], digits = digits), " - ",
@@ -82,6 +82,67 @@ plot_network_slices <- function (x, number = 9, start = NULL, end = NULL,
 
   on.exit(par(mfrow = opar))
   invisible(NULL)
+}
+
+
+
+
+
+# original code from the ndtv package
+# integreated here to reduce package dependencies
+network.layout.animate.kamadakawai <- function (net, 
+                                                dist.mat = NULL, 
+                                                default.dist = NULL, 
+                                                seed.coords = NULL, 
+                                                layout.par = list(), 
+                                                verbose = FALSE) {
+  if (is.null(dist.mat)) {
+    dist.mat <- layout.distance(net, default.dist = default.dist)
+  }
+  layout.par$seed.coord <- seed.coords
+  layout.par$elen <- dist.mat
+  coords <- network::network.layout.kamadakawai(net, layout.par = layout.par)
+  return(coords)
+}
+
+
+
+layout.distance <- function (net, 
+                             default.dist = NULL, 
+                             weight.attr = NULL, 
+                             weight.dist = FALSE) {
+  if (is.null(default.dist)) {
+    default.dist = sqrt(network::network.size(net))
+  }
+  else {
+    if (!is.numeric(default.dist) | length(default.dist) > 
+        1) {
+      stop("default.dist must be a numeric value of length 1")
+    }
+  }
+  if (network::network.edgecount(net) < 1) {
+    weight.attr = NULL
+  }
+  raw <- network::as.matrix.network.adjacency(net, attrname = weight.attr, 
+                                              expand.bipartite = TRUE)
+  if (!is.null(weight.attr) & !weight.dist) {
+    matmax <- max(raw)
+    matmin <- min(raw[raw > 0])
+    raw[] <- vapply(raw, function(x) {
+      ifelse(x > 0, (matmax - x) + matmin, 0)
+    }, numeric(1))
+  }
+  if (network::is.directed(net)) {
+    if (weight.dist) {
+      raw[raw == 0] <- t(raw)[raw == 0]
+      raw <- pmin(raw, t(raw))
+    }
+    else {
+      raw <- pmax(raw, t(raw))
+    }
+  }
+  dg <- sna::geodist(raw, inf.replace = default.dist, ignore.eval = is.null(weight.attr))$gdist
+  return(dg)
 }
 
 

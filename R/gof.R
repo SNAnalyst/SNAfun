@@ -50,7 +50,7 @@
 #' \dontrun{
 #' ### ergm model
 #' flo <-SNA4DSData::florentine
-#' flom <- intergraph::asNetwork(flo$flomarriage)
+#' flom <- to_network(flo$flomarriage)
 #' m_ergm <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
 #' gof_ergm <- GOF_and_plot_as_btergm(m_ergm)
 #' gof_ergm <- GOF_and_plot_as_btergm(m_ergm, btergm_statistics = c(btergm::esp,
@@ -128,7 +128,7 @@ GOF_and_plot_as_btergm <- function(m,
 #' \dontrun{
 #' ### ergm model
 #' flo <-SNA4DSData::florentine
-#' flom <- intergraph::asNetwork(flo$flomarriage)
+#' flom <- to_network(flo$flomarriage)
 #' m_ergm <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
 #' gof_ergm <- ergm::gof(m_ergm)
 #' GOF_plot(gof_ergm)

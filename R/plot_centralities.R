@@ -1,5 +1,5 @@
 
-#' centralityChart
+#' Make a chart with centrality scores
 #'
 #' Make a chart with centrality scores
 #'
@@ -39,11 +39,11 @@
 #' @examples
 #' \dontrun{
 #' g <- igraph::erdos.renyi.game(20, 1/20)
-#' centralityChart(g, measures = c("degree", "betweenness"))
+#' plot_centralities(g, measures = c("degree", "betweenness"))
 #' # note that closeness is not well-defined for disconnected graphs
-#' centralityChart(g)
+#' plot_centralities(g)
 #' }
-centralityChart <- function(net,
+plot_centralities <- function(net,
                             measures = c("betweenness", "closeness", "degree"),
                             directed = igraph::is.directed(net),
                             mode = c("all", "out", "in", "total"),

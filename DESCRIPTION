@@ -14,7 +14,7 @@ Authors@R:
 Maintainer: Roger Leenders <r.t.a.j.leenders@jads.nl>
 Description: Contains useful functions to assist the JADS course "Social Network Analysis for Data Science." The package contains a vignette that shows the most important functions you need to know for this course.
 Depends: 
-	R (>= 4.1.0)
+	R (>= 4.2.0)
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/SNAnalyst/SNA4fun
@@ -22,11 +22,8 @@ BugReports: https://github.com/SNAnalyst/SNA4fun/issues
 Imports:
 	ergm,
 	igraph,
-	intergraph,
 	methods,
-	ndtv,
 	network,
-	networkDynamic,
 	sna,
 	utils
 Remotes:
@@ -34,6 +31,7 @@ Remotes:
 Suggests:
 	btergm,
 	desc,
+	networkDynamic,
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE

@@ -21,7 +21,7 @@
 #' \dontrun{
 #' flo <-SNA4DSData::florentine
 #' fflom <- flo$flomarriage
-#' flom <- intergraph::asNetwork(fflom)
+#' flom <- to_network(fflom)
 #' m <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
 #'
 #' Ef_int(m, prob)

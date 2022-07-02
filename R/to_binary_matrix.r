@@ -12,12 +12,11 @@
 #' @param min a threshold. All values in \code{mat} of at least this minimum value 
 #' will become 1, all values smaller than this minimum will become 0.
 #' @return the dichotomized matrix
-#' @export dichotMat
+#' @export to_binary_matrix
 #' @examples
 #' M <- matrix(round(runif(20),1), ncol = 4)
-#' dichotMat(M, min = .45)
-
-dichotMat <- function(mat, min) {
+#' to_binary_matrix(M, min = .45)
+to_binary_matrix <- function(mat, min) {
   mat <- ifelse(mat < min, 0, 1)
   return(mat)
 }

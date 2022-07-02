@@ -1,4 +1,4 @@
-#' Find the geodesic k-path centrality
+#' Geodesic k-path centrality
 #'
 #' Geodesic K-path centrality counts the number of vertices that can be reached 
 #' through a geodesic path of length less than "k". 
@@ -35,14 +35,47 @@
 #' "A graph-theoretic perspective on centrality." Social networks 28.4 (2006): 466-484.
 #' @examples
 #' g <- igraph::barabasi.game(100)
-#' geokpath_centrality(g)
+#' v_geokpath(g)
 #' @export
-geokpath_centrality <- function (graph, vids = igraph::V(graph),
+v_geokpath <- function(graph, vids = NULL,
+                       mode = c("all", "out", "in"),
+                       weights = NULL, k = 3) {
+  UseMethod("v_geokpath")
+}
+
+
+#' @export
+v_geokpath.default <- function(graph, vids = NULL,
+                               mode = c("all", "out", "in"),
+                               weights = NULL, k = 3) {
+  txt <- methods_error_message("graph", "v_geokpath")
+  stop(txt)
+}
+
+
+#' @export
+v_geokpath.network <- function(graph, vids = NULL,
+                               mode = c("all", "out", "in"),
+                               weights = NULL, k = 3) {
+  mode = snafun.match.arg(mode)
+  x <- to_igraph(graph)
+  if (is.null(vids)) {
+    vids = igraph::V(x)
+  }
+  v_geokpath.igraph(graph = x, vids = vids,
+                    mode = mode,
+                    weights = weights, k = k)
+}
+
+
+
+#' @export
+v_geokpath.igraph <- function(graph, vids = NULL,
                                  mode = c("all", "out", "in"),
                                  weights = NULL, k = 3){
-  
-  if (!igraph::is.igraph(graph)) {
-    stop("Not a graph object", call. = FALSE)
+  mode = snafun.match.arg(mode)
+  if (is.null(vids)) {
+    vids = igraph::V(graph)
   }
   
   induced <- FALSE
@@ -94,3 +127,6 @@ geokpath_centrality <- function (graph, vids = igraph::V(graph),
   }  
   res
 }
+
+
+

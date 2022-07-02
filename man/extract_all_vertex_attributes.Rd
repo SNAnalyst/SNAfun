@@ -38,7 +38,7 @@ extract_all_vertex_attributes(flomar)
 # NULL
 extract_all_vertex_attributes(igraph::erdos.renyi.game(10, 4, type = "gnm"))
 
-flomar_nw <- intergraph::asNetwork(flomar)
+flomar_nw <- to_network(flomar)
 extract_all_vertex_attributes(flomar_nw)
 }
 }
