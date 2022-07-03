@@ -48,7 +48,7 @@ extract_edge_id <- function(object, ego, alter, edgelist) {
 
 #' @export
 extract_edge_id.default <- function(object, ego, alter, edgelist) {
-  txt <- methods_error_message("x", "extract_edge_id")
+  txt <- methods_error_message("object", "extract_edge_id")
   stop(txt)
 }
 

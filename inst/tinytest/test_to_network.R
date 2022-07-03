@@ -216,16 +216,29 @@ rm(b_i, b_m, b_n, j_i, j_m, m1, n1)
 i_g <- igraph::erdos.renyi.game(n = 15, p.or.m = .2, type = "gnp", directed = TRUE)
 i_g <- add_edge_attributes(i_g, "att1", value = round(runif(igraph::ecount(i_g)), digits = 2))
 i_g <- add_edge_attributes(i_g, "att2", value = 100*round(runif(igraph::ecount(i_g)), digits = 2))
+igraph::V(i_g)$name <- LETTERS[1:15]
 edges <- to_edgelist(i_g)
 i_n <- to_network(edges)
 expect_true("att1" %in% network::list.edge.attributes(i_n))
 expect_true("att2" %in% network::list.edge.attributes(i_n))
 expect_equal(nrow(edges), network::network.edgecount(i_n))
 expect_equal(15, network::network.size(i_n))
-eid <- network::get.edgeIDs(i_n, v = edges[10, "from"], alter = edges[10, "to"])
+
+no_10 <- edges[10, ]
+from <- which(sapply(i_n$val, function(z) z$vertex.names == no_10$from))
+to <- which(sapply(i_n$val, function(z) z$vertex.names == no_10$to))
+eid <- lapply(i_n$mel, function(z) {
+    z$outl == from & z$inl == to
+    }) |> unlist() |> which()
 expect_equal(network::get.edge.value(i_n, attrname = "att1")[eid], edges[10, "att1"])
 expect_equal(network::get.edge.value(i_n, attrname = "att2")[eid], edges[10, "att2"])
-eid <- network::get.edgeIDs(i_n, v = edges[20, "from"], alter = edges[20, "to"])
+
+no_20 <- edges[20, ]
+from <- which(sapply(i_n$val, function(z) z$vertex.names == no_20$from))
+to <- which(sapply(i_n$val, function(z) z$vertex.names == no_20$to))
+eid <- lapply(i_n$mel, function(z) {
+  z$outl == from & z$inl == to
+}) |> unlist() |> which()
 expect_equal(network::get.edge.value(i_n, attrname = "att1")[eid], edges[20, "att1"])
 expect_equal(network::get.edge.value(i_n, attrname = "att2")[eid], edges[20, "att2"])
 

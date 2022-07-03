@@ -4,17 +4,34 @@
 \alias{gli}
 \alias{g_density}
 \alias{g_mean_distance}
+\alias{g_correlation}
+\alias{g_reciprocity}
+\alias{g_transitivity}
 \title{Graph level indices}
 \usage{
 g_density(x, loops = FALSE)
 
 g_mean_distance(x)
+
+g_correlation(g1, g2, diag = FALSE)
+
+g_reciprocity(x)
+
+g_transitivity(x)
 }
 \arguments{
 \item{x}{graph object}
 
 \item{loops}{logical, should loops/diagonal be included? Default is \code{FALSE}.
 This is almost always what you want.}
+
+\item{g1}{an input graph of class \code{igraph}, \code{network}, \code{matrix}}
+
+\item{g2}{an input graph of class \code{igraph}, \code{network}, \code{matrix}}
+
+\item{diag}{logical, indicating whether or not the diagonal should be treated 
+as valid data. Set this \code{TRUE} if and only if the data can contain 
+loops. Is \code{FALSE} by default.}
 }
 \description{
 Graph level indices
@@ -29,6 +46,22 @@ Use \code{\link[sna]{gden}} if edge weights are to be used and \code{code} is
 a graph of class \code{network}.
 
 \item \code{g_mean_distance}: Mean path distance
+
+\item \code{g_correlation}: Product-moment correlation between two networks. 
+Missing values are permitted. Takes into account whether the 
+graph is (un)directed (judged from \code{g1}). Both input graphs should 
+be of the same type.
+
+\item \code{g_reciprocity}: Reciprocity
+
+\item \code{g_transitivity}: Transitivity Transitivity is a triadic, algebraic structural 
+constraint. In its weak form (which is the common form), the transitive constraint 
+corresponds to a -> b -> c implying a -> c. This measure returns  the fraction 
+of potentially intransitive triads obeying the weak condition.
+Weights are discarded. Specific functions that can alternatively be used (and are 
+called by this function) include \code{\link[sna]{gtrans}} (for objects of 
+class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
+class \code{igraph}).
 }}
 
 \examples{
@@ -52,4 +85,38 @@ g_n <- snafun::to_network(g)
 g_mean_distance(g_n)
 g_i <- snafun::to_igraph(g)
 g_mean_distance(g_i)
+# 
+# correlation
+# matrices
+g1 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
+g2 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
+g_correlation(g1, g2)
+
+g1 <- to_network(g1); g2 <- to_network(g2)
+g_correlation(g1, g2)
+
+g1 <- to_igraph(g1); g2 <- to_igraph(g2)
+g_correlation(g1, g2)
+# 
+# reciprocity
+g <- igraph::erdos.renyi.game(10, .3, type = "gnp", directed = TRUE)
+g_reciprocity(g)
+g_reciprocity(snafun::to_network(g))
+
+g <- snafun::create_random_graph(10, strategy = "gnm", m = 2, directed = FALSE, graph = "igraph")
+g_reciprocity(g)
+g_reciprocity(snafun::to_network(g))
+#
+# transitivity
+data("emon", package = "network")
+g <- emon$Cheyenne
+is_directed(g)  # TRUE
+g_transitivity(g)
+g_transitivity(to_network(g))
+
+data(florentine, package = "snafun")
+g <- florentine$flobusiness
+is_directed(g)  # FALSE
+g_transitivity(g)
+g_transitivity(to_network(g))
 }

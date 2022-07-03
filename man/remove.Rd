@@ -5,6 +5,7 @@
 \alias{remove_edge_attribute}
 \alias{remove_vertex_attribute}
 \alias{remove_graph_attribute}
+\alias{remove_vertex_names}
 \title{Remove parts of the graph}
 \usage{
 remove_edge_attribute(x, attr_name)
@@ -12,6 +13,8 @@ remove_edge_attribute(x, attr_name)
 remove_vertex_attribute(x, attr_name)
 
 remove_graph_attribute(x, attr_name)
+
+remove_vertex_names(x)
 }
 \arguments{
 \item{x}{input graph (class \code{igraph} or \code{network})}
@@ -24,6 +27,17 @@ graph, without the removed elements
 \description{
 Remove parts of the graph
 }
+\section{Functions}{
+\itemize{
+\item \code{remove_edge_attribute}: remove an edge attribute from the graph
+
+\item \code{remove_vertex_attribute}: remove a vertex attribute from the graph
+
+\item \code{remove_graph_attribute}: remove a graph attribute from the graph
+
+\item \code{remove_vertex_names}: remove vertex names from the graph
+}}
+
 \examples{
 data(emon, package = "network")
 texas <- emon$Texas

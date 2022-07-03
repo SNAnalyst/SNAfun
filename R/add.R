@@ -216,7 +216,7 @@ add_edge_attributes <- function(object, attr_name, value, edgelist, overwrite = 
 
 #' @export
 add_edge_attributes.default <- function(object, attr_name, value, edgelist, overwrite = FALSE) {
-  txt <- methods_error_message("x", "add_edge_attributes")
+  txt <- methods_error_message("object", "add_edge_attributes")
   stop(txt) 
 }
 

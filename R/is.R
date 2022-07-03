@@ -262,3 +262,98 @@ is_signed.network <- function(x) {
 }
 
 
+
+
+
+
+# is (describeIn) --------------------------------------------------------------
+
+
+
+
+
+
+#' Is something?
+#' 
+#' Check if the network is something specific.
+#' 
+#' Check for various "identities" of the input object
+#' 
+#' @param x graph object
+#'
+#' @return logical, \code{TRUE} or \code{FALSE}
+#' @name is_something
+#' @examples
+#' data(florentine, package = "snafun")
+#' is_network(florentine$flobusiness)   # FALSE
+#' is_igraph(florentine$flobusiness)   # TRUE
+#' data(emon, package = "network")
+#' is_network(emon$Cheyenne)   # TRUE
+#' is_igraph(emon$Cheyenne)   # FALSE
+NULL
+
+
+
+#' @export
+#' @describeIn is_something Check whether a graph is of class \code{network}
+is_network <- function(x) {
+  UseMethod("is_network")
+}
+
+
+#' @export
+is_network.default <- function(x) {
+  txt <- methods_error_message("x", "is_network")
+  stop(txt)
+}
+
+
+#' @export
+is_network.igraph <- function(x) {
+  FALSE
+}
+
+
+#' @export
+is_network.network <- function(x) {
+  TRUE
+}
+
+#' @export
+is_network.matrix <- function(x) {
+  FALSE
+}
+
+
+
+
+#' @export
+#' @describeIn is_something Check whether a graph is of class \code{igraph}
+is_igraph <- function(x) {
+  UseMethod("is_igraph")
+}
+
+
+#' @export
+is_igraph.default <- function(x) {
+  txt <- methods_error_message("x", "is_igraph")
+  stop(txt)
+}
+
+
+#' @export
+is_igraph.network <- function(x) {
+  FALSE
+}
+
+
+#' @export
+is_igraph.igraph <- function(x) {
+  TRUE
+}
+
+#' @export
+is_igraph.matrix <- function(x) {
+  FALSE
+}
+
