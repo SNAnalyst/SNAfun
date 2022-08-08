@@ -1,6 +1,6 @@
-#' Ef_int
+#' Estimate the intensity of effects using odds ratio and probabilities
 #'
-#' Estimates the intensity of the effects using Odds ratio and probabilities
+#' Estimates the intensity of the effects using odds ratio and probabilities
 #'
 #' This function processes the output of an Exponential Random Graph or a logistic models model and estimates
 #' the intensity of the effects using either Odds ratios or Probabilities
@@ -14,19 +14,19 @@
 #' @param m A model object
 #' @param type Prints either Odds ratios or Probabilities ("odds", "prob")
 #'
-#' @return a data frame
-#' @export Ef_int
-#'
+#' @return a \code{data.frame}
+#' @export
+#' @family statistics functions
 #' @examples
 #' \dontrun{
-#' flo <-SNA4DSData::florentine
-#' fflom <- flo$flomarriage
+#' data(florentine, package = "snafun")
+#' fflom <- florentine$flomarriage
 #' flom <- to_network(fflom)
 #' m <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
 #'
-#' Ef_int(m, prob)
+#' stat_ef_int(m, "prob")
 #' }
-Ef_int <- function(m, type = "odds"){
+stat_ef_int <- function(m, type = "odds"){
 
   coefM <- summary(m)
 

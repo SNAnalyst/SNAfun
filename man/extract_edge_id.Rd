@@ -32,11 +32,11 @@ and internally order the edges differently.
 
 There are three arguments that help determine for which edges the id's are extracted.
 
-When only \code{ego} is specified, *all* edges are included that have an 'ego' 
+When only \code{ego} is specified, \emph{all} edges are included that have an 'ego' 
 node as the sender (in case of a directed graph) or as a sender or receiver 
 (in case of an undirected graph).
 
-When only \code{alter} is specified, *all* edges are included that have an 'alter' 
+When only \code{alter} is specified, \emph{all} edges are included that have an 'alter' 
 node as the receiver (in case of a directed graph) or as a sender or receiver 
 (in case of an undirected graph).
 

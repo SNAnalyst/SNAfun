@@ -148,11 +148,11 @@ to_igraph.network <- function (x, bipartite = FALSE,
       graph <- sna::as.sociomatrix.sna(x, attrname = "weight")
       graph <- igraph::graph_from_adjacency_matrix(graph, 
                     weighted = TRUE, mode = ifelse(x$gal$directed, "directed", "undirected"))
-    } else if (length(network::list.edge.attributes(x)) > 1) {
-      x$gal$multiple <- FALSE
-      graph <- sna::as.sociomatrix.sna(x, attrname = network::list.edge.attributes(x)[1])
-      graph <- igraph::graph_from_adjacency_matrix(graph, 
-                    weighted = TRUE, mode = ifelse(x$gal$directed, "directed", "undirected"))
+    # } else if (length(network::list.edge.attributes(x)) > 1) {
+    #   x$gal$multiple <- FALSE
+    #   graph <- sna::as.sociomatrix.sna(x, attrname = network::list.edge.attributes(x)[1])
+    #   graph <- igraph::graph_from_adjacency_matrix(graph, 
+    #                 weighted = TRUE, mode = ifelse(x$gal$directed, "directed", "undirected"))
     } else {
       graph <- sna::as.sociomatrix.sna(x)
       graph <- igraph::graph_from_adjacency_matrix(graph, 

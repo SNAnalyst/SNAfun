@@ -35,26 +35,28 @@
 #' "A graph-theoretic perspective on centrality." Social networks 28.4 (2006): 466-484.
 #' @examples
 #' g <- igraph::barabasi.game(100)
-#' v_geokpath(g)
+#' v_geokpath_w(g)
 #' @export
-v_geokpath <- function(graph, vids = NULL,
+v_geokpath_w <- function(graph, vids = NULL,
                        mode = c("all", "out", "in"),
                        weights = NULL, k = 3) {
-  UseMethod("v_geokpath")
+  UseMethod("v_geokpath_w")
 }
 
 
 #' @export
-v_geokpath.default <- function(graph, vids = NULL,
+v_geokpath_w.default <- function(graph, vids = NULL,
                                mode = c("all", "out", "in"),
                                weights = NULL, k = 3) {
-  txt <- methods_error_message("graph", "v_geokpath")
+  txt <- methods_error_message("graph", "v_geokpath_w")
   stop(txt)
 }
 
 
+
+
 #' @export
-v_geokpath.network <- function(graph, vids = NULL,
+v_geokpath_w.network <- function(graph, vids = NULL,
                                mode = c("all", "out", "in"),
                                weights = NULL, k = 3) {
   mode = snafun.match.arg(mode)
@@ -62,15 +64,17 @@ v_geokpath.network <- function(graph, vids = NULL,
   if (is.null(vids)) {
     vids = igraph::V(x)
   }
-  v_geokpath.igraph(graph = x, vids = vids,
+  v_geokpath_w.igraph(graph = x, vids = vids,
                     mode = mode,
                     weights = weights, k = k)
 }
 
 
 
+
+
 #' @export
-v_geokpath.igraph <- function(graph, vids = NULL,
+v_geokpath_w.igraph <- function(graph, vids = NULL,
                                  mode = c("all", "out", "in"),
                                  weights = NULL, k = 3){
   mode = snafun.match.arg(mode)

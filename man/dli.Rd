@@ -2,27 +2,15 @@
 % Please edit documentation in R/d.R
 \name{dli}
 \alias{dli}
-\alias{d_diameter}
 \alias{d_distance}
 \title{Dyad level indices}
 \usage{
-d_diameter(x, directed = is_directed(x), unconnected = TRUE)
-
-d_distance(x, type = c("all", "out", "in"))
+d_distance(x, mode = c("all", "out", "in"))
 }
 \arguments{
 \item{x}{graph object}
 
-\item{directed}{Logical, whether directed or undirected paths are to be 
-considered. This is ignored for undirected graphs.}
-
-\item{unconnected}{Logical, what to do if the graph is unconnected. If \code{FALSE}, 
-the function will return a number that is one larger the largest possible 
-diameter, which is always the number of vertices. If \code{TRUE}, the 
-diameters of the connected components will be calculated and the largest 
-one will be returned.}
-
-\item{type}{Character constant, gives whether the shortest paths to or from 
+\item{mode}{Character constant, gives whether the shortest paths to or from 
 the given vertices should be calculated for directed graphs. If \code{out} 
 then the shortest paths from the vertex, if \code{in} then to it will be 
 considered. If \code{all}, the default, then the corresponding undirected 
@@ -37,28 +25,13 @@ Calculate several dyad level indices.
 }
 \section{Functions}{
 \itemize{
-\item \code{d_diameter}: Diameter of a graph. Weights are discarded. 
-Use \code{\link[igraph]{diameter}} if edge weights are to be used or specific 
-options are needed.
-
-\item \code{d_distance}: Distance between each pair of vertices in the graph. 
+\item \code{d_distance()}: Distance between each pair of vertices in the graph. 
 Weights are discarded. The output of this function is a matrix.
 Use \code{\link[igraph]{distances}} or \code{\link[sna]{geodist}} if edge 
 weights are to be used or specific options are needed.
+
 }}
-
 \examples{
-#
-# diameter
-g <- igraph::make_ring(10)
-g2 <- igraph::delete_edges(g, c(1,2,1,10))
-igraph::diameter(g2, unconnected=TRUE)
-igraph::diameter(g2, unconnected=FALSE)
-d_diameter(g2)  # 7
-d_diameter(g2, unconnected = FALSE)  # Inf
-
-d_diameter(to_network(g2)) # 7
-d_diameter(to_network(g2), unconnected = FALSE) # Inf
 # 
 # distance
 g <- igraph::make_ring(10)

@@ -32,6 +32,25 @@ flobus_n <- to_network(flobus_i)
 flomar_n <- to_network(flomar_i)
 judge_n <- suppressWarnings(to_network(judge_i))
 
+# random networks, no name attribute
+undirected_g_i <- igraph::random.graph.game(n = 10, p.or.m = 12, type = "gnm", directed = FALSE)
+undirected_g2_i <- add_edge_attributes(undirected_g_i, attr_name = "weight", 1:count_edges(undirected_g_i))
+undirected_g3_i <- add_edge_attributes(undirected_g2_i, attr_name = "blabla", count_edges(undirected_g2_i):1)
+directed_g_i <- igraph::random.graph.game(n = 10, p.or.m = 12, type = "gnm", directed = TRUE)
+directed_g2_i <- add_edge_attributes(directed_g_i, attr_name = "weight", 1:count_edges(directed_g_i))
+directed_g3_i <- add_edge_attributes(directed_g2_i, attr_name = "blabla", count_edges(directed_g2_i):1)
+# add name
+undirected_g_i_name <- igraph::set.vertex.attribute(undirected_g_i, "name", value = LETTERS[1:igraph::vcount(undirected_g_i)])
+undirected_g2_i_name <- igraph::set.vertex.attribute(undirected_g2_i, "name", value = LETTERS[1:igraph::vcount(undirected_g2_i)])
+undirected_g3_i_name <- igraph::set.vertex.attribute(undirected_g3_i, "name", value = LETTERS[1:igraph::vcount(undirected_g3_i)])
+directed_g_i_name <- igraph::set.vertex.attribute(directed_g_i, "name", value = LETTERS[1:igraph::vcount(directed_g_i)])
+directed_g2_i_name <- igraph::set.vertex.attribute(directed_g2_i, "name", value = LETTERS[1:igraph::vcount(directed_g2_i)])
+directed_g3_i_name <- igraph::set.vertex.attribute(directed_g3_i, "name", value = LETTERS[1:igraph::vcount(directed_g3_i)])
+
+
+
+
+
 
 # from igraph to network ----
 expect_equal(network::network.size(flobus_n), igraph::vcount(flobus_i))
@@ -40,6 +59,7 @@ expect_equal(network::network.size(judge_n), igraph::vcount(judge_i))
 expect_equal(network::network.edgecount(flobus_n), igraph::ecount(flobus_i))
 expect_equal(network::network.edgecount(flomar_n), igraph::ecount(flomar_i))
 expect_equal(network::network.edgecount(judge_n), igraph::ecount(judge_i))
+
 # check if all vertex attrs are carried over
 expect_true(all(
   network::list.vertex.attributes(flobus_n) |> remove_na_attr()|> rename_vertex.names() %in%
@@ -80,6 +100,19 @@ expect_equal(
   igraph::get.vertex.attribute(flomar_i, "name")
 )
 
+# vertex attributes, but not a name attribute
+g <- igraph::remove.vertex.attribute(flomar_i, "name")
+g_n <- to_network(g)
+expect_equal(
+  network::get.vertex.attribute(g_n, "Wealth"),
+  igraph::get.vertex.attribute(g, "Wealth")
+)
+expect_equal(
+  network::get.vertex.attribute(g_n, "NumberPriorates"),
+  igraph::get.vertex.attribute(g, "NumberPriorates")
+)
+
+
 
 ### graph with edge attributes
 edges <- data.frame(from = c(1, 1, 2, 2, 3, 3, 4), 
@@ -115,6 +148,72 @@ expect_equal(network::get.edge.attribute(flomar_n, "att1")[reorder],
              igraph::get.edge.attribute(flomar_i, "att1"))
 expect_equal(network::get.edge.attribute(flomar_n, "att2")[reorder], 
              igraph::get.edge.attribute(flomar_i, "att2"))
+
+
+# random graphs
+undirected_g_n <- to_network(undirected_g_i)
+undirected_g2_n <- to_network(undirected_g2_i)
+undirected_g3_n <- to_network(undirected_g3_i)
+directed_g_n <- to_network(directed_g_i)
+directed_g2_n <- to_network(directed_g2_i)
+directed_g3_n <- to_network(directed_g3_i)
+undirected_g_n_name <- to_network(undirected_g_i_name)
+undirected_g2_n_name <- to_network(undirected_g2_i_name)
+undirected_g3_n_name <- to_network(undirected_g3_i_name)
+directed_g_n_name <- to_network(directed_g_i_name)
+directed_g2_n_name <- to_network(directed_g2_i_name)
+directed_g3_n_name <- to_network(directed_g3_i_name)
+
+expect_false(is_directed(undirected_g_n))
+expect_false(is_directed(undirected_g2_n))
+expect_false(is_directed(undirected_g3_n))
+expect_false(is_directed(undirected_g_n_name))
+expect_false(is_directed(undirected_g2_n_name))
+expect_false(is_directed(undirected_g3_n_name))
+expect_true(is_directed(directed_g_n))
+expect_true(is_directed(directed_g2_n))
+expect_true(is_directed(directed_g3_n))
+expect_true(is_directed(directed_g_n_name))
+expect_true(is_directed(directed_g2_n_name))
+expect_true(is_directed(directed_g3_n_name))
+expect_equal(list_edge_attributes(undirected_g_n), "na")   # network objects always have this "na" vertex attribute
+expect_equal(list_edge_attributes(directed_g_n), "na") 
+expect_equal(list_edge_attributes(undirected_g2_n), c("na", "weight"))
+expect_equal(list_edge_attributes(directed_g2_n), c("na", "weight"))
+expect_equal(list_edge_attributes(undirected_g3_n), c("blabla", "na", "weight"))  # probably in alphabetical order
+expect_equal(list_edge_attributes(directed_g3_n), c("blabla", "na", "weight"))
+expect_equal(list_edge_attributes(undirected_g_n_name), "na")   # network objects always have this "na" vertex attribute
+expect_equal(list_edge_attributes(directed_g_n_name), "na") 
+expect_equal(list_edge_attributes(undirected_g2_n_name), c("na", "weight"))
+expect_equal(list_edge_attributes(directed_g2_n_name), c("na", "weight"))
+expect_equal(list_edge_attributes(undirected_g3_n_name), c("blabla", "na", "weight"))  # probably in alphabetical order
+expect_equal(list_edge_attributes(directed_g3_n_name), c("blabla", "na", "weight"))
+
+expect_equal(list_vertex_attributes(undirected_g_i), character(0))
+expect_equal(list_vertex_attributes(undirected_g_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(undirected_g2_i), character(0))
+expect_equal(list_vertex_attributes(undirected_g2_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(undirected_g3_i), character(0))
+expect_equal(list_vertex_attributes(undirected_g3_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(undirected_g_i_name), "name")
+expect_equal(list_vertex_attributes(undirected_g_n_name), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(undirected_g2_i_name), "name")
+expect_equal(list_vertex_attributes(undirected_g2_n_name), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(undirected_g3_i_name), "name")
+expect_equal(list_vertex_attributes(undirected_g3_n_name), c("na", "vertex.names"))
+
+expect_equal(list_vertex_attributes(directed_g_i), character(0))
+expect_equal(list_vertex_attributes(directed_g_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(directed_g2_i), character(0))
+expect_equal(list_vertex_attributes(directed_g2_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(directed_g3_i), character(0))
+expect_equal(list_vertex_attributes(directed_g3_n), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(directed_g_i_name), "name")
+expect_equal(list_vertex_attributes(directed_g_n_name), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(directed_g2_i_name), "name")
+expect_equal(list_vertex_attributes(directed_g2_n_name), c("na", "vertex.names"))
+expect_equal(list_vertex_attributes(directed_g3_i_name), "name")
+expect_equal(list_vertex_attributes(directed_g3_n_name), c("na", "vertex.names"))
 
 
 ### bipartite
@@ -165,9 +264,14 @@ i2 <- igraph::random.graph.game(100, p.or.m = .15, type = "gnp", directed = FALS
 n2 <- to_network(i2)
 expect_inherits(n2, "network")
 expect_equal(network::network.size(n2), igraph::vcount(i2))
-expect_equal(network::network.edgecount(n2), igraph::ecount(i2) * 2) # undirected
+expect_equal(network::network.edgecount(n2), igraph::ecount(i2)) # undirected
 
 rm(b_i, b_i2, b_n, b_n2, edges, eid_i, eid_n, i_g, i_n, i1, i2, n1, n2, reorder, val)
+
+
+
+
+
 
 
 # from network ----

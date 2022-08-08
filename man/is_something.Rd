@@ -24,11 +24,11 @@ Check for various "identities" of the input object
 }
 \section{Functions}{
 \itemize{
-\item \code{is_network}: Check whether a graph is of class \code{network}
+\item \code{is_network()}: Check whether a graph is of class \code{network}
 
-\item \code{is_igraph}: Check whether a graph is of class \code{igraph}
+\item \code{is_igraph()}: Check whether a graph is of class \code{igraph}
+
 }}
-
 \examples{
 data(florentine, package = "snafun")
 is_network(florentine$flobusiness)   # FALSE

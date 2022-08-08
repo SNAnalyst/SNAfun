@@ -111,7 +111,8 @@ to_network.igraph <- function(x, bipartite = NULL) {
   }
   
   if (is.null(vattrs)) {
-    res <- mat
+    res <- to_network(mat)
+    # res <- mat
   } else {
     already_included <- which(colnames(vattrs) %in% c("name", "type"))
     if (length(already_included) > 0) {

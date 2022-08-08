@@ -266,6 +266,82 @@ is_signed.network <- function(x) {
 
 
 
+#' Is the network connected?
+#' 
+#' Check if the network is connected
+#'
+#' The rule to determined if a graph is connected can be either "weak" or 
+#' "strong". If "weak", vertex $i$ is connected to $j$ iff there exists a 
+#' semi-path from $i$ to $j$ (i.e., a path in the weakly symmetrized graph).
+#' If "strong", vertex $i$ is connected to $j$ iff there exists a 
+#' direct path from $i$ to $j$ OR  a direct path from $j$ to $i$. 
+#' 
+#' In other words: a graph is said to be "strongly connected" if every pair of 
+#' vertices($i$, $j$) in the graph contains a path between each other following 
+#' the directions of the edges.  
+#' In an unweighted directed graph G, every pair of vertices $i$ and $j$ should 
+#' have a path in each direction between them i.e., a bidirectional path. 
+#' The elements of the path matrix of such a graph will contain all 1’s.
+#' A graph is "weakly connected" if when considering it as an $undirected$ graph 
+#' it is connected, e.e., for every pair of distinct vertices $i$ and $j$ there 
+#' exists an undirected path (potentially running opposite the direction of an 
+#' edge) from $i$ to $j$.
+#' 
+#' A strongly connected graph is also weakly connected.
+#' 
+#' Note that the above rules are distinct for directed graphs only; if \code{x} 
+#' is symmetric, the rule has no effect. An undirected graph ought not get the 
+#' label of "strongly" or "weakly" connected, but it is connected or not.
+#'
+#' @param x graph of type \code{igraph} or \code{network}
+#' @param rule character, either "strong" or "weak"
+#'
+#' @return logical
+#' @export
+#'
+#' @examples
+#' strong_i <- igraph::graph_from_literal(a --+ b --+ c --+ a)
+#' is_connected(strong_i, "weak")  # TRUE
+#' is_connected(strong_i, "strong")  # TRUE
+#' strong_n <- snafun::to_network(strong_i)
+#' is_connected(strong_n, "weak")  # TRUE
+#' is_connected(strong_n, "strong")  # TRUE
+#' 
+#' weak_i <- igraph::graph_from_literal(a --+ b +-- c)
+#' is_connected(weak_i, "weak")  # TRUE
+#' is_connected(weak_i, "strong")  # FALSE
+#' weak_n <- snafun::to_network(weak_i)
+#' is_connected(weak_n, "weak")  # TRUE
+#' is_connected(weak_n, "strong")  # FALSE
+is_connected <- function(x, rule = c("weak", "strong")) {
+  UseMethod("is_connected")
+}
+
+
+#' @export
+is_connected.default <- function(x, rule = c("weak", "strong")) {
+  txt <- methods_error_message("x", "is_connected")
+  stop(txt)
+}
+
+
+#' @export
+is_connected.network <- function(x, rule = c("weak", "strong")) {
+  rule = snafun.match.arg(rule)
+  sna::is.connected(g = x, connected = rule, comp.dist.precomp = NULL)
+}
+
+
+#' @export
+is_connected.igraph <- function(x, rule = c("weak", "strong")) {
+  rule = snafun.match.arg(rule)
+  igraph::is.connected(x, mode = rule)
+}
+
+
+
+
+
 # is (describeIn) --------------------------------------------------------------
 
 
@@ -356,4 +432,11 @@ is_igraph.igraph <- function(x) {
 is_igraph.matrix <- function(x) {
   FALSE
 }
+
+
+
+
+
+
+
 

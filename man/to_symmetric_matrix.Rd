@@ -41,25 +41,25 @@ Rule \code{in}: \code{g} is made symmetric by copying the lower triangle
 onto the upper triangle. 
 
 Rule \code{weak}: every edge is assumed to be reciprocated. Hence, an edge 
-from *i* to *j* also becomes an edge from *j* to *i*,
+from $i$ to $j$ also becomes an edge from $j$ to $i$,
 Mathematically: i<->j iff i->j or i<-j (OR rule)
 
 Rule \code{mutual}: every edge is only maintained if it is already reciprocated
-in \code{g}. Hence, if an edge from *i* to *j* exist and also from *j* to *i*, 
+in \code{g}. Hence, if an edge from $i$ to $j$ exist and also from $j$ to $i$, 
 these edges are maintained in the resulting matrix. Otherwise (for unreciprocated 
 edges or null dyads), the resulting matrix will neither contain an edge 
-from *i* to *j* nor from *j* to *i*.
+from $i$ to $j$ nor from $j$ to $i$.
 Mathematically: i<->j iff i->j and i<-j (AND rule)
 
-Rule \code{average}: the values for the edges (*i*, *j*) and (*j*, *i*) are 
+Rule \code{average}: the values for the edges ($i$, $j$) and ($j$, $i$) are 
 averaged and assigned to both edges in the resulting matrix. This will 
 typically result in a non-binary matrix.
 
-Rule \code{max}: edges (*i*, *j*) and (*j*, *i*) are both assigned the highest value 
+Rule \code{max}: edges ($i$, $j$) and ($j$, $i$) are both assigned the highest value 
 of the two edges. If input matrix \code{g} is binary, this will yield the 
 same result as rule \code{weak}.
 
-Rule \code{min}: edges (*i*, *j*) and (*j*, *i*) are both assigned the lowest value 
+Rule \code{min}: edges ($i$, $j$) and ($j$, $i$) are both assigned the lowest value 
 of the two edges. If input matrix \code{g} is binary, this will yield the 
 same result as rule \code{mutual}.
 }

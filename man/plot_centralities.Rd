@@ -2,59 +2,60 @@
 % Please edit documentation in R/plot_centralities.R
 \name{plot_centralities}
 \alias{plot_centralities}
-\title{Make a chart with centrality scores}
+\title{Plot one or more centrality scores}
 \usage{
 plot_centralities(
   net,
-  measures = c("betweenness", "closeness", "degree"),
-  directed = igraph::is.directed(net),
-  mode = c("all", "out", "in", "total"),
-  normalized = TRUE,
+  measures = c("betweenness", "closeness", "degree", "eccentricity"),
+  directed = TRUE,
+  mode = c("all", "out", "in"),
+  k = 3,
+  rescaled = FALSE,
   ...
 )
 }
 \arguments{
-\item{net}{a network of class \code{igraph}}
+\item{net}{a network of class \code{igraph} or \code{network}}
 
-\item{measures}{one or more centrality measures}
+\item{measures}{character vector of one or more centrality measures}
 
 \item{directed}{logical, should direction be taken into account? This argument
 is optional, if it is not chosen the directionality of the network will be used.}
 
-\item{mode}{Character, used for closeness and degree. The default is "all".}
+\item{mode}{Character. The default is "all".}
 
-\item{normalized}{Logical scalar, whether to normalize the centrality scores.
-The default is \code{TRUE}, which makes the centralities more motually comparable.}
+\item{k}{The k parameter for the "geokpath" measure. The default is 3.}
 
-\item{...}{other arguments passed to \code{\link{graphics}{dotchart}}.}
+\item{rescaled}{Logical scalar, whether to rescale the centrality scores to 
+they add up to 1.}
+
+\item{...}{other arguments passed to \code{\link{plot}}.}
 }
 \value{
 a plot
 }
 \description{
-Make a chart with centrality scores
+Plot one or more centrality scores of all vertices in the network
 }
 \details{
-This function creates a facet path plot that displays the chosen centrality measures.
-Currently, three centrality measures are implemented: "betweenness", "closeness"
-, and degree". One or more of these can be chosen.
+This function creates of grid of plots containing the values a set of 
+centrality scores, selected by the user. The function will calculate the 
+requested scores and then plot them. When a large network is used and 
+many or complex measures are requested, the calculations can take some time. 
+The plotting itself will be fast.
 
-The \code{mode} is any of "all", "out", "in", "total". Character string,
-defines the types of the paths used for measuring the distance in directed
-graphs. “in” measures the paths to a vertex, “out” measures paths from a
-vertex, all uses undirected paths. This argument is ignored for undirected
-graphs.
+Since the function calculates the centrality scores itself, the choice 
+is currently limited to the centralities implemented in this package.
 
-The names of the vertices are plotted on the y-axis IF a \code{name} attribute
-is present for the vertices. Otherwise, their IDs are used.
+At the moment, these are "betweenness", "closeness", "degree", "eccentricity", 
+"eigenvector", "geokpath", "harmonic", "shapley", and "stress". The default is to 
+plot "betweenness", "closeness", "degree", and "eccentricity".
 
-The default is a point plot. Depending on the neatness of the network object,
-it is possible to turn this into a nicer path plot. For this option, set
-\code{path} to \code{TRUE}. Depending on the data, this can become a really nice
-plot, or become really messy. This is why the default if \code{FALSE}. But feel
-free to try it out on a dataset.
+The various arguments relate to these measures. The \code{mode}, 
+\code{directed}, and \code{rescaled} arguments will be appled to all chosen 
+measures
 
-The function takes an \code{igraph}-object as input.
+The function takes an \code{igraph} object or a \code{network} object as input.
 }
 \examples{
 \dontrun{
@@ -62,5 +63,14 @@ g <- igraph::erdos.renyi.game(20, 1/20)
 plot_centralities(g, measures = c("degree", "betweenness"))
 # note that closeness is not well-defined for disconnected graphs
 plot_centralities(g)
+
+data(florentine, package = "snafun")
+business <- florentine$flobusiness
+plot_centralities(business)
+plot_centralities(business, rescaled = TRUE)
+plot_centralities(business, measures = c("betweenness", "closeness", "degree", 
+   "eccentricity", "eigenvector", "geokpath", "harmonic", "stress"))
+bus_n <- snafun::to_network(business)
+plot_centralities(bus_n, c("degree", "betweenness"), mode = "out", use_vertexnames = TRUE)
 }
 }

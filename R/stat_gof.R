@@ -31,8 +31,13 @@
 #' groups. As a result, the objects and functions are not 100 percent 
 #' compatible. If applying this function to an \code{ergm}-model returns 
 #' weird errors, it is better to calculate the gof using the 
-#' \code{ergm} package and then plot that (using \link{GOF_plot} or 
+#' \code{ergm} package and then plot that (using \link{stat_plot_gof} or 
 #' using the \code{ergm} package functions).
+#' 
+#' NOTE2: because the gof statistics for the models are determined inside the 
+#' plotting functions (so they can be used for the plotting), they can take some
+#' time to run. This is why it is useful that the gof results themselves are not 
+#' only calculated by this function, but also returned for further inspection.
 #'
 #' @param m a fitted \code{ergm} or {btergm} model
 #' @param ... optional arguments, see description
@@ -42,19 +47,19 @@
 #' @param verbose logical, if \code{FALSE}, the printing of most details 
 #' by the gof function is suppressed (but some warnings may still appear and 
 #' errors are always shown)
-#'
+#' @family statistics functions
 #' @return the goodness of fit is silently returned
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' ### ergm model
-#' flo <-SNA4DSData::florentine
-#' flom <- to_network(flo$flomarriage)
+#' data(florentine, package = "snafun")
+#' flom <- to_network(florentine$flomarriage)
 #' m_ergm <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
-#' gof_ergm <- GOF_and_plot_as_btergm(m_ergm)
-#' gof_ergm <- GOF_and_plot_as_btergm(m_ergm, btergm_statistics = c(btergm::esp,
-#'      btergm::dsp, btergm::deg))
+#' gof_ergm <- stat_plot_gof_as_btergm(m_ergm)
+#' gof_ergm <- stat_plot_gof_as_btergm(m_ergm, 
+#'         btergm_statistics = c(btergm::esp, btergm::dsp, btergm::deg))
 #' gof_ergm
 #' 
 #' ### btergm model
@@ -68,20 +73,20 @@
 #'   absdiff("polity") + 
 #'   absdiff("Composite_Index_National_Capability") +
 #'   edgecov(sharedBorder), 
-#'   R = 100, # number of bootstraps
+#'   R = 100, # number of bootstraps, perhaps set lower to just try the example
 #'   parallel = "snow", ncpus = 16  # optional line
 #' )
 #' 
-#' gof_btergm <- GOF_and_plot_as_btergm(m_btergm)
-#' gof_btergm <- GOF_and_plot_as_btergm(m_btergm, 
+#' gof_btergm <- stat_plot_gof_as_btergm(m_btergm)
+#' gof_btergm <- stat_plot_gof_as_btergm(m_btergm, 
 #'   parallel = "snow", ncpus = 12)
 #' gof_btergm
-#' GOF_and_plot_as_btergm(m_btergm, 
+#' gof_btergm <- stat_plot_gof_as_btergm(m_btergm, 
 #'   parallel = "snow", ncpus = 12, silent = TRUE)
-#' GOF_and_plot_as_btergm(m_btergm, 
+#' gof_btergm <- stat_plot_gof_as_btergm(m_btergm, 
 #'   parallel = "snow", ncpus = 12, verbose = FALSE, silent = TRUE)
 #' }
-GOF_and_plot_as_btergm <- function(m, 
+stat_plot_gof_as_btergm <- function(m, 
                                    ...,
                                    btergm_statistics = c(btergm::esp, 
                                                          btergm::geodesic, 
@@ -89,27 +94,26 @@ GOF_and_plot_as_btergm <- function(m,
                                                          btergm::rocpr),
                                    silent = FALSE,
                                    verbose = TRUE) {
-  
   if (!inherits(m, "ergm") & !inherits(m, "btergm")) {
     klasse <- class(m)[1]
     stop("'m' should be a fitted 'ergm' or 'btergm' model, but you inputted a ", klasse, " object")
   }
   
   if (silent) {
-    g <- suppressMessages(gof_btergm(m, statistics = btergm_statistics, ...,
+    g <- suppressMessages(btergm:::gof.btergm(m, statistics = btergm_statistics, ...,
                                               verbose = verbose),
                           classes = c("message", "warning"))
   }
-  g <- suppressWarnings(gof_btergm(m, statistics = btergm_statistics, ...,
+  g <- suppressWarnings(btergm:::gof.btergm(m, statistics = btergm_statistics, ...,
                                             verbose = verbose))
-  plot_gof_btergm(g)
+  btergm:::plot.gof(g)
   invisible(g)
 }
 
 
 
 
-#' GOF plot
+#' Plot the Goodness of fit of a (bt)ergm result
 #'
 #' Plots the Goodness of fit for the output of a model of class \code{ergm} or \code{btergm}
 #'
@@ -122,16 +126,16 @@ GOF_and_plot_as_btergm <- function(m,
 #' @param gof A gof model object for a fitted \code{ergm} or \code{btergm} model
 #'
 #' @return Plots displaying the Goodness of Fit
-#' @export GOF_plot
-#'
+#' @export 
+#' @family statistics functions
 #' @examples
 #' \dontrun{
 #' ### ergm model
-#' flo <-SNA4DSData::florentine
-#' flom <- to_network(flo$flomarriage)
+#' data(florentine, package = "snafun")
+#' flom <- to_network(florentine$flomarriage)
 #' m_ergm <- ergm::ergm(flom ~ edges + nodecov("Wealth"))
 #' gof_ergm <- ergm::gof(m_ergm)
-#' GOF_plot(gof_ergm)
+#' stat_plot_gof(gof_ergm)
 #' 
 #' ### btergm model
 #' data(alliances, package = "SNA4DSData")
@@ -148,14 +152,14 @@ GOF_and_plot_as_btergm <- function(m,
 #'   parallel = "snow", ncpus = 16  # optional line
 #' )
 #' 
-#' gof_btergm <- gof_btergm(m_btergm)
-#' GOF_plot(gof_btergm)
+#' gof_btergm <- btergm:::gof.btergm(m_btergm)
+#' stat_plot_gof(gof_btergm)
 #' }
-GOF_plot <- function(gof) {
+stat_plot_gof <- function(gof) {
   if (inherits(gof, "gof.ergm")) {
-    plot_gof_ergm(gof)
+    ergm:::plot.gof(gof)
   } else if (inherits(gof, "gof")) {
-    plot_gof_btergm(gof)
+    btergm:::plot.gof(gof)
   } else {
     stop("The input for 'm' has to be a gof object from a 'ergm' or a 'btergm' model")
   }

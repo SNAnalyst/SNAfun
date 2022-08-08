@@ -39,19 +39,19 @@ edge attributes and \code{FALSE} otherwise.
 }
 \section{Functions}{
 \itemize{
-\item \code{has_edge_attributes}: Check whether a graph has edge attributes
+\item \code{has_edge_attributes()}: Check whether a graph has edge attributes
 
-\item \code{has_vertex_attributes}: Check whether a graph has vertex attributes (where 
+\item \code{has_vertex_attributes()}: Check whether a graph has vertex attributes (where 
 the attribute called "na" does not count, as that is only an internal attribute 
 by the network package)
 
-\item \code{has_vertex_attribute}: Check whether a graph has a specific vertex attribute (where 
+\item \code{has_vertex_attribute()}: Check whether a graph has a specific vertex attribute (where 
 the attribute called "na" does not count, as that is only an internal attribute 
 by the network package)
 
-\item \code{has_edge_attribute}: Check whether a graph has a specific edge attribute
+\item \code{has_edge_attribute()}: Check whether a graph has a specific edge attribute
 
-\item \code{has_vertexnames}: Check whether a graph has vertex names. The function merely checks 
+\item \code{has_vertexnames()}: Check whether a graph has vertex names. The function merely checks 
 for the presence of the vertex attribute \code{name} (for a network of
 class \code{igraph}) or \code{vertex.names} (for a network of
 class \code{network}). 
@@ -64,10 +64,10 @@ whether these are names the researcher want to use as names, or purely
 the result of the default behavior of the \code{network} package (and 
 not meaningful names per se).
 
-\item \code{has_loops}: Check whether a graph contains at least one loop (ie. 
+\item \code{has_loops()}: Check whether a graph contains at least one loop (ie. 
 an edge from a vertex to itself). Also works on a \code{matrix}.
-}}
 
+}}
 \examples{
 data(florentine, package = "snafun")
 has_vertexnames(florentine$flobusiness)      # TRUE

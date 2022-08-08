@@ -35,4 +35,4 @@ Suggests:
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1

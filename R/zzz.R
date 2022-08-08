@@ -17,8 +17,8 @@
         "more fun!\n\n",
         "If you experience any issues or have a request for new or improved\n",
         "functions, please contact Roger and Claudia or add an issue to\n",
-        "the package github repo\n\n\n",
-        "Type help(package = 'snafun') to access the package documentation\n\n",
+        "the package github repo at https://github.com/SNAnalyst/SNAfun/issues.\n\n\n",
+        "Type help(package = 'snafun') to access the package documentation.\n\n",
         "To suppress this message use:\n",
         "\tsuppressPackageStartupMessages(library(snafun))\n\n",
         sep = "")

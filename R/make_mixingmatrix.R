@@ -8,15 +8,15 @@
 #' tool for assessing network homophily or seggregation and often very useful 
 #' for the subsequent construction of explanatory statistical models of the network. 
 #' 
-#' Each cell (*i*, *j*) in the mixing matrix reports the number of edges in the 
-#' graph where the sender has value *i* on the vertex attribute and the receiver 
-#' has value *j* on that vertex attribute. In case of an undirected graph, 
-#' each edge counts twice, when *j* != *j*, since an undirected edge from MALE to 
+#' Each cell ($i$, $j$) in the mixing matrix reports the number of edges in the 
+#' graph where the sender has value $i$ on the vertex attribute and the receiver 
+#' has value $j$ on that vertex attribute. In case of an undirected graph, 
+#' each edge counts twice, when $j$ != $j$, since an undirected edge from MALE to 
 #' FEMALE means that there is also an undirected edge from FEMALE to MALE.
 #' 
 #' If the argument \code{by_edge} is set to \code{TRUE}, a list of two mixing 
 #' matrices is returned: the first contains the traditional mixing matrix and the 
-#' second contains the mixing matrix of edges that do *no* occur in the graph.
+#' second contains the mixing matrix of edges that do \emph{no} occur in the graph.
 #' The two matrices are appropriately called "edge_present" and "no_edge_present".
 #' 
 #' The mixing matrix includes row and column margins. Note that this can be somewhat 

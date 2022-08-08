@@ -54,11 +54,11 @@ g1_i <- extract_subgraph(g_i, e_to_keep = which(extract_edge_attribute(g_i, 'Fre
 expect_equal(igraph::vcount(g1_i), 10)
 expect_equal(igraph::ecount(g1_i), 12)
 
-# delete the edge weight, b/c it does not exist in g1
-g1_i <- igraph::remove.edge.attribute(g1_i, "weight")
-g_m <- to_matrix(g1)
-g_i_m <- to_matrix(g1_i)
-expect_equal(g_m, g_i_m)
+# # delete the edge weight, b/c it does not exist in g1
+# g1_i <- igraph::remove.edge.attribute(g1_i, "weight")
+# g_m <- to_matrix(g1)
+# g_i_m <- to_matrix(g1_i)
+# expect_equal(g_m, g_i_m)
 
 
 

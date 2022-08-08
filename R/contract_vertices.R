@@ -39,8 +39,8 @@
 #' 
 #' @param method Indication of which grouping criterion should be used.\cr
 #' \code{method="min"} indicates the "minimum" criterion (edge values as distances).\cr
-#' \code{method="max"} indicates the "maximum" criterion (edge values as non-cummulative strengths).\cr
-#' \code{method="add"} indicates the "addition" criterion (edge values as cummulative strengths).\cr
+#' \code{method="max"} indicates the "maximum" criterion (edge values as non-cumulative strengths).\cr
+#' \code{method="add"} indicates the "addition" criterion (edge values as cumulative strengths).\cr
 #' \code{method="union"} indicates the "union" criterion (edge values as probability).\cr
 #' The default is "min". See details for examples.
 #'
@@ -54,10 +54,10 @@
 #' the algorithm takes the distance between A and C to describe
 #' the distance between AB and C.}
 #'
-#' Maximun Criterion: the edge value between a group and an outside vertex
+#' Maximum Criterion: the edge value between a group and an outside vertex
 #' is measured as the maximal value among all the (nonzero) edge values between
 #' any vertex in the group and the outside vertex. Suggested if edge values are
-#' interpreted as non-cummulative strengths. \cr
+#' interpreted as non-cumulative strengths. \cr
 #' \emph{Example: we keep using the above example, but the figure now indicates
 #' the strength of tie. According to the maximum criterion, the strength of tie
 #' between AB and C is 2.}

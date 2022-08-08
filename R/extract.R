@@ -10,11 +10,11 @@
 #' 
 #' There are three arguments that help determine for which edges the id's are extracted.
 #' 
-#' When only \code{ego} is specified, *all* edges are included that have an 'ego' 
+#' When only \code{ego} is specified, \emph{all} edges are included that have an 'ego' 
 #' node as the sender (in case of a directed graph) or as a sender or receiver 
 #' (in case of an undirected graph).
 #' 
-#' When only \code{alter} is specified, *all* edges are included that have an 'alter' 
+#' When only \code{alter} is specified, \emph{all} edges are included that have an 'alter' 
 #' node as the receiver (in case of a directed graph) or as a sender or receiver 
 #' (in case of an undirected graph).
 #' 
@@ -310,8 +310,8 @@ extract_graph_attribute.network <- function(x, name) {
 #' 
 #' Extract a subgraph
 #' 
-#' Extract a subgraph from an input graph object by *either* choosing which 
-#' vertices to keep *or* which edges to keep.
+#' Extract a subgraph from an input graph object by \emph{either} choosing which 
+#' vertices to keep \emph{or} which edges to keep.
 #' 
 #' When both \code{v_to_keep} and \code{e_to_keep} are provided, only 
 #' \code{v_to_keep} is used. Of course, the resulting graph can subsequently 
@@ -420,7 +420,7 @@ extract_subgraph.network <- function(x, v_to_keep, e_to_keep) {
 #' 
 #' In an undirected graph, \code{mode} will always be taken to be "all".
 #' 
-#' Note that \code{vertex} needs to be a *single* vertex, not a vector.
+#' Note that \code{vertex} needs to be a \emph{single} vertex, not a vector.
 #' 
 #' @param x graph object if class \code{igraph} or \code{network}
 #' @param vertex number or name (if the graph has vertex names) of a single vertex

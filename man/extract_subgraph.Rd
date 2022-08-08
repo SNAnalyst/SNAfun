@@ -21,8 +21,8 @@ graph of same class as the input graph
 Extract a subgraph
 }
 \details{
-Extract a subgraph from an input graph object by *either* choosing which 
-vertices to keep *or* which edges to keep.
+Extract a subgraph from an input graph object by \emph{either} choosing which 
+vertices to keep \emph{or} which edges to keep.
 
 When both \code{v_to_keep} and \code{e_to_keep} are provided, only 
 \code{v_to_keep} is used. Of course, the resulting graph can subsequently 

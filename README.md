@@ -1,7 +1,7 @@
 # SNAfun
 FUNctions to enjoy alongside the SNA4DS course
 
-The following API is used (for now):
+The following API is used:
 
 - add_* : add stuff to network objects
 - count_* : counting things in the graph, such as the number of vertices, number of edges, dyad census, triad census
@@ -14,6 +14,7 @@ The following API is used (for now):
 - make_* : create objects based on graphs, ie. make a matrix from vertex attributes, make a mixing_matrix, etc.
 - plot_* : several plot functions
 - remove_* : delete parts of the network, such as remove the isolates
+- stat_* : help functions for statistical modeling
 - to_* : conversion methods, converting from `igraph`, `network`, `matrix`, `data.frame` to `igraph`, `network`, `matrix`, `data.frame`
 
 Then, there are indices/measures at three levels:
@@ -21,4 +22,4 @@ Then, there are indices/measures at three levels:
 - g_* : graph level indices, such as betweenness centralization
 - v_* : vertex level indices, such as betweenness
 
-Then, there are some other functions for which there is no specific entry in the API yet. But, hey, naming may just all change again anyway...
+Finally, a few some functions don't fit within a clear category and don't follow this API.

@@ -39,7 +39,7 @@
 #' However, it leaves the modularity values intact and also does not change the 
 #' 'merges' element from the \code{coms} object. 
 #' Hence, running \code{\link[igraph]{modularity}} on the output of this function 
-#' will return the modularity of the **original** community memberships, not the 
+#' will return the modularity of the \strong{original} community memberships, not the 
 #' new merged ones. 
 #' However, it is easy to calculate the modularity of the new 
 #' communities: see example section below.

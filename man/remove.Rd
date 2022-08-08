@@ -29,15 +29,15 @@ Remove parts of the graph
 }
 \section{Functions}{
 \itemize{
-\item \code{remove_edge_attribute}: remove an edge attribute from the graph
+\item \code{remove_edge_attribute()}: remove an edge attribute from the graph
 
-\item \code{remove_vertex_attribute}: remove a vertex attribute from the graph
+\item \code{remove_vertex_attribute()}: remove a vertex attribute from the graph
 
-\item \code{remove_graph_attribute}: remove a graph attribute from the graph
+\item \code{remove_graph_attribute()}: remove a graph attribute from the graph
 
-\item \code{remove_vertex_names}: remove vertex names from the graph
+\item \code{remove_vertex_names()}: remove vertex names from the graph
+
 }}
-
 \examples{
 data(emon, package = "network")
 texas <- emon$Texas

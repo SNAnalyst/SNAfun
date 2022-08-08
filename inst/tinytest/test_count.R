@@ -66,7 +66,7 @@ n2 <- to_network(i2)
 
 expect_equal(
   count_dyads(i2, echo = FALSE),
-  count_dyads(n2, echo = FALSE)[c(1, 3)]   # undirected
+  count_dyads(n2, echo = FALSE)   # undirected
 )
 
 expect_equal(

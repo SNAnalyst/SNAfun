@@ -31,7 +31,7 @@ are returned.
 
 In an undirected graph, \code{mode} will always be taken to be "all".
 
-Note that \code{vertex} needs to be a *single* vertex, not a vector.
+Note that \code{vertex} needs to be a \emph{single} vertex, not a vector.
 }
 \examples{
 m <- matrix(0, 3, 3)
