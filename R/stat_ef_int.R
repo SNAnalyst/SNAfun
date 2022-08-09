@@ -15,7 +15,7 @@
 #' @param type Prints either Odds ratios or Probabilities ("odds", "prob")
 #'
 #' @return a \code{data.frame}
-#' @export
+#'
 #' @family statistics functions
 #' @examples
 #' \dontrun{
@@ -26,13 +26,18 @@
 #'
 #' stat_ef_int(m, "prob")
 #' }
+#' @export
 stat_ef_int <- function(m, type = "odds"){
 
+  if (class(m) != "ergm") {
+    stop(paste("ERROR: The argument provided is not class ergm. Please, provide an ergm class object")
+    )
+  }
+
   coefM <- summary(m)
+  tab <- data.frame(Estimate = round(coefM$coefficients[,1], 3))
+  rownames(tab) <- rownames(coefM$coefficients)
 
-  tab <- data.frame(Estimate = round(coefM$coefs[,1], 3))
-
-  rownames(tab) <- rownames(coefM$coefs)
 
   if(type == "odds") {
 
@@ -41,7 +46,6 @@ stat_ef_int <- function(m, type = "odds"){
     for (i in 1:nrow(tab)) {
 
       temp <- exp(tab[i, 1])
-
       or <- append(or, temp)
     }
 
@@ -54,19 +58,14 @@ stat_ef_int <- function(m, type = "odds"){
     for (i in 1:nrow(tab)) {
 
       temp <- exp(tab[i, 1])/ (1 + exp(tab[i, 1]))
-
       P <- append(P, temp)}
 
-      tab <- cbind(tab, Prob = round(P, 3))
+    tab <- cbind(tab, Prob = round(P, 3))
 
   }
 
-
-  tab <- cbind(tab, Std.Error = round(coefM$coefs[,2],3), Pval = round(coefM$coefs[,4],3))
+  tab <- cbind(tab, Std.Error = round(coefM$coefficients[,2],3), Pval = round(coefM$coefficients[,4],3))
 
   return(tab)
 
 }
-
-
-
