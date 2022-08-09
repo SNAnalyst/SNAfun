@@ -15,7 +15,8 @@ the edge}
 in the same order as column one of the names data frame}
 }
 \value{
-a vector or a data frame
+a vector of nodes names or a data frame with nodes names and one node attribute
+#'
 }
 \description{
 Makes a node list from row data.
@@ -35,7 +36,12 @@ It is not possible to process more than one attribute at the time.
 
 The function takes only data frames as input for the argument `names` and
 vectors for the argument `attribute`. The user should provide the values of
-names and attributes in the same order
+names and attributes in the same order. If an attribute is missing it will be
+shown as 0 if numeric, or as FALSE if categorical.
+
+NOTE: Double check the attribute vector before passing it to the function. If
+the attribute vector is shorter than the number of respondent names the
+function will still run, but the output might be incorrect.
 }
 \examples{
 \dontrun{

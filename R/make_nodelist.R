@@ -17,7 +17,12 @@
 #'
 #' The function takes only data frames as input for the argument `names` and
 #' vectors for the argument `attribute`. The user should provide the values of
-#' names and attributes in the same order
+#' names and attributes in the same order. If an attribute is missing it will be
+#' shown as 0 if numeric, or as FALSE if categorical.
+#'
+#' NOTE: Double check the attribute vector before passing it to the function. If
+#' the attribute vector is shorter than the number of respondent names the
+#' function will still run, but the output might be incorrect.
 #'
 #' @param names A data frame with N columns where the first one has the survey
 #' respondents (edge origin), and the other columns express the destination of
@@ -25,9 +30,8 @@
 #' @param attribute A vector with information about the node attribute provided
 #' in the same order as column one of the names data frame
 #'
-#' @return a vector or a data frame
-#' @export make_nodelist
-#'
+#' @return a vector of nodes names or a data frame with nodes names and one node attribute
+#' #'
 #' @examples
 #' \dontrun{
 #' namedf <- data.frame(respondent = c('A', 'B', 'C'),
@@ -37,7 +41,20 @@
 #'
 #' nodelist <-  make_nodelist(names =  namedf, attribute = attributeV)
 #' }
-make_nodelist <- function(names = NULL, attribute = NULL ) {
+#' @export
+make_nodelist <- function(names = NULL , attribute = NULL) {
+  UseMethod("make_nodelist")
+}
+
+#' @export
+make_nodelist.default <- function(names = NULL , attribute = NULL) {
+  txt <- methods_error_message("x", "make_nodelist")
+  stop(txt)
+}
+
+
+#'@export
+make_nodelist.fun <- function(names = NULL, attribute = NULL ) {
 
 if (inherits(names, "data.frame")) {
 
@@ -66,14 +83,14 @@ if (inherits(names, "data.frame")) {
 
     } else {
 
-      cat('ERROR: The argument attribute needs to be a vector')
+      stop(paste('The argument attribute needs to be a vector'))
 
     }
   }
 
 } else {
 
-  cat('ERROR: The argument names needs to be a data frame')
+  stop(paste('The argument names needs to be a data frame'))
 
 }
 
