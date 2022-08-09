@@ -54,7 +54,7 @@ make_nodelist.default <- function(names = NULL , attribute = NULL) {
 
 
 #'@export
-make_nodelist.fun <- function(names = NULL, attribute = NULL ) {
+make_nodelist.data.frame <- function(names = NULL, attribute = NULL ) {
 
 if (inherits(names, "data.frame")) {
 
