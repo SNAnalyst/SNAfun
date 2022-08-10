@@ -26,26 +26,28 @@ This function processes row network data producing a list of edges.
 The function returns a data frame.
 If only the argument `names` is specified, the function returns a data frame
 with two columns, indicating the node from which the link comes from in column
-one and the node to which the link is directed in column two.
+one (respondents) and the node to which the link is directed in column two (alters).
 
 If the argument `attribute` is also specified, the function returns a data frame
 with three columns. The first two columns are the same as above, the third
-column contain information about one node attribute
+column contain information about one edge attribute
 
-It is not possible to process more than one attribute at the time.
+It is not possible to process more than one attribute at the time. If needed,
+it is possible to use the function with different attributes and then merge
+the output data frame using `cbind()`.
 
 The function takes only data frames as input and the first column in the
 input data frame needs to express the nodes originating the edges.
 
 The user should provide the values of
-names and attributes in the same order
+respondent-alter relationships and edge attributes in the same order.
 }
 \examples{
 \dontrun{
 namedf <- data.frame(respondent = c('A', 'B', 'C'),
                       alter1 = c('D', 'C', 'A'),
                       alter2 = c('B', 'A', 'A') )
-attributedf <- data.frame(attribute1 = 1:3, attribute2 = 4:6, attribute3 = 2:4)
+attributedf <- data.frame(attributeCol1 = 1:3, attributeCol2 = 4:6)
 
 edgelist <-  make_edgelist(names =  namedf, attribute = attributedf)
 }
