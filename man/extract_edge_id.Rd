@@ -48,7 +48,7 @@ When only \code{edgelist} is specified, the exact edges specified in that
 edgelist are used.
 
 In case an id is requested for an edge that does not occur in the graph, 
-zero is returned for that non-existant edge(s).
+zero is returned for that non-existent edge(s).
 
 Note that \code{ego}, \code{vertex}, and \code{edgelist} should only contain 
 numeric vertex id's and will not accept vertex names in the current implementation 
