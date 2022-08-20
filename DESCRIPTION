@@ -1,7 +1,7 @@
 Package: snafun
 Type: Package
 Title: Cool FUNctions for the Social Network Analysis for Data Science Course
-Version: 0.2022.5
+Version: 0.2022.8
 Authors@R:
 	c(person(given = "Roger",
 					family = "Leenders",
@@ -14,24 +14,24 @@ Authors@R:
 Maintainer: Roger Leenders <r.t.a.j.leenders@jads.nl>
 Description: Contains useful functions to assist the JADS course "Social Network Analysis for Data Science." The package contains a vignette that shows the most important functions you need to know for this course.
 Depends: 
-	R (>= 4.2.0)
+	R (>= 4.2.1)
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/SNAnalyst/SNA4fun
-BugReports: https://github.com/SNAnalyst/SNA4fun/issues
+URL: https://github.com/SNAnalyst/SNAfun
+BugReports: https://github.com/SNAnalyst/SNAfun/issues
 Imports:
-	ergm,
-	igraph,
+	ergm (>= 4.2.2),
+	igraph (>= 1.3.2),
 	methods,
-	network,
-	sna,
+	network (>= 1.17.2),
+	sna (>= 2.7),
 	utils
 Remotes:
 	github::SNAnalyst/SNA4DSData
 Suggests:
-	btergm,
+	btergm (>= 1.10.6),
 	desc,
-	networkDynamic,
+	networkDynamic (>= 0.11.2),
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE

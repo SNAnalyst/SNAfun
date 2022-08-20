@@ -23,6 +23,7 @@
 #'
 #' @return nothing, the object is merely printed
 #' @name print
+#' @export
 #' @examples 
 #' g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
 #' g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
@@ -30,14 +31,14 @@
 #' print(g_n)
 NULL
 
-#' @describeIn print S3 method to print an igraph object
+#' @rdname print
 #' @export
 print.igraph <- function(x, ...) {
   igraph::print.igraph(x = x, ...)
 }
 
 
-#' @describeIn print S3 method to print an igraph object
+#' @rdname print
 #' @export
 print.network <- function(x, na.omit = FALSE, ...) {
   network::print.network(x = x, na.omit = na.omit, ...)

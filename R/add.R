@@ -159,6 +159,96 @@ add_vertex_attributes.network <- function(x, attr_name = NULL, value) {
 
 
 
+
+### add_vertex_names ------------------------------------------------------
+
+#' Add vertex names to a graph
+#' 
+#' Add vertex names to a graph
+#' 
+#' Consistent API to easily add vertex names to a graph of 
+#' class \code{igraph} or \code{network}. 
+#' The vertex attribute that holds the vertex names is called differently for 
+#' \code{igraph} and \code{network} objects, so 
+#' if you use the incorrect name for the attribute, the new names will not be 
+#' recognized in subsequent steps of the network analysis pipeline. 
+#' 
+#' This function puts the vertex names in the correct vertex attribute, so you 
+#' do not need to remember what they are called.
+#' 
+#' @param x graph object to which the vertex attributes need to be added
+#' @param value the vertex names to be set
+#' @param vids the id's of the vertices for which the names are to be set.
+#' This is useful if you only want to set/correct the names of a few vertices. 
+#' For \code{igraph} objects, these can be the number or the name of the vertices. 
+#' For \code{network} objects, only the numeric ID is allowed. 
+#' The default is \code{NULL}, which selects all vertices, in the order in which 
+#' they occur in the graph object. 
+#'
+#' @return graph object with new attributes added
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_random_graph(5, "gnp", p = .1, graph = "igraph")
+#' # there are no names yet
+#' snafun::extract_vertex_names(g)  # NULL
+#' g <- snafun::add_vertex_names(g, LETTERS[5:1])
+#' snafun::extract_vertex_names(g) # "E" "D" "C" "B" "A"
+#' g <- snafun::add_vertex_names(g, "X", vids = 2)
+#' snafun::extract_vertex_names(g) # "E" "X" "C" "B" "A"
+#' g <- snafun::add_vertex_names(g, c("Y", "Z"), vids = c("C", "A"))
+#' snafun::extract_vertex_names(g) # ""E" "X" "Y" "B" "Z"
+#' 
+#' g <- snafun::create_random_graph(5, "gnp", p = .1, graph = "network")
+#' snafun::extract_vertex_names(g)  # 1 2 3 4 5
+#' g <- snafun::add_vertex_names(g, LETTERS[5:1])
+#' snafun::extract_vertex_names(g) # "E" "D" "C" "B" "A"
+#' g <- snafun::add_vertex_names(g, "X", vids = 2)
+#' snafun::extract_vertex_names(g) # "E" "X" "C" "B" "A"
+#' # network objects accept only numeric id's
+#' g <- snafun::add_vertex_names(g, c("Y", "Z"), vids = c(3, 5))
+#' snafun::extract_vertex_names(g) # ""E" "X" "Y" "B" "Z"
+add_vertex_names <- function(x, value, vids = NULL) {
+  UseMethod("add_vertex_names")  
+}
+
+
+#' @export
+add_vertex_names.default <- function(x, value, vids = NULL) {
+  txt <- methods_error_message("x", "add_vertex_names")
+  stop(txt) 
+}
+
+
+#' @export
+add_vertex_names.igraph <- function(x, value, vids = NULL) {
+  if (is.null(vids)) {
+    vids = igraph::V(x)
+  }
+  x <- igraph::set_vertex_attr(x, name = "name", 
+                               index = vids, value = value)
+  x
+}
+
+
+
+#' @export
+add_vertex_names.network <- function(x, value, vids = NULL) {
+  if (is.null(vids)) {
+    vids = seq_len(network::get.network.attribute(x, "n"))
+  }
+  x <- network::set.vertex.attribute(x, attrname = "vertex.names", 
+                                value = value, v = vids)
+  x
+}
+
+
+
+
+
+
+
+
 ### add_edge_attributes --------------------------------------------------------
 
 #' Add edge attributes to a graph

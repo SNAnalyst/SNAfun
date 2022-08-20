@@ -36,13 +36,6 @@ the default settings in these packages.
 This function prints the objects just as they would be printed if the 
 packages were attached, but now they do not need to be attached.
 }
-\section{Methods (by class)}{
-\itemize{
-\item \code{print(igraph)}: S3 method to print an igraph object
-
-\item \code{print(network)}: S3 method to print an igraph object
-
-}}
 \examples{
 g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
 g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")

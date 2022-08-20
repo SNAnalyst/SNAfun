@@ -47,10 +47,16 @@ expect_error(add_vertex_attributes(g, c("twee", "een"), value = mat),
 colnames(mat) <- c("een", "twee", "drie")
 g1 <- add_vertex_attributes(g, c("twee", "een"), value = mat)
 expect_true(all(c("een", "twee") %in% igraph::list.vertex.attributes(g1)))
+
+# add vertex names
+g1 <- add_vertex_names(g1, 1:count_vertices(g1))
+expect_equal(extract_vertex_names(g1), 1:count_vertices(g1))
+g1 <- add_vertex_names(g1, count_vertices(g1):1)  # use 'add' to change existing names
+expect_equal(extract_vertex_names(g1), count_vertices(g1):1)
+g1 <- add_vertex_names(g1, c("A", "B"), vids = c(1, 3))
+expect_equal(extract_vertex_names(g1), c("A", 4, "B", 2, 1))
+
 rm(g, g1, mat)
-
-
-
 
 
 
@@ -100,6 +106,16 @@ colnames(mat) <- c("een", "twee", "drie")
 g1 <- add_vertex_attributes(g, c("twee", "een"), value = mat)
 network::list.vertex.attributes(g1)   #  "twee" "een" "na" "vertex.names"
 expect_true(all(c("een", "twee") %in% network::list.vertex.attributes(g1)))
+
+# add vertex names
+g1 <- add_vertex_names(g1, 1:count_vertices(g1))
+expect_equal(extract_vertex_names(g1), 1:count_vertices(g1))
+g1 <- add_vertex_names(g1, count_vertices(g1):1)  # use 'add' to change existing names
+expect_equal(extract_vertex_names(g1), count_vertices(g1):1)
+g1 <- add_vertex_names(g1, c("A", "B"), vids = c(1, 3))
+expect_equal(extract_vertex_names(g1), c("A", "9", "B", "7", "6", "5", "4", "3", "2", "1"))
+expect_equal(extract_vertex_names(g1), c("A", 9, "B", 7, 6, 5, 4, 3, 2, 1))
+
 rm(g, g1, mat)
 
 
