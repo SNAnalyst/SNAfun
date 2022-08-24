@@ -163,7 +163,8 @@ to_igraph.network <- function (x, bipartite = FALSE,
   # edge attribs 
   if (has_edge_attributes(x)) { # there are edge attribs to copy over
     edges_network <- to_edgelist(x)
-    graph <- add_edge_attributes(graph, edgelist = edges_network)
+    # note the need for overwrite = TRUE (try flomar_network)
+    graph <- add_edge_attributes(graph, edgelist = edges_network, overwrite = TRUE)
   }
   
   if (length(attr) > 1) {

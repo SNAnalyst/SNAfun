@@ -111,9 +111,18 @@ a graph of class \code{network}.
 Missing values are permitted. Takes into account whether the 
 graph is (un)directed (judged from \code{g1}). 
 
-NOTE: Both input graphs should be of the same type so, both should be 
-\code{igraph} or both should be \code{network} or both should be 
-\code{matrix} objects.
+NOTE: The input graphs should be of class 
+\code{igraph},\code{network} or 
+\code{matrix}. It is possible to mis graph claases, so correlations can 
+be calculated between graphs of class \code{network} and \code{igraph}, for 
+example.
+
+It is possible and the most common to provide two graphs directly, 
+but the function also accepts a list of two graphs or an array 
+of two graph (so, an array of size 2 x n x n).
+
+Internally, the graphs are converted to matrices before correlation is 
+calculated.
 
 \item \code{g_reciprocity()}: Reciprocity
 
@@ -129,6 +138,9 @@ Weights are discarded. Specific functions that can alternatively be used (and ar
 called by this function) include \code{\link[sna]{gtrans}} (for objects of 
 class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
 class \code{igraph}).
+
+The \code{network} and \code{igraph} implementations differ and can give 
+somewhat different results.
 
 \item \code{g_diameter()}: Diameter of a graph. Weights are discarded. The diameter is 
 equal to the maximum eccentricity scores across all vertices. 

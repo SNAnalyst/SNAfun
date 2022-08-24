@@ -59,6 +59,31 @@ expect_equal(extract_vertex_names(g1), c("A", 4, "B", 2, 1))
 rm(g, g1, mat)
 
 
+## check that previous vertex attrs remain after adding new ones
+data("florentine", package = "SNA4DSData")
+flomarriage <- florentine$flomarriage
+
+atts <- snafun::extract_all_vertex_attributes(flomarriage)
+# exclude the names and Wealth attrs
+atts <- atts[, !colnames(atts) %in% c("name", "Wealth")]
+# these attrs are already in the object, so rename them
+colnames(atts) <- paste0(colnames(atts), "_1")
+# now add them, call the resulting graph g
+g <- add_vertex_attributes(flomarriage, value = atts)
+# check that the new ones have been added correctly
+expect_equal(snafun::extract_vertex_attribute(g, "Wealth"), 
+             snafun::extract_vertex_attribute(flomarriage, "Wealth"))
+expect_equal(snafun::extract_vertex_attribute(g, "NumberPriorates"), 
+             snafun::extract_vertex_attribute(g, "NumberPriorates_1"))
+expect_equal(snafun::extract_vertex_attribute(g, "NumberTies"), 
+             snafun::extract_vertex_attribute(g, "NumberTies_1"))
+expect_equal(snafun::extract_vertex_attribute(g, "name"), 
+             snafun::extract_vertex_attribute(flomarriage, "name"))
+
+rm(g, flomarriage, atts, florentine)
+
+
+
 
 #### network ----
 g <- sna::rgraph(10, tprob = .2) |> network::as.network()
@@ -117,5 +142,28 @@ expect_equal(extract_vertex_names(g1), c("A", "9", "B", "7", "6", "5", "4", "3",
 expect_equal(extract_vertex_names(g1), c("A", 9, "B", 7, 6, 5, 4, 3, 2, 1))
 
 rm(g, g1, mat)
+
+
+## check that previous vertex attrs remain after adding new ones
+flomar_network <- SNA4DS:::flomar_network
+
+atts <- snafun::extract_all_vertex_attributes(flomar_network)
+# exclude the names and Wealth attrs
+atts <- atts[, !colnames(atts) %in% c("name", "Wealth")]
+# these attrs are already in the object, so rename them
+colnames(atts) <- paste0(colnames(atts), "_1")
+# now add them, call the resulting graph g
+g <- add_vertex_attributes(flomar_network, value = atts)
+# check that the new ones have been added correctly
+expect_equal(snafun::extract_vertex_attribute(g, "Wealth"), 
+             snafun::extract_vertex_attribute(flomar_network, "Wealth"))
+expect_equal(snafun::extract_vertex_attribute(g, "NumberPriorates"), 
+             snafun::extract_vertex_attribute(g, "NumberPriorates_1"))
+expect_equal(snafun::extract_vertex_attribute(g, "NumberTies"), 
+             snafun::extract_vertex_attribute(g, "NumberTies_1"))
+expect_equal(snafun::extract_vertex_names(g), 
+             snafun::extract_vertex_names(flomar_network))
+
+rm(g, flomar_network, atts)
 
 

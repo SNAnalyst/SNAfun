@@ -97,7 +97,6 @@ add_vertex_attributes.igraph <- function(x, attr_name = NULL, value) {
     x <- igraph::set.vertex.attribute(x, name = attr_name, value = value)
     
   } else { # value is a df
-    # read in all attributes at once, this works by using a named list and igraph::vertex_attr
     if (!is.null(attr_name)) {
       if (!all(attr_name %in% colnames(value))) {
         stop("Not all names from 'name' occur in 'value'")
@@ -108,7 +107,13 @@ add_vertex_attributes.igraph <- function(x, attr_name = NULL, value) {
       stop("The length of 'value' does not correspond with the number of vertices for which it is to be used")
     }
     value <- as.list(value)
-    igraph::vertex_attr(x) <- value
+    
+    for (kol in names(value)) {
+      x <- igraph::set_vertex_attr(graph = x,
+                                   name = kol,
+                                   index = index,
+                                   value = value[[kol]])
+    }
   }
   x
 }

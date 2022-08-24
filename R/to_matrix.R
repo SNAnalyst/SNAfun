@@ -72,11 +72,9 @@ to_matrix.igraph <- function(x) {
     }
   } else {
     if (is_weighted(x) | is_signed(x)) {
-      mat <- igraph::as_adjacency_matrix(x, sparse = FALSE,
-                                         attr = igraph::edge_attr_names(x)[[1]])
+      mat <- igraph::as_adjacency_matrix(x, type = "both", sparse = FALSE, attr = "weight")
     } else {
-      mat <- igraph::as_adjacency_matrix(x, sparse = FALSE,
-                                         attr = NULL)
+      mat <- igraph::as_adjacency_matrix(x, type = "both", sparse = FALSE, attr = NULL)
     }
   }
   mat

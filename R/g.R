@@ -180,9 +180,18 @@ g_mean_distance.network <- function(x) {
 #' Missing values are permitted. Takes into account whether the 
 #' graph is (un)directed (judged from \code{g1}). 
 #' 
-#' NOTE: Both input graphs should be of the same type so, both should be 
-#' \code{igraph} or both should be \code{network} or both should be 
-#' \code{matrix} objects.
+#' NOTE: The input graphs should be of class 
+#' \code{igraph},\code{network} or 
+#' \code{matrix}. It is possible to mis graph claases, so correlations can 
+#' be calculated between graphs of class \code{network} and \code{igraph}, for 
+#' example.
+#' 
+#' It is possible and the most common to provide two graphs directly, 
+#' but the function also accepts a list of two graphs or an array 
+#' of two graph (so, an array of size 2 x n x n).
+#' 
+#' Internally, the graphs are converted to matrices before correlation is 
+#' calculated.
 #' @export
 #' @examples
 #' # 
@@ -211,7 +220,9 @@ g_correlation.default <- function(g1, g2, diag = FALSE) {
 
 #' @export
 g_correlation.igraph <- function(g1, g2, diag = FALSE) {
-  if (!inherits(g2, "igraph")) stop("Graph 'g2' should be of class 'igraph' too")
+  if (!inherits(g2, c("igraph", "network", "matrix"))) {
+    stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
+  }
   x1 <- to_matrix(g1)
   x2 <- to_matrix(g2)
   directed <- is_directed(g1)
@@ -222,7 +233,10 @@ g_correlation.igraph <- function(g1, g2, diag = FALSE) {
 
 #' @export
 g_correlation.network <- function(g1, g2, diag = FALSE) {
-  if (!inherits(g2, "network")) stop("Graph 'g2' should be of class 'network' too")
+  if (!inherits(g2, c("igraph", "network", "matrix"))) {
+    stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
+  }
+  if (inherits(g2, "igraph")) g2 <- to_matrix(g2)
   directed <- is_directed(g1)
   sna::gcor(dat = g1, dat2 = g2, diag = diag, 
             mode = ifelse(directed, "digraph", "graph"))
@@ -230,14 +244,31 @@ g_correlation.network <- function(g1, g2, diag = FALSE) {
 
 #' @export
 g_correlation.matrix <- function(g1, g2, diag = FALSE) {
-  if (!inherits(g2, "matrix")) stop("Graph 'g2' should be of class 'matrix' too")
+  if (!inherits(g2, c("igraph", "network", "matrix"))) {
+    stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
+  }
+  if (inherits(g2, "igraph")) g2 <- to_matrix(g2)
   directed <- is_directed(g1)
   sna::gcor(dat = g1, dat2 = g2, diag = diag, 
             mode = ifelse(directed, "digraph", "graph"))
 }
 
+#' @export
+g_correlation.list <- function(g1, g2, diag = FALSE) {
+  if (length(g1) != 2) {
+    stop("When a list is provided, include exactly two graphs")
+  }
+  g_correlation(g1 = g1[[1]], g2 = g1[[2]], diag = diag)
+}
 
 
+#' @export
+g_correlation.array <- function(g1, g2, diag = FALSE) {
+  if (dim(g1)[1] != 2) {
+    stop("When an array is provided, include exactly two graphs")
+  }
+  g_correlation(g1 = g1[1, , ], g2 = g1[2, , ], diag = diag)
+}
 
 
 
@@ -292,6 +323,10 @@ g_reciprocity.network <- function(x) {
 #' called by this function) include \code{\link[sna]{gtrans}} (for objects of 
 #' class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
 #' class \code{igraph}).
+#' 
+#' The \code{network} and \code{igraph} implementations differ and can give 
+#' somewhat different results. 
+#' 
 #' @export
 #' @examples
 #' #
@@ -332,9 +367,6 @@ g_transitivity.network <- function(x) {
               measure = "weak",
               use.adjacency = TRUE)
 }
-
-
-
 
 
 
