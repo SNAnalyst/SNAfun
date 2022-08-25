@@ -4,7 +4,7 @@
 \alias{extract_edge_id}
 \title{Extract edge id's}
 \usage{
-extract_edge_id(object, ego, alter, edgelist)
+extract_edge_id(object, ego, alter, edgelist, ordered = FALSE)
 }
 \arguments{
 \item{object}{graph of class \code{network} or \code{igraph}}
@@ -13,9 +13,11 @@ extract_edge_id(object, ego, alter, edgelist)
 
 \item{alter}{numeric vector with the vertex id's}
 
-\item{edgelist}{matrix or data.frame with two numeric columns, c
-ontaining the vertex id's. Is ignored when \code{ego} and/or \code{alter} 
-are/is specified.}
+\item{edgelist}{matrix or data.frame with two numeric columns, 
+containing the vertex id's. Is ignored when \code{ego} and/or \code{alter} 
+are (is) specified.}
+
+\item{ordered}{logical, should the output be ordered according to the edgelist}
 }
 \value{
 data.frame with three columns: ego (=sender), alter (=receiver), 

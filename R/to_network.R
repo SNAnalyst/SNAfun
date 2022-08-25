@@ -133,14 +133,14 @@ to_network.igraph <- function(x, bipartite = NULL) {
     if (!is.numeric(edges$to)) {
       edges$to <- match(edges$to, namen)
     }
-    eids <- extract_edge_id(res, edgelist = edges)[, "eid"]
-    
+    eids <- extract_edge_id(res, edgelist = edges, ordered = FALSE)[, "eid"]
     eatt_names <- setdiff(colnames(eattrs), c("from", "to"))
     for (eat in eatt_names) {
-      network::set.edge.attribute(res, attrname = eat, value = eattrs[, eat], e = eids)
+      network::set.edge.attribute(res, attrname = eat,
+                                  value = eattrs[, eat], 
+                                  e = eids)
     }
   }
-  
   if (inherits(res, "matrix")) {res <- network::as.network.matrix(res)}
   res
 }

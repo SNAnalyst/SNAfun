@@ -231,6 +231,48 @@ remove_edge_attribute.network <- function(x, attr_name) {
 
 
 
+#' @describeIn remove remove an edge weight attribute from the graph. 
+#' If \code{x} is a matrix, this function will dichotomize
+#' it by turning every non-zero cell into a 1.
+#' @export
+remove_edge_weight <- function(x) {
+  UseMethod("remove_edge_weight")
+}
+
+
+#' @export
+remove_edge_weight.default <- function(x) {
+  txt <- methods_error_message("x", "remove_edge_weight")
+  stop(txt)
+}
+
+
+
+#' @export
+remove_edge_weight.igraph <- function(x) {
+  x <- igraph::delete_edge_attr(graph = x, name = "weight")
+  x
+}
+
+
+#' @export
+remove_edge_weight.network <- function(x) {
+  network::delete.edge.attribute(x, attrname = "weight")
+  x
+}
+
+#' @export
+remove_edge_weight.matrix <- function(x) {
+  x[x != 0] <- 1
+  x
+}
+
+
+
+
+
+
+
 #' @describeIn remove remove a vertex attribute from the graph
 #' @export
 remove_vertex_attribute <- function(x, attr_name) {

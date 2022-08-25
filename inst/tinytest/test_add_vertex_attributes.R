@@ -145,7 +145,7 @@ rm(g, g1, mat)
 
 
 ## check that previous vertex attrs remain after adding new ones
-flomar_network <- SNA4DS:::flomar_network
+flomar_network <- sna4tutti:::flomar_network
 
 atts <- snafun::extract_all_vertex_attributes(flomar_network)
 # exclude the names and Wealth attrs

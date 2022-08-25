@@ -3,12 +3,15 @@
 \name{remove}
 \alias{remove}
 \alias{remove_edge_attribute}
+\alias{remove_edge_weight}
 \alias{remove_vertex_attribute}
 \alias{remove_graph_attribute}
 \alias{remove_vertex_names}
 \title{Remove parts of the graph}
 \usage{
 remove_edge_attribute(x, attr_name)
+
+remove_edge_weight(x)
 
 remove_vertex_attribute(x, attr_name)
 
@@ -30,6 +33,10 @@ Remove parts of the graph
 \section{Functions}{
 \itemize{
 \item \code{remove_edge_attribute()}: remove an edge attribute from the graph
+
+\item \code{remove_edge_weight()}: remove an edge weight attribute from the graph. 
+If \code{x} is a matrix, this function will dichotomize
+it by turning every non-zero cell into a 1.
 
 \item \code{remove_vertex_attribute()}: remove a vertex attribute from the graph
 

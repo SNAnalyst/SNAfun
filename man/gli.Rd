@@ -20,7 +20,7 @@ g_density(x, loops = FALSE)
 
 g_mean_distance(x)
 
-g_correlation(g1, g2, diag = FALSE)
+g_correlation(g1, g2, diag = FALSE, weight = TRUE, wf = NULL)
 
 g_reciprocity(x)
 
@@ -58,6 +58,10 @@ This is almost always what you want.}
 \item{diag}{logical, indicating whether or not the diagonal should be treated 
 as valid data. Set this \code{TRUE} if and only if the data can contain 
 loops. Is \code{FALSE} by default.}
+
+\item{weight}{local, should weight be included? Is \code{TRUE} by default.}
+
+\item{wf}{not to be set by the user, for internal use only}
 
 \item{unconnected}{Logical, what to do if the graph is unconnected. 
 If \code{FALSE}, the function will return a number that is one larger the 
@@ -113,13 +117,17 @@ graph is (un)directed (judged from \code{g1}).
 
 NOTE: The input graphs should be of class 
 \code{igraph},\code{network} or 
-\code{matrix}. It is possible to mis graph claases, so correlations can 
+\code{matrix}. It is possible to mix graph classes, so correlations can 
 be calculated between graphs of class \code{network} and \code{igraph}, for 
 example.
 
+If a weight attribute is included in the graphs, these are used by default.
+
 It is possible and the most common to provide two graphs directly, 
 but the function also accepts a list of two graphs or an array 
-of two graph (so, an array of size 2 x n x n).
+of two graph (so, an array of size 2 x n x n). 
+In this case, provide the list or array as the \code{g1} argument. 
+The \code{g2} is ignored if \code{g1} is a list or array.
 
 Internally, the graphs are converted to matrices before correlation is 
 calculated.
@@ -206,18 +214,17 @@ g_n <- snafun::to_network(g)
 g_mean_distance(g_n)
 g_i <- snafun::to_igraph(g)
 g_mean_distance(g_i)
-# 
+#
 # correlation
 # matrices
+# 
 g1 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
 g2 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
 g_correlation(g1, g2)
-
 g1 <- to_network(g1); g2 <- to_network(g2)
 g_correlation(g1, g2)
-
 g1 <- to_igraph(g1); g2 <- to_igraph(g2)
-g_correlation(g1, g2)
+g_correlation(g1, g2)              
 # 
 # reciprocity
 g <- igraph::erdos.renyi.game(10, .3, type = "gnp", directed = TRUE)

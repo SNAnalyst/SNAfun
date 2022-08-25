@@ -35,26 +35,27 @@
 #' @param object graph of class \code{network} or \code{igraph}
 #' @param ego numeric vector with the vertex id's
 #' @param alter numeric vector with the vertex id's
-#' @param edgelist matrix or data.frame with two numeric columns, c
-#' ontaining the vertex id's. Is ignored when \code{ego} and/or \code{alter} 
-#' are/is specified.
+#' @param edgelist matrix or data.frame with two numeric columns, 
+#' containing the vertex id's. Is ignored when \code{ego} and/or \code{alter} 
+#' are (is) specified.
+#' @param ordered logical, should the output be ordered according to the edgelist
 #'
 #' @return data.frame with three columns: ego (=sender), alter (=receiver), 
 #' eid (= edge id)
 #' @export
-extract_edge_id <- function(object, ego, alter, edgelist) {
+extract_edge_id <- function(object, ego, alter, edgelist, ordered = FALSE) {
   UseMethod("extract_edge_id")
 }
 
 #' @export
-extract_edge_id.default <- function(object, ego, alter, edgelist) {
+extract_edge_id.default <- function(object, ego, alter, edgelist, ordered = FALSE) {
   txt <- methods_error_message("object", "extract_edge_id")
   stop(txt)
 }
 
 
 #' @export
-extract_edge_id.network <- function(object, ego, alter, edgelist) {
+extract_edge_id.network <- function(object, ego, alter, edgelist, ordered = FALSE) {
   directed = is_directed(object)
   check_ego <- !missing(ego)
   check_alter <- !missing(alter)
@@ -105,7 +106,6 @@ extract_edge_id.network <- function(object, ego, alter, edgelist) {
   if (!all(edgelist_is_numeric)) {
     stop("Provide only numeric id's for the requested vertices")
   }
-
   colnames(edgelist) <- c("ego", "alter")
   eids <- network::get.dyads.eids(object, 
                                   tails = edgelist[, "ego"], 
@@ -123,13 +123,13 @@ extract_edge_id.network <- function(object, ego, alter, edgelist) {
   
   out <- cbind(edgelist, eid = eids)
   out <- out[!duplicated(out), ]
-  out <- out[order(out[, 1], out[, 2]), ]
+  if (ordered) {out <- out[order(out[, 1], out[, 2]), ]}
   out
 }
 
 
 #' @export
-extract_edge_id.igraph <- function(object, ego, alter, edgelist) {
+extract_edge_id.igraph <- function(object, ego, alter, edgelist, ordered = FALSE) {
   directed = is_directed(object)
   check_ego <- !missing(ego)
   check_alter <- !missing(alter)
@@ -186,7 +186,7 @@ extract_edge_id.igraph <- function(object, ego, alter, edgelist) {
   eids <- igraph::get.edge.ids(object, vp = vp, directed = directed, error = FALSE)
   out <- cbind(edgelist, eid = eids)
   out <- out[!duplicated(out), ]
-  out <- out[order(out[, 1], out[, 2]), ]
+  if (ordered) {out <- out[order(out[, 1], out[, 2]), ]}
   out
 }
 

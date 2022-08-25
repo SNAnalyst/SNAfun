@@ -1,4 +1,140 @@
 
+# start with an actual matrix, so we know the exact correlation
+net1 <- runif(100, 0, 1) |> matrix(ncol = 10)
+net2 <- runif(100, -10, 30) |> matrix(ncol = 10)
+n1 <- network::as.network.matrix(net1, ignore.eval = FALSE, names.eval = "weight")
+n2 <- network::as.network.matrix(net2, ignore.eval = FALSE, names.eval = "weight")
+
+kor <- g_correlation(n1, n2)
+expect_equal(kor, g_correlation(n1, to_matrix(n2)))
+expect_equal(kor, g_correlation(n1, to_igraph(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), n2))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), n2))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(list(n1, n2)))
+expect_equal(kor, g_correlation(list(n1, n2), n1))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar))
+rm(net1, net2, n1, n2, kor, ar)
+
+
+# ONgewogen directed matrix
+net1 <- sna::rgnm(1, nv = 10, m = 35, mode = "digraph", diag = FALSE)
+net2 <- sna::rgnm(1, nv = 10, m = 55, mode = "digraph", diag = FALSE)
+n1 <- network::as.network.matrix(net1)
+n2 <- network::as.network.matrix(net2)
+kor <- g_correlation(n1, n2)
+expect_equal(kor, g_correlation(n1, to_matrix(n2)))
+expect_equal(kor, g_correlation(n1, to_igraph(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), n2))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), n2))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(list(n1, n2)))
+expect_equal(kor, g_correlation(list(n1, n2), n1))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar))
+rm(kor, net1, net2, ar)
+
+# gewogen directed matrix
+n1 <- snafun::add_edge_attributes(n1, attr_name = "weight", value = rnorm(35, 0, 10))
+n2 <- snafun::add_edge_attributes(n1, attr_name = "weight", value = runif(35, -10, 5))
+kor <- g_correlation(n1, n2)
+expect_equal(kor, g_correlation(n1, to_matrix(n2)))
+expect_equal(kor, g_correlation(n1, to_igraph(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), n2))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), n2))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(list(n1, n2)))
+expect_equal(kor, g_correlation(list(n1, n2), n1))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar))
+rm(kor)
+
+
+
+
+# ONgewogen symm matrix
+net1 <- sna::rgnm(1, nv = 10, m = 35, mode = "graph", diag = FALSE)
+net2 <- sna::rgnm(1, nv = 10, m = 25, mode = "graph", diag = FALSE)
+n1 <- network::as.network.matrix(net1, directed = FALSE)
+n2 <- network::as.network.matrix(net2, directed = FALSE)
+kor <- g_correlation(n1, n2)
+expect_equal(kor, g_correlation(n1, to_matrix(n2)))
+expect_equal(kor, g_correlation(n1, to_igraph(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), n2))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), n2))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(list(n1, n2)))
+expect_equal(kor, g_correlation(list(n1, n2), n1))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar))
+rm(net1, net2, ar)
+
+
+
+# gewogen symm matrix
+n1 <- snafun::add_edge_attributes(n1, attr_name = "weight", value = rnorm(35, 0, 10))
+n2 <- snafun::add_edge_attributes(n2, attr_name = "weight", value = runif(35, -10, 5))
+
+# should be the same as the previous correlation
+expect_equal(kor, g_correlation(n1, n2, weight = FALSE))
+expect_equal(kor, g_correlation(n1, to_matrix(n2), weight = FALSE))
+expect_equal(kor, g_correlation(n1, to_igraph(n2), weight = FALSE))
+expect_equal(kor, g_correlation(to_matrix(n1), n2, weight = FALSE))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2), weight = FALSE))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2), weight = FALSE))
+expect_equal(kor, g_correlation(to_igraph(n1), n2, weight = FALSE))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2), weight = FALSE))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2), weight = FALSE))
+expect_equal(kor, g_correlation(list(n1, n2), weight = FALSE))
+expect_equal(kor, g_correlation(list(n1, n2), n1, weight = FALSE))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar, weight = FALSE))
+rm(kor, ar)
+
+# now actually use the weighhts
+kor <- g_correlation(n1, n2)
+expect_equal(kor, g_correlation(n1, to_matrix(n2)))
+expect_equal(kor, g_correlation(n1, to_igraph(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), n2))
+expect_equal(kor, g_correlation(to_matrix(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_matrix(n1), to_igraph(n2),))
+expect_equal(kor, g_correlation(to_igraph(n1), n2))
+expect_equal(kor, g_correlation(to_igraph(n1), to_matrix(n2)))
+expect_equal(kor, g_correlation(to_igraph(n1), to_igraph(n2)))
+expect_equal(kor, g_correlation(list(n1, n2)))
+expect_equal(kor, g_correlation(list(n1, n2), n1))
+ar <- array(0, c(2,10,10))
+ar[1, , ] <- to_matrix(n1)
+ar[2, , ] <- to_matrix(n2)
+expect_equal(kor, g_correlation(ar))
+rm(ar, kor, n1, n2)
+
+
+
+
 data(florentine, package = "snafun")
 data(judge_net, package = "snafun")
 
@@ -9,35 +145,36 @@ g2_m <- to_matrix(g2_i)
 g1_n <- to_network(g1_i)
 g2_n <- to_network(g2_i)
 
-# check all comis
-kor <- g_correlation(g1_i, g2_i)
-expect_equal(kor, g_correlation(g1_i, g2_n))
-expect_equal(kor, g_correlation(g1_i, g2_m))
-expect_equal(kor, g_correlation(g1_n, g2_i))
-expect_equal(kor, g_correlation(g1_n, g2_m))
-expect_equal(kor, g_correlation(g1_n, g2_n))
-expect_equal(kor, g_correlation(g1_m, g2_i))
-expect_equal(kor, g_correlation(g1_m, g2_n))
-expect_equal(kor, g_correlation(g1_m, g2_m))
+# check all combis
+suppressWarnings(kor <- g_correlation(g1_i, g2_i))
+expect_warning(g_correlation(g1_i, g2_n), "correlation will assume weights")
+expect_equal(kor, g_correlation(g1_i, g2_n, weight = F))
+expect_equal(kor, g_correlation(g1_i, g2_m, weight = F))
+expect_equal(kor, g_correlation(g1_n, g2_i, weight = F))
+expect_equal(kor, g_correlation(g1_n, g2_m, weight = F))
+expect_equal(kor, g_correlation(g1_n, g2_n, weight = F))
+expect_equal(kor, g_correlation(g1_m, g2_i, weight = F))
+expect_equal(kor, g_correlation(g1_m, g2_n, weight = F))
+expect_equal(kor, g_correlation(g1_m, g2_m, weight = F))
 expect_equal(1, g_correlation(g1_i, g1_i))
 expect_equal(1, g_correlation(g2_i, g2_i))
 expect_equal(1, g_correlation(g1_i, g1_n))
 expect_equal(1, g_correlation(g2_i, g2_n))
 expect_equal(1, g_correlation(g1_i, g1_m))
-expect_equal(1, g_correlation(g2_i, g2_m))
+expect_equal(1, g_correlation(g2_i, g2_m, weight = F))
 expect_equal(1, g_correlation(g1_n, g1_i))
 expect_equal(1, g_correlation(g2_n, g2_i))
 expect_equal(1, g_correlation(g1_n, g1_n))
 expect_equal(1, g_correlation(g2_n, g2_n))
 expect_equal(1, g_correlation(g1_n, g1_m))
-expect_equal(1, g_correlation(g2_n, g2_m))
+expect_equal(1, g_correlation(g2_n, g2_m, weight = F))
 expect_equal(1, g_correlation(g1_m, g1_i))
 expect_equal(1, g_correlation(g2_m, g2_i))
 expect_equal(1, g_correlation(g1_m, g1_n))
 expect_equal(1, g_correlation(g2_m, g2_n))
 expect_equal(1, g_correlation(g1_m, g1_m))
 expect_equal(1, g_correlation(g2_m, g2_m))
-rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor)
+rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor, florentine)
 
 g1_i <- judge_net
 g1_m <- to_matrix(g1_i)
@@ -51,7 +188,7 @@ expect_equal(1, g_correlation(g1_n, g1_m))
 expect_equal(1, g_correlation(g1_m, g1_i))
 expect_equal(1, g_correlation(g1_m, g1_n))
 expect_equal(1, g_correlation(g1_m, g1_m))
-rm(g1_i, g1_n, g1_m, kor)
+rm(g1_i, g1_n, g1_m, judge_net)
 
 
 
@@ -135,7 +272,7 @@ rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor)
 
 # weighted
 g <- SNA4DSData::DSstudents
-igraph::E(g)$weight = igraph::E(g)$frequency
+igraph::E(g)$weight <- igraph::E(g)$frequency
 g1_i <- snafun::extract_subgraph(g, v_to_keep = 1:40)
 g2_i <- snafun::extract_subgraph(g, v_to_keep = 41:80)
 g1_m <- to_matrix(g1_i)
@@ -144,66 +281,32 @@ g1_n <- to_network(g1_i)
 g2_n <- to_network(g2_i)
 rm(g)
 kor <- g_correlation(g1_i, g2_i)
-# expect_equal(kor, g_correlation(g1_i, g2_n))
-# expect_equal(kor, g_correlation(g1_i, g2_m))
-# expect_equal(kor, g_correlation(g1_n, g2_i))
-# expect_equal(kor, g_correlation(g1_n, g2_m))
-# expect_equal(kor, g_correlation(g1_n, g2_n))
-# expect_equal(kor, g_correlation(g1_m, g2_i))
-# expect_equal(kor, g_correlation(g1_m, g2_n))
-# expect_equal(kor, g_correlation(g1_m, g2_m))
-# expect_equal(1, g_correlation(g1_i, g1_i))
-# expect_equal(1, g_correlation(g2_i, g2_i))
-# 
-# expect_equal(1, g_correlation(g1_i, g1_n))
-# expect_equal(1, g_correlation(g2_i, g2_n))
-# expect_equal(1, g_correlation(g1_i, g1_m))
-# expect_equal(1, g_correlation(g2_i, g2_m))
-# expect_equal(1, g_correlation(g1_n, g1_i))
-# expect_equal(1, g_correlation(g2_n, g2_i))
-# expect_equal(1, g_correlation(g1_n, g1_n))
-# expect_equal(1, g_correlation(g2_n, g2_n))
-# expect_equal(1, g_correlation(g1_n, g1_m))
-# expect_equal(1, g_correlation(g2_n, g2_m))
-# expect_equal(1, g_correlation(g1_m, g1_i))
-# expect_equal(1, g_correlation(g2_m, g2_i))
-# expect_equal(1, g_correlation(g1_m, g1_n))
-# expect_equal(1, g_correlation(g2_m, g2_n))
-# expect_equal(1, g_correlation(g1_m, g1_m))
-# expect_equal(1, g_correlation(g2_m, g2_m))
-# rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n)
-# 
-# 
-# 
-# 
-# 
-# igraph::as_adjacency_matrix(g1_i, attr = "weight")
-# mi <- igraph::as_adjacency_matrix(g1_i, attr = "weight", sparse = FALSE)
-# mn <- network::as.matrix.network(g1_n, attrname = "weight")
-# mm <- to_matrix(g1_i)
-# sum(mm != mi) # 0, identiek
-# sum(mm != mn)  # 49
-# 
-# 
-# 
-# het gaat mis in t-Nnetwork bij 
-# network::set.edge.attribute(res, attrname = eat, value = eattrs[, eat], e = eids)
-# waar de eids niet lijken te kloppen
-# 
-# 
-# # de nullen staan op dezlfde plek
-# to_matrix(mn)[which(to_matrix(mi) == 0, arr.ind = TRUE)] |> sum()
-# to_matrix(mi)[which(to_matrix(mn) == 0, arr.ind = TRUE)] |> sum()
-# mm[which(to_matrix(mn) == 0, arr.ind = TRUE)] |> sum()
-# to_matrix(mn)[which(mm == 0, arr.ind = TRUE)] |> sum()
-# sum(mn) == sum(mi)   # zelfde totaal, maar dus op andere plekken
-# sum(mn) == sum(mm)
-# all(table(mn) == table(mi))
-# all(colnames(mi) == rownames(mi))
-# all(colnames(mn) == rownames(mn))
-# all(colnames(mi) == rownames(mn))
-# 
-# extract_edge_attribute(g1_i, "weight") == extract_edge_attribute(g1_n, "weight")
-# 
-# cbind(mi[7, ], mn[7,])
-# cbind(mi[17, ], mn[17,])
+expect_equal(kor, g_correlation(g1_i, g2_n))
+expect_equal(kor, g_correlation(g1_i, g2_m))
+expect_equal(kor, g_correlation(g1_n, g2_i))
+expect_equal(kor, g_correlation(g1_n, g2_m))
+expect_equal(kor, g_correlation(g1_n, g2_n))
+expect_equal(kor, g_correlation(g1_m, g2_i))
+expect_equal(kor, g_correlation(g1_m, g2_n))
+expect_equal(kor, g_correlation(g1_m, g2_m))
+expect_equal(1, g_correlation(g1_i, g1_i))
+expect_equal(1, g_correlation(g2_i, g2_i))
+expect_equal(1, g_correlation(g1_i, g1_n))
+expect_equal(1, g_correlation(g2_i, g2_n))
+expect_equal(1, g_correlation(g1_i, g1_m))
+expect_equal(1, g_correlation(g2_i, g2_m))
+expect_equal(1, g_correlation(g1_n, g1_i))
+expect_equal(1, g_correlation(g2_n, g2_i))
+expect_equal(1, g_correlation(g1_n, g1_n))
+expect_equal(1, g_correlation(g2_n, g2_n))
+expect_equal(1, g_correlation(g1_n, g1_m))
+expect_equal(1, g_correlation(g2_n, g2_m))
+expect_equal(1, g_correlation(g1_m, g1_i))
+expect_equal(1, g_correlation(g2_m, g2_i))
+expect_equal(1, g_correlation(g1_m, g1_n))
+expect_equal(1, g_correlation(g2_m, g2_n))
+expect_equal(1, g_correlation(g1_m, g1_m))
+expect_equal(1, g_correlation(g2_m, g2_m))
+rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor)
+
+

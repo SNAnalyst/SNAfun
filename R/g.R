@@ -31,6 +31,8 @@
 #' @param diag logical, indicating whether or not the diagonal should be treated 
 #' as valid data. Set this \code{TRUE} if and only if the data can contain 
 #' loops. Is \code{FALSE} by default.
+#' @param weight local, should weight be included? Is \code{TRUE} by default.
+#' @param wf not to be set by the user, for internal use only
 #' @examples 
 #' m <- matrix(rbinom(25, 1, 0.5), 5, 5)
 #' diag(m) <- 0
@@ -182,93 +184,144 @@ g_mean_distance.network <- function(x) {
 #' 
 #' NOTE: The input graphs should be of class 
 #' \code{igraph},\code{network} or 
-#' \code{matrix}. It is possible to mis graph claases, so correlations can 
+#' \code{matrix}. It is possible to mix graph classes, so correlations can 
 #' be calculated between graphs of class \code{network} and \code{igraph}, for 
 #' example.
 #' 
+#' If a weight attribute is included in the graphs, these are used by default.
+#' 
 #' It is possible and the most common to provide two graphs directly, 
 #' but the function also accepts a list of two graphs or an array 
-#' of two graph (so, an array of size 2 x n x n).
+#' of two graph (so, an array of size 2 x n x n). 
+#' In this case, provide the list or array as the \code{g1} argument. 
+#' The \code{g2} is ignored if \code{g1} is a list or array.
 #' 
 #' Internally, the graphs are converted to matrices before correlation is 
 #' calculated.
 #' @export
 #' @examples
-#' # 
+#' #
 #' # correlation
 #' # matrices
+#' # 
 #' g1 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
 #' g2 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
 #' g_correlation(g1, g2)
-#' 
 #' g1 <- to_network(g1); g2 <- to_network(g2)
 #' g_correlation(g1, g2)
-#' 
 #' g1 <- to_igraph(g1); g2 <- to_igraph(g2)
-#' g_correlation(g1, g2)
-g_correlation <- function(g1, g2, diag = FALSE) {
+#' g_correlation(g1, g2)              
+g_correlation <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
   UseMethod("g_correlation")
 }
 
 
+
 #' @export
-g_correlation.default <- function(g1, g2, diag = FALSE) {
+g_correlation.default <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
   txt <- methods_error_message("g1", "g_correlation")
   stop(txt)
 }
 
 
+
+
 #' @export
-g_correlation.igraph <- function(g1, g2, diag = FALSE) {
+g_correlation.igraph <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
+  wf <- 0  # is -999, this shows that weights have already been fixed/dealt with
+  if (!weight) {
+    if (is_weighted(g1)) g1 <- remove_edge_weight(g1)
+    if (is_weighted(g2)) g2 <- remove_edge_weight(g2)
+    wf <- -999  # weird number, not normally just tried by an investigative user
+  } else {
+    if (is_weighted(g1) && !is_weighted(g2)) {
+      warning("'g1' is weighted, but 'g2' is not; correlation will assume weights")
+    } else if (!is_weighted(g1) && is_weighted(g2)) {
+      warning("'g2' is weighted, but 'g1' is not; correlation will assume weights")
+    }
+  }
+  g1 <- to_matrix(g1)
+  g_correlation.matrix(g1, g2, diag = diag, weight = weight, wf = wf)
+}
+
+
+#' @export
+g_correlation.network <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
+  wf <- 0
+  if (!weight) {
+    if (is_weighted(g1)) g1 <- remove_edge_weight(g1)
+    if (is_weighted(g2)) g2 <- remove_edge_weight(g2)
+    wf <- -999
+  } else {
+    if (is_weighted(g1) && !is_weighted(g2)) {
+      warning("'g1' is weighted, but 'g2' is not; correlation will assume weights")
+    } else if (!is_weighted(g1) && is_weighted(g2)) {
+      warning("'g2' is weighted, but 'g1' is not; correlation will assume weights")
+    }
+  }
+  g1 <- to_matrix(g1)
+  g_correlation.matrix(g1, g2, diag = diag, weight = weight, wf = wf)
+}
+
+
+#' @export
+g_correlation.matrix <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
   if (!inherits(g2, c("igraph", "network", "matrix"))) {
     stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
   }
-  x1 <- to_matrix(g1)
+  
+  x1 <- g1
   x2 <- to_matrix(g2)
-  directed <- is_directed(g1)
-  sna::gcor(dat = x1, dat2 = x2, diag = diag, 
-            mode = ifelse(directed, "digraph", "graph"))
-}
-
-
-#' @export
-g_correlation.network <- function(g1, g2, diag = FALSE) {
-  if (!inherits(g2, c("igraph", "network", "matrix"))) {
-    stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
+  
+  if (is.null(wf) || wf != -999) {  # other functions have not dealt with weight already
+    if (!weight) {
+      if (is_weighted(g1)) x1[x1 != 0] <- 1
+      if (is_weighted(g2)) x2[x2 != 0] <- 1
+    } else {
+      if (is_weighted(g1) && !is_weighted(g2)) {
+        warning("'g1' appears weighted, but 'g2' is not; correlation will assume weights")
+      } else if (!is_weighted(x1) && is_weighted(x2)) {
+        warning("'g2' appears weighted, but 'g1' is not; correlation will assume weights")
+      }
+    }
   }
-  if (inherits(g2, "igraph")) g2 <- to_matrix(g2)
+  
+  if (any(dim(x1) != dim(x2))) {stop("The input graphs should have the same sizes")}
   directed <- is_directed(g1)
-  sna::gcor(dat = g1, dat2 = g2, diag = diag, 
-            mode = ifelse(directed, "digraph", "graph"))
-}
-
-#' @export
-g_correlation.matrix <- function(g1, g2, diag = FALSE) {
-  if (!inherits(g2, c("igraph", "network", "matrix"))) {
-    stop("'g2' should be of class 'igraph', 'network', or 'matrix'")
+  if (!diag) {
+    diag(x1) <- NA
+    diag(x2) <- NA
   }
-  if (inherits(g2, "igraph")) g2 <- to_matrix(g2)
-  directed <- is_directed(g1)
-  sna::gcor(dat = g1, dat2 = g2, diag = diag, 
-            mode = ifelse(directed, "digraph", "graph"))
+  if (!directed) {
+    x1[upper.tri(x1)] <- NA
+    x2[upper.tri(x2)] <- NA
+  }
+  cor(as.vector(x1), as.vector(x2), use = "complete.obs")
 }
 
+
+
+
 #' @export
-g_correlation.list <- function(g1, g2, diag = FALSE) {
+g_correlation.list <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
   if (length(g1) != 2) {
-    stop("When a list is provided, include exactly two graphs")
+    stop("When a list is provided, include exactly two graphs in 'g1'")
   }
-  g_correlation(g1 = g1[[1]], g2 = g1[[2]], diag = diag)
+  g_correlation(g1 = g1[[1]], g2 = g1[[2]], diag = diag, weight = weight, wf = wf)
 }
 
 
 #' @export
-g_correlation.array <- function(g1, g2, diag = FALSE) {
+g_correlation.array <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) {
   if (dim(g1)[1] != 2) {
-    stop("When an array is provided, include exactly two graphs")
+    stop("When an array is provided, include exactly two graphs inside 'g1'")
   }
-  g_correlation(g1 = g1[1, , ], g2 = g1[2, , ], diag = diag)
+  g_correlation(g1 = g1[1, , ], g2 = g1[2, , ], diag = diag, weight = weight, wf = wf)
 }
+
+
+
+
 
 
 
