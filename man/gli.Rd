@@ -108,6 +108,12 @@ graph with its undirected equivalent.
 \item \code{g_density()}: Density of a graph. Weights are discarded. 
 Use \code{\link[sna]{gden}} if edge weights are to be used and \code{code} is 
 a graph of class \code{network}.
+Note that this function computes the density of a bipartite network without 
+symmetrizing, so the density that is reported is half that of the density 
+reported by the \code{\link[sna]{gden}} in this specific case.
+Also note that \code{\link[igraph]{edge_density}} does not correctly deal with 
+loops, so the current function reports correct density values whereas 
+\code{\link[igraph]{edge_density}} reports incorrect values.
 
 \item \code{g_mean_distance()}: Mean path distance
 

@@ -111,30 +111,55 @@ g_summary <- function(x, directed = TRUE) {
 #' @describeIn gli Density of a graph. Weights are discarded. 
 #' Use \code{\link[sna]{gden}} if edge weights are to be used and \code{code} is 
 #' a graph of class \code{network}.
+#' Note that this function computes the density of a bipartite network without 
+#' symmetrizing, so the density that is reported is half that of the density 
+#' reported by the \code{\link[sna]{gden}} in this specific case.
+#' Also note that \code{\link[igraph]{edge_density}} does not correctly deal with 
+#' loops, so the current function reports correct density values whereas 
+#' \code{\link[igraph]{edge_density}} reports incorrect values.
 #' @export
 g_density <- function(x, loops = FALSE) {
-  UseMethod("g_density")
-}
-
-
-#' @export
-g_density.default <- function(x, loops = FALSE) {
-  txt <- methods_error_message("x", "g_density")
-  stop(txt)
-}
-
-
-#' @export
-g_density.igraph <- function(x, loops = FALSE) {
-  igraph::edge_density(x, loops = loops)
-}
-
-
-#' @export
-g_density.network <- function(x, loops = FALSE) {
-  sna::gden(dat = x, diag = loops, 
-            mode = ifelse(snafun::is_directed(x), "digraph", "graph"),
-            ignore.eval = TRUE)
+  if (!(snafun::is_igraph(x) || snafun::is_network(x) || is.matrix(x))) {
+    stop("'g_density' requires an graph object of class 'igraph', 'network', or 'matrix'")
+  }
+  
+  is_directed <- snafun::is_directed(x)
+  
+  g <- snafun::to_matrix(x)
+  is_bipartite <- (nrow(g) != ncol(g))
+  if (!loops & !is_bipartite) {diag(g) <- 0}
+  # a regular matrix is symmetrized, this is not applicable for a bipartite networtk
+  if (!is_bipartite & !is_directed) {
+    g <- snafun::to_symmetric_matrix(g, rule = "weak")
+  }
+  
+  no_of_vertices <- nrow(g)
+  no_of_edges <- sum(g != 0)    # value is discarded
+  
+  if (loops & is_bipartite) {
+    stop("You want loops to be included, but 'x' is a bipartite network and is therefore not allowed to have loops.")
+  }
+  
+  if (no_of_vertices == 0) {
+    return(NaN)
+  } else if (no_of_vertices == 1) {
+    if (!loops) {  # no loops allowed, so no edges are possible
+      return(NaN)
+    } else {       # 1 vertex, so max 1 edge (=loop) is possible, so density is 1 or 0
+      return(no_of_edges)
+    }
+  }
+  
+  if (!loops & !is_bipartite) {
+    return(no_of_edges / (no_of_vertices * (no_of_vertices - 1)))
+  }
+  if (loops & !is_bipartite) {
+    return(no_of_edges / (no_of_vertices  * no_of_vertices))
+  }
+  
+  if (!loops & is_bipartite) {
+    return(no_of_edges / (nrow(g) * ncol(g)))
+  }
 }
 
 

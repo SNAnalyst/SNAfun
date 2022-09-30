@@ -72,7 +72,7 @@ d_structural_equivalence.default <- function(x, weights = NA, digits = 3,
 }
 
 
-
+#' @export
 d_structural_equivalence.igraph <- function(x, weights = NA, digits = 3,
                                             suppressWarnings = TRUE) {
   
@@ -103,7 +103,7 @@ d_structural_equivalence.igraph <- function(x, weights = NA, digits = 3,
 }
 
 
-
+#' @export
 d_structural_equivalence.network <- function(x, weights = NA, digits = 3,
                                             suppressWarnings = TRUE) {
 
@@ -133,7 +133,7 @@ d_structural_equivalence.network <- function(x, weights = NA, digits = 3,
 
 
 
-
+#' @export
 d_structural_equivalence.matrix <- function(x, weights = NA, digits = 3,
                                              suppressWarnings = TRUE) {
   
