@@ -119,6 +119,7 @@ to_igraph.matrix <- function(x, bipartite = FALSE,
                           mode = ifelse(isSymmetric(x), "undirected", "directed"))
     }
   }
+  # simplify, because loops will otherwise occur twice each
   graph <- igraph::simplify(graph, remove.multiple = TRUE, remove.loops = FALSE)
   graph
 }
