@@ -19,13 +19,14 @@ Fix the intermediate input from sna::cug.test
 }
 \details{
 This function makes the \link[sna]{cug.test} useable for \code{snafun}. 
-The cug.test function generates a series of networks in a specific way. 
+The cug.test function generates a series of networks in a various specific ways. 
 This function converts that data format into an object of class \code{igraph}, 
 which can then be handled by (almost) any function in \code{snafun} or 
 \code{igraph} or other code that works with \code{igraph} objects.
 
-This does slow down the computations in cug.test a little, but the added 
+This somwtimes slows down the computations in cug.test a little, but 
+can sometimes also speed it up. Either way, the added 
 flexibility is a huge gain.
 
-Make sure to set correctly whether the actual graph is directed or not.
+Make sure to set correctly whether the actual graph is \code{directed} or not.
 }
