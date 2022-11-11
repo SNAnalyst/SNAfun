@@ -64,7 +64,7 @@ stat_ef_int <- function(m, type = "odds"){
 
   }
 
-  tab <- cbind(tab, Std.Error = round(coefM$coefficients[,2],3), Pval = round(coefM$coefficients[,4],3))
+  tab <- cbind(tab, Std.Error = round(coefM$coefficients[,2],3), Pval = round(coefM$coefficients[,5],3))
 
   return(tab)
 
