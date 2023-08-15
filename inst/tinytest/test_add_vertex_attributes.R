@@ -60,7 +60,7 @@ rm(g, g1, mat)
 
 
 ## check that previous vertex attrs remain after adding new ones
-data("florentine", package = "SNA4DSData")
+data("florentine", package = "snafun")
 flomarriage <- florentine$flomarriage
 
 atts <- snafun::extract_all_vertex_attributes(flomarriage)
@@ -80,7 +80,7 @@ expect_equal(snafun::extract_vertex_attribute(g, "NumberTies"),
 expect_equal(snafun::extract_vertex_attribute(g, "name"), 
              snafun::extract_vertex_attribute(flomarriage, "name"))
 
-rm(g, flomarriage, atts, florentine)
+rm(g, flomarriage, atts)
 
 
 

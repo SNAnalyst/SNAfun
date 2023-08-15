@@ -25,7 +25,8 @@ $G(n,p)$ graph, ‘gnm’ creates a $G(n,m)$ graph. See details below.}
 
 \item{p}{probability for $G(n,p)$ graphs. Should not be given for $G(n,m)$ graphs.}
 
-\item{m}{integer, the number of edges for $G(n,p)$ graphs. Should not be given for $G(n,p)$ graphs.}
+\item{m}{integer, the number of edges for $G(n,p)$ graphs. Should not be given 
+for $G(n,p)$ graphs.}
 
 \item{directed}{logical, whether to create a directed graph}
 
