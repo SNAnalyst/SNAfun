@@ -46,7 +46,8 @@ The vertices in the final graph will be numerically named, from 1 to
 for two-mode graphs.
 }
 \note{
-Much of the code comes from \code{link[manynet]{create_components}}
+Much of the code comes from \code{\link[manynet]{create_components}} 
+in the \pkg{manynet} package.
 }
 \examples{
 create_components_graph(10, membership = c(1,1,1,2,2,2,3,3,3,3))
