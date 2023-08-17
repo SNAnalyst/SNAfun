@@ -96,7 +96,8 @@ m_btergm <- btergm::btergm(allianceNets ~ edges +
   parallel = "snow", ncpus = 16  # optional line
 )
 
-gof_btergm <- stat_plot_gof_as_btergm(m_btergm)
+# gof with only 10 simulations to keep time for the example low
+gof_btergm <- stat_plot_gof_as_btergm(m_btergm, nsim = 10)
 gof_btergm <- stat_plot_gof_as_btergm(m_btergm, 
   parallel = "snow", ncpus = 12)
 gof_btergm

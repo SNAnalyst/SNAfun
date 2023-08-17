@@ -174,7 +174,7 @@ expect_equal(1, g_correlation(g1_m, g1_n))
 expect_equal(1, g_correlation(g2_m, g2_n))
 expect_equal(1, g_correlation(g1_m, g1_m))
 expect_equal(1, g_correlation(g2_m, g2_m))
-rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor, florentine)
+rm(g1_i, g1_n, g1_m, g2_i, g2_m, g2_n, kor)
 
 g1_i <- judge_net
 g1_m <- to_matrix(g1_i)
@@ -188,7 +188,7 @@ expect_equal(1, g_correlation(g1_n, g1_m))
 expect_equal(1, g_correlation(g1_m, g1_i))
 expect_equal(1, g_correlation(g1_m, g1_n))
 expect_equal(1, g_correlation(g1_m, g1_m))
-rm(g1_i, g1_n, g1_m, judge_net)
+rm(g1_i, g1_n, g1_m)
 
 
 

@@ -4,10 +4,51 @@
 \alias{stat_plot_gof}
 \title{Plot the Goodness of fit of a (bt)ergm result}
 \usage{
-stat_plot_gof(gof)
+stat_plot_gof(
+  gof,
+  median_include = TRUE,
+  median_col = "black",
+  median_lwd = 2,
+  median_lty = "solid",
+  mean_include = TRUE,
+  mean_col = "black",
+  mean_lwd = 1,
+  mean_lty = "dashed",
+  ...
+)
 }
 \arguments{
 \item{gof}{A gof model object for a fitted \code{ergm} or \code{btergm} model}
+
+\item{median_include}{logical, should the median be included? 
+Default is \code{TRUE}}
+
+\item{median_col}{character, name of the color to plot the median in.}
+
+\item{median_lwd}{number, width of the line for the median.}
+
+\item{median_lty}{what line type should be used to plot the 
+median. Line types can either be specified as an integer 
+(0 = blank, 1 = solid (default), 2 = dashed, 3 = dotted, 4 = dotdash, 
+5 = longdash, 6 = twodash) or as one of the character strings "blank", 
+"solid", "dashed", "dotted", "dotdash", "longdash", or "twodash", 
+where "blank" uses ‘invisible lines’ (i.e., does not draw them).}
+
+\item{mean_include}{logical, should the mean be included? 
+Default is \code{TRUE}. Ignored if \code{gof} is the gof of an ergm.}
+
+\item{mean_col}{character, name of the color to plot the mean in.}
+
+\item{mean_lwd}{number, width of the line for the mean.}
+
+\item{mean_lty}{what line type should be used to plot the 
+medn. Default is "dashed".}
+
+\item{...}{additional arguments. When, \code{gof} is an \code{ergm} gof 
+object, it will be passed to the \link{boxplot} function (really only 
+somewhat potentially useful to set color in the \code{border} argument). 
+For a \code{btergm} gof, it is passed to the \code{plot.gof} function of 
+the \code{btergm} package.}
 }
 \value{
 Plots displaying the Goodness of Fit
@@ -21,6 +62,10 @@ or BTERGM models.
 
 It does not process bipartite ERGMs model objects nor other types of 
 Exponential random graph models object.
+
+The graphical arguments for this function are only used when a \code{btergm} 
+gof object is passed, since the ergm gof object does not support the setting 
+of graphical arguments (with the exception of the \code{...} argument).
 }
 \examples{
 \dontrun{
@@ -42,12 +87,17 @@ m_btergm <- btergm::btergm(allianceNets ~ edges +
   absdiff("polity") + 
   absdiff("Composite_Index_National_Capability") +
   edgecov(sharedBorder), 
-  R = 100, # number of bootstraps
+  R = 10, # number of bootstraps
   parallel = "snow", ncpus = 16  # optional line
 )
 
-gof_btergm <- btergm:::gof.btergm(m_btergm)
+# gof with on;y 10 simulations to keep time for the example low
+gof_btergm <- btergm:::gof.btergm(m_btergm, nsim = 10)
 stat_plot_gof(gof_btergm)
+stat_plot_gof(gof_btergm, median_include = FALSE)
+stat_plot_gof(gof_btergm, mean_col = "green", mean_lwd = 4, mean_lty = "dotted")
+stat_plot_gof(gof_btergm, mean_include = FALSE, median_col = "orange")
+stat_plot_gof(gof_btergm, mean_include = FALSE, median_include = FALSE)
 }
 }
 \seealso{

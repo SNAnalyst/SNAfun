@@ -48,10 +48,11 @@
 #' ignored otherwise.
 #' @param vertices A data frame with vertex metadata, or \code{NULL}. See details below.
 #' @export
-#' @note The functions are largely based upon the \code{\link[migraph]{as_igraph}} 
-#' functions. The versions in the \code{snafun} package do not require 
+#' @note The functions are largely based upon \code{as_igraph} functions from 
+#' the \code{migraph} package. 
+#' The versions in the \code{snafun} package do not require 
 #' the tidyverse dependencies of \code{migraph}
-#' and do not deal with tidygraph.
+#' and do not deal with \code{tidygraph}.
 #' @examples
 #' # from a matrix
 #' g <- igraph::sample_gnp(10, 2/10)

@@ -1,7 +1,7 @@
 Package: snafun
 Type: Package
-Title: Cool FUNctions for the Social Network Analysis for Data Science Course
-Version: 0.2022.11
+Title: Bringing more fun to Social Network Analysis 
+Version: 0.2023.2
 Authors@R:
 	c(person(given = "Roger",
 					family = "Leenders",
@@ -12,7 +12,7 @@ Authors@R:
 					role = c("aut"),
 					email = "SNA4DS@jads.nl"))
 Maintainer: Roger Leenders <r.t.a.j.leenders@jads.nl>
-Description: Contains useful functions to assist the JADS course "Social Network Analysis for Data Science." The package contains a vignette that shows the most important functions you need to know for this course.
+Description: Contains useful functions for Social Network Analysis. SNA is fun, but even more fun when you do not constantly need to switch beteen R packages and graph object classes. This package helps you to focus on the analysis itself, rather than on having to remember which function was in what package with which arguments and unexpected output formats. You can now focus on the fun of SNA, without experiencing the frustration of graph manipulation between different formats/classes/packages/aaaargh! Instead: ENJOY THE RIDE!
 Depends: 
 	R (>= 4.2.1)
 Encoding: UTF-8
@@ -20,7 +20,6 @@ LazyData: true
 URL: https://github.com/SNAnalyst/SNAfun
 BugReports: https://github.com/SNAnalyst/SNAfun/issues
 Imports:
-	igraphdata (>= 1.0.1),
 	methods,
 	sna (>= 2.7),
 	utils
@@ -33,9 +32,12 @@ Suggests:
 	gradethis (>= 0.2.4.9000),
 	igraph (>= 1.3.2),
 	learnr (>= 0.10.1.9000),
+	Matrix,
 	network (>= 1.17.2),
 	networkDynamic (>= 0.11.2),
+	spatialreg (>= 1.2-9),
+	spdep (>= 1.2-8),
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3

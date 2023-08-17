@@ -59,10 +59,11 @@ vertex names listed in vertices.
 See \code{\link[igraph]{graph_from_data_frame}} for the underlying function.
 }
 \note{
-The functions are largely based upon the \code{\link[migraph]{as_igraph}} 
-functions. The versions in the \code{snafun} package do not require 
+The functions are largely based upon \code{as_igraph} functions from 
+the \code{migraph} package. 
+The versions in the \code{snafun} package do not require 
 the tidyverse dependencies of \code{migraph}
-and do not deal with tidygraph.
+and do not deal with \code{tidygraph}.
 }
 \examples{
 # from a matrix
