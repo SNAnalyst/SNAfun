@@ -7,7 +7,6 @@ The following API is used:
 - count_* : counting things in the graph, such as the number of vertices, number of edges, dyad census, triad census
 - create_* : create graphs (in `igraph` or `network` format) with specific characteristics
 - extract_* : access specific data from (network) objects
-- find_* : identify specific parts of the network, such as who the isolates are
 - is_* : checks, such as whether a network is bipartite
 - has_* : checks, such as whether a network has loops
 - list_*: list characteristics, such as `list_edge_attributes`
