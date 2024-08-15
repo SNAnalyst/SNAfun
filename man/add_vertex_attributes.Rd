@@ -51,10 +51,10 @@ make sure the values in the correct order and exist for all of the vertices.
 \examples{
 g <- igraph::graph.ring(5)
 add_vertex_attributes(g, "at1", 1:5) |> 
-  igraph::get.vertex.attribute("at1")
+  igraph::vertex_attr("at1")
 
 add_vertex_attributes(g, value = data.frame(naam = 1:5)) |> 
-  igraph::get.vertex.attribute("naam")
+  igraph::vertex_attr("naam")
 
 add_vertex_attributes(g, value = data.frame(een = 11:15, twee = 21:25))
 

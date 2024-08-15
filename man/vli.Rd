@@ -168,7 +168,7 @@ for more details on this generalization.
 
 The closeness centrality of a vertex \eqn{v} is calculated as the inverse of 
 the sum of distances to all the other vertices in the graph. In other words, 
-for a vertex \eqn{v}, determine the lengths of the shortest paths from {v} 
+for a vertex \eqn{v}, determine the lengths of the shortest paths from \code{v} 
 to all other vertices (in caae of "out"), add those. This measures the 
 "farness" of \eqn{v}. The closeness of \eqn{v} is the inverse of this sum.
 The higher the number, the shorter the number of steps to reach all other 

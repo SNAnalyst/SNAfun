@@ -70,7 +70,7 @@ create_bipartite <- function(n_type1,
   )
   
   if (graph == "network") {
-    inc <- igraph::as_incidence_matrix(uit, sparse = FALSE)
+    inc <- igraph::as_biadjacency_matrix(uit, sparse = FALSE)
     uit <- to_network(inc, bipartite = TRUE)
   }
   

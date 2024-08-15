@@ -46,11 +46,11 @@ extract_all_vertex_attributes <- function(g) {
       return(NULL)
     }
   } else if (inherits(g, "igraph")) {
-    attrs <- igraph::list.vertex.attributes(g)
+    attrs <- igraph::vertex_attr_names(g)
     if (length(attrs) > 0) {
       mat <- data.frame(matrix(ncol = length(attrs), nrow = igraph::gorder(g)))
       for (att in 1:length(attrs)) {
-        atje <- igraph::get.vertex.attribute(g, attrs[att]) |> 
+        atje <- igraph::vertex_attr(g, attrs[att]) |> 
           fix_list_attribute()
         mat[, att] <- atje
       }

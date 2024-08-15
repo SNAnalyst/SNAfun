@@ -8,6 +8,7 @@
 \alias{has_edge_attribute}
 \alias{has_vertexnames}
 \alias{has_loops}
+\alias{has_isolates}
 \title{Check for the existence of edge attributes in the graph}
 \usage{
 has_edge_attributes(x)
@@ -21,6 +22,8 @@ has_edge_attribute(x, attrname)
 has_vertexnames(x)
 
 has_loops(x)
+
+has_isolates(x)
 }
 \arguments{
 \item{x}{graph of class \code{igraph} or \code{network}}
@@ -66,6 +69,9 @@ not meaningful names per se).
 
 \item \code{has_loops()}: Check whether a graph contains at least one loop (ie. 
 an edge from a vertex to itself). Also works on a \code{matrix}.
+
+\item \code{has_isolates()}: Check whether a graph contains at least one isolate vertex. 
+Returns \code{TRUE} or \code{FAlsE}
 
 }}
 \examples{

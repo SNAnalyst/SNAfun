@@ -96,7 +96,7 @@ v_geokpath_w.igraph <- function(graph, vids = NULL,
   
   # check vertex names
   v <- vids
-  if (is.character(v) && "name" %in% igraph::list.vertex.attributes(graph)) {
+  if (is.character(v) && "name" %in% igraph::vertex_attr_names(graph)) {
     v <- as.numeric(match(v, igraph::V(graph)$name))
     if (any(is.na(v))) {
       stop("Invalid vertex names: there are NA's in the names")
@@ -126,7 +126,7 @@ v_geokpath_w.igraph <- function(graph, vids = NULL,
   for (v in igraph::V(graph)[vids]){
     res <- append(res, length(sp[v, sp[v,] <= k]) - 1);
   }
-  if (igraph::is.named(graph)) {
+  if (igraph::is_named(graph)) {
     names(res) <- igraph::V(graph)$name[vids]
   }  
   res

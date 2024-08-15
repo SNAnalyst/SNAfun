@@ -48,7 +48,7 @@ has_edge_attributes.default <- function(x) {
 
 #' @export
 has_edge_attributes.igraph <- function(x) {
-  eattrs <- igraph::list.edge.attributes(x)
+  eattrs <- igraph::edge_attr_names(x)
   length(eattrs) > 0   # TRUE if there is at least one edge attribute
 }
 
@@ -81,7 +81,7 @@ has_vertex_attributes.default <- function(x) {
 
 #' @export
 has_vertex_attributes.igraph <- function(x) {
-  vattrs <- igraph::list.vertex.attributes(x)
+  vattrs <- igraph::vertex_attr_names(x)
   length(vattrs) > 0   # TRUE if there is at least one vertex attribute
 }
 
@@ -115,7 +115,7 @@ has_vertex_attribute.default <- function(x, attrname) {
 
 #' @export
 has_vertex_attribute.igraph <- function(x, attrname) {
-  attrname %in% igraph::list.vertex.attributes(x)
+  attrname %in% igraph::vertex_attr_names(x)
 }
 
 
@@ -146,7 +146,7 @@ has_edge_attribute.default <- function(x, attrname) {
 
 #' @export
 has_edge_attribute.igraph <- function(x, attrname) {
-  attrname %in% igraph::list.edge.attributes(x)
+  attrname %in% igraph::edge_attr_names(x)
 }
 
 
@@ -191,7 +191,7 @@ has_vertexnames.default <- function(x) {
 
 #' @export
 has_vertexnames.igraph <- function(x) {
-  "name" %in% igraph::list.vertex.attributes(x)
+  "name" %in% igraph::vertex_attr_names(x)
 }
 
 
@@ -235,5 +235,43 @@ has_loops.network <- function(x) {
 #' @export
 has_loops.matrix <- function(x) {
   any(diag(x) != 0)
+}
+
+
+
+
+
+
+
+
+#' @export
+#' @describeIn has Check whether a graph contains at least one isolate vertex. 
+#' Returns \code{TRUE} or \code{FAlsE}
+has_isolates <- function(x) {
+  UseMethod("has_isolates")
+}
+
+
+#' @export
+has_isolates.default <- function(x) {
+  txt <- methods_error_message("x", "has_isolates")
+  stop(txt)
+}
+
+
+#' @export
+has_isolates.igraph <- function(x) {
+  length(extract_isolates(x)) != 0
+}
+
+
+#' @export
+has_isolates.network <- function(x) {
+  length(extract_isolates(x)) != 0
+}
+
+#' @export
+has_isolates.matrix <- function(x) {
+  length(extract_isolates(x)) != 0
 }
 

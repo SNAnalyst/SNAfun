@@ -68,7 +68,7 @@
 #' g <- igraph::make_bipartite_graph( rep(0:1,length=10), c(1:10))
 #' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
 #' to_igraph(mat)  # same network, but not officially bipartite
-#' mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
+#' mat <- igraph::as_biadjacency_matrix(g, sparse = FALSE)
 #' to_igraph(mat, bipartite = TRUE)
 #' 
 #' relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 

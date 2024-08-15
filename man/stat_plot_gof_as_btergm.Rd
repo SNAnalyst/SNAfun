@@ -13,7 +13,7 @@ stat_plot_gof_as_btergm(
 )
 }
 \arguments{
-\item{m}{a fitted \code{ergm} or {btergm} model}
+\item{m}{a fitted \code{ergm} or \code{btergm} model}
 
 \item{...}{optional arguments, see description}
 

@@ -44,10 +44,10 @@
 #' @examples
 #' g <- igraph::graph.ring(5)
 #' add_vertex_attributes(g, "at1", 1:5) |> 
-#'   igraph::get.vertex.attribute("at1")
+#'   igraph::vertex_attr("at1")
 #' 
 #' add_vertex_attributes(g, value = data.frame(naam = 1:5)) |> 
-#'   igraph::get.vertex.attribute("naam")
+#'   igraph::vertex_attr("naam")
 #' 
 #' add_vertex_attributes(g, value = data.frame(een = 11:15, twee = 21:25))
 #' 
@@ -94,7 +94,7 @@ add_vertex_attributes.igraph <- function(x, attr_name = NULL, value) {
     if (length(attr_name) > 1) stop("Please only provide a single 'name' for this 'value'")
     if (length(index) != length(value)) stop("The length of 'value' does not correspond with the number of vertices for which it is to be used")
     # name holds a single attribute name and value contains the value of just 1 attribute
-    x <- igraph::set.vertex.attribute(x, name = attr_name, value = value)
+    x <- igraph::set_vertex_attr(x, name = attr_name, value = value)
     
   } else { # value is a df
     if (!is.null(attr_name)) {

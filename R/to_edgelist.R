@@ -57,7 +57,7 @@ to_edgelist.default <- function(x, named = TRUE, sort = "from") {
 #' @export
 to_edgelist.igraph <- function(x, named = TRUE, sort = "from") {
   if (!named & has_vertexnames(x)) {
-    x <- igraph::remove.vertex.attribute(x, "name")
+    x <- igraph::delete_vertex_attr(x, "name")
   }
   el <- igraph::get.data.frame(x)
 

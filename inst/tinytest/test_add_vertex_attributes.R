@@ -16,27 +16,27 @@ expect_error(add_vertex_attributes(g, "naam", value = data.frame(naam = 1:15)),
 
 # check if adding is correct
 expect_equal(
-  add_vertex_attributes(g, "at1", 1:5) |> igraph::get.vertex.attribute("at1"), 1:5
+  add_vertex_attributes(g, "at1", 1:5) |> igraph::vertex_attr("at1"), 1:5
 )
 expect_equal(
   add_vertex_attributes(g, "naam", value = data.frame(naam = 1:5)) |> 
-    igraph::get.vertex.attribute("naam"), 1:5
+    igraph::vertex_attr("naam"), 1:5
 )
 expect_equal(
   add_vertex_attributes(g, value = data.frame(naam = 1:5)) |> 
-    igraph::get.vertex.attribute("naam"), 1:5
+    igraph::vertex_attr("naam"), 1:5
 )
 
 
 g1 <- add_vertex_attributes(g, value = data.frame(een = 11:15, twee = 21:25))
-expect_equal(igraph::get.vertex.attribute(g1, "een"), 11:15)
-expect_equal(igraph::get.vertex.attribute(g1, "twee"), 21:25)
+expect_equal(igraph::vertex_attr(g1, "een"), 11:15)
+expect_equal(igraph::vertex_attr(g1, "twee"), 21:25)
 
 g1 <- add_vertex_attributes(g, c("twee", "een"), 
                   value = data.frame(een = 11:15, twee = 21:25, drie = 31:35))
-expect_equal(igraph::get.vertex.attribute(g1, "een"), 11:15)
-expect_equal(igraph::get.vertex.attribute(g1, "twee"), 21:25)
-expect_null(igraph::get.vertex.attribute(g1, "drie")) # does no exist
+expect_equal(igraph::vertex_attr(g1, "een"), 11:15)
+expect_equal(igraph::vertex_attr(g1, "twee"), 21:25)
+expect_null(igraph::vertex_attr(g1, "drie")) # does no exist
 
 ### check if reading from a matrix works
 mat <- matrix(c(11:15, 21:25, 31:35), ncol = 3, byrow = FALSE)
@@ -46,7 +46,7 @@ expect_error(add_vertex_attributes(g, c("twee", "een"), value = mat),
 # now add column names to the matrix
 colnames(mat) <- c("een", "twee", "drie")
 g1 <- add_vertex_attributes(g, c("twee", "een"), value = mat)
-expect_true(all(c("een", "twee") %in% igraph::list.vertex.attributes(g1)))
+expect_true(all(c("een", "twee") %in% igraph::vertex_attr_names(g1)))
 
 # add vertex names
 g1 <- add_vertex_names(g1, 1:count_vertices(g1))

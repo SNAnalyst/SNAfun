@@ -56,8 +56,8 @@ expect_true(inherits(ig, "igraph"))
 expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat)/2)  # undirected
 expect_false(snafun::is_directed(ig)) # undirected
-expect_true(length(igraph::list.edge.attributes(ig)) == 0)
-expect_true(length(igraph::list.vertex.attributes(ig)) == 0)
+expect_true(length(igraph::edge_attr_names(ig)) == 0)
+expect_true(length(igraph::vertex_attr_names(ig)) == 0)
 
 # directed matrix
 g <- igraph::sample_gnp(10, 2/10, directed = TRUE)
@@ -76,8 +76,8 @@ expect_true(inherits(ig, "igraph"))
 expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat != 0)/2)  # undirected, weighted
 expect_equal(sum(igraph::E(ig)$weight), sum(mat)/2) # undirected
-expect_true(length(igraph::list.edge.attributes(ig)) == 1)
-expect_true(length(igraph::list.vertex.attributes(ig)) == 0)
+expect_true(length(igraph::edge_attr_names(ig)) == 1)
+expect_true(length(igraph::vertex_attr_names(ig)) == 0)
 
 
 ## edge attributes
@@ -89,7 +89,7 @@ eid_n <- extract_edge_id(g6_n, edgelist = edges_n[, 1:2])$eid
 eid_i <- extract_edge_id(g6_i, edgelist = edges_n[, 1:2])$eid
 reorder <- match(eid_i, eid_n)
 expect_equal(network::get.edge.value(g6_n, "eatt1"), 
-             igraph::get.edge.attribute(g6_i, "eatt1")[reorder])
+             igraph::edge_attr(g6_i, "eatt1")[reorder])
 g7_n <- add_edge_attributes(g6_n, "eatt2", runif(network::network.edgecount(g5_n)))
 g7_i <- to_igraph(g7_n)
 expect_true("eatt1" %in% list_edge_attributes(g7_i))
@@ -99,9 +99,9 @@ eid_n <- extract_edge_id(g7_n, edgelist = edges_n[, 1:2])$eid
 eid_i <- extract_edge_id(g7_i, edgelist = edges_n[, 1:2])$eid
 reorder <- match(eid_i, eid_n)
 expect_equal(network::get.edge.value(g7_n, "eatt2"), 
-             igraph::get.edge.attribute(g7_i, "eatt2")[reorder])
+             igraph::edge_attr(g7_i, "eatt2")[reorder])
 expect_equal(network::get.edge.value(g7_n, "eatt1"), 
-             igraph::get.edge.attribute(g7_i, "eatt1")[reorder])
+             igraph::edge_attr(g7_i, "eatt1")[reorder])
 
 
 
@@ -111,14 +111,14 @@ g <- igraph::make_bipartite_graph( rep(0:1,length=10), c(1:10))
 mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
 ig <- to_igraph(mat)  # same network, but not officially bipartite
 expect_true(inherits(ig, "igraph"))
-expect_false(igraph::is.bipartite(ig))
+expect_false(igraph::is_bipartite(ig))
 expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat != 0)/2)
 
-mat2 <- igraph::as_incidence_matrix(g, sparse = FALSE)
+mat2 <- igraph::as_biadjacency_matrix(g, sparse = FALSE)
 ig2 <- to_igraph(mat2, bipartite = TRUE)
 expect_true(inherits(ig2, "igraph"))
-expect_true(igraph::is.bipartite(ig2))
+expect_true(igraph::is_bipartite(ig2))
 expect_equal(igraph::vcount(ig2), nrow(mat2) + ncol(mat2))
 expect_equal(igraph::ecount(ig2), sum(mat2))
 
@@ -138,11 +138,11 @@ ig_rel <- to_igraph(relations)
 ig_aa <- to_igraph(aa, bipartite = TRUE)
 
 expect_error(to_igraph(relations, TRUE))
-expect_false(igraph::is.bipartite(ig_rel))
+expect_false(igraph::is_bipartite(ig_rel))
 expect_true(igraph::vcount(ig_rel) == 5)
 expect_true(igraph::ecount(ig_rel) == 6)
 expect_message(to_igraph(aa, FALSE), "unipartite")
-expect_true(igraph::is.bipartite(ig_aa))
+expect_true(igraph::is_bipartite(ig_aa))
 expect_true(igraph::vcount(ig_aa) == 12)
 expect_true(igraph::ecount(ig_aa) == 8)
 
@@ -189,7 +189,7 @@ expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat))
 expect_true(snafun::is_directed(ig))
 expect_true(has_vertexnames(ig))
-expect_identical(igraph::get.vertex.attribute(ig, "name"), LETTERS[1:nrow(mat)])
+expect_identical(igraph::vertex_attr(ig, "name"), LETTERS[1:nrow(mat)])
 
 
 # random undirected matrix
@@ -208,36 +208,36 @@ expect_equal(igraph::vcount(ig), nrow(mat))
 expect_equal(igraph::ecount(ig), sum(mat)/2)
 expect_false(snafun::is_directed(ig))
 expect_true(has_vertexnames(ig))
-expect_identical(igraph::get.vertex.attribute(ig, "name"), LETTERS[1:nrow(mat)])
+expect_identical(igraph::vertex_attr(ig, "name"), LETTERS[1:nrow(mat)])
 
 
 # random bipartite matrix
 g <- igraph::make_bipartite_graph(c(rep(0, times = 5), rep(1, times = 10)), 
                                   c(1, 10, 1, 11, 2, 12, 3, 14, 3, 15, 4, 13, 5, 15))
-mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
+mat <- igraph::as_biadjacency_matrix(g, sparse = FALSE)
 ## has row and column names
 ig <- to_igraph(mat) # automatically bipartite
 expect_equal(igraph::vcount(ig), nrow(mat) + ncol(mat))
 expect_equal(igraph::ecount(ig), sum(mat))
 expect_true(is_bipartite(ig))
-expect_identical(igraph::get.vertex.attribute(ig, "name"), as.character(1:15))
+expect_identical(igraph::vertex_attr(ig, "name"), as.character(1:15))
 
 ig2 <- to_igraph(mat, bipartite = TRUE)
 expect_equal(igraph::vcount(ig2), nrow(mat) + ncol(mat))
 expect_equal(igraph::ecount(ig2), sum(mat))
 expect_true(is_bipartite(ig2))
-expect_identical(igraph::get.vertex.attribute(ig2, "name"), as.character(1:15))
+expect_identical(igraph::vertex_attr(ig2, "name"), as.character(1:15))
 
 ig3 <- to_igraph(mat, bipartite = FALSE)
 expect_equal(igraph::vcount(ig3), nrow(mat) + ncol(mat))
 expect_equal(igraph::ecount(ig3), sum(mat))
 expect_true(is_bipartite(ig3))  # this is odd, it should be false?????
-expect_identical(igraph::get.vertex.attribute(ig3, "name"), as.character(1:15))
+expect_identical(igraph::vertex_attr(ig3, "name"), as.character(1:15))
 
 rownames(mat) <- colnames(mat) <- NULL
 ig <- to_igraph(mat)
 expect_equal(igraph::vcount(ig), nrow(mat) + ncol(mat))
 expect_equal(igraph::ecount(ig), sum(mat))
 expect_true(is_bipartite(ig))
-expect_null(igraph::get.vertex.attribute(ig, "name"))
+expect_null(igraph::vertex_attr(ig, "name"))
 

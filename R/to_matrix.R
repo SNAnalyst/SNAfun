@@ -65,16 +65,22 @@ to_matrix.matrix <- function(x) {
 to_matrix.igraph <- function(x) {
   if (is_bipartite(x)) {
     if (is_weighted(x) | is_signed(x)) {
-      mat <- igraph::as_incidence_matrix(x, sparse = FALSE,
+      mat <- igraph::as_biadjacency_matrix(x, sparse = FALSE,
                                          attr = igraph::edge_attr_names(x)[[1]])
     } else {
-      mat <- igraph::as_incidence_matrix(x, sparse = FALSE, attr = NULL)
+      mat <- igraph::as_biadjacency_matrix(x, sparse = FALSE, attr = NULL)
     }
   } else {
     if (is_weighted(x) | is_signed(x)) {
       mat <- igraph::as_adjacency_matrix(x, type = "both", sparse = FALSE, attr = "weight")
     } else {
       mat <- igraph::as_adjacency_matrix(x, type = "both", sparse = FALSE, attr = NULL)
+      # the igraph::as_adjacency_matrix removes the diagonal, put it back
+      which_loops <- which(igraph::which_loop(x))
+      if (length(which_loops) > 0) {
+        these_loops <- igraph::as_edgelist(x)[which_loops, ]
+        mat[these_loops] <- 1
+      }
     }
   }
   mat

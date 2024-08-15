@@ -92,7 +92,7 @@ g_summary <- function(x, directed = TRUE) {
   mean_distance <- g_mean_distance(x)
   dyad_census <- count_dyads(x, echo = FALSE)
   triad_census <- count_triads(x, echo = FALSE)
-  number_of_isolates = length(find_isolates(x, names = FALSE))
+  number_of_isolates = length(extract_isolates(x, names = FALSE))
   list(number_of_vertices = count_vertices(x),
        number_of_edges = count_edges(x),
        density = round(density, 3),
@@ -526,7 +526,7 @@ g_diameter.network <- function(x,
 #' g_i_iso <- igraph::add_vertices(g_i, nv = 1)
 #' igraph::radius(g_i)
 #' snafun::v_eccentricity(g_i)
-#' snafun::find_isolates(g_i_iso)
+#' snafun::extract_isolates(g_i_iso)
 #' snafun::v_eccentricity(g_i_iso)  # the isolate has eccentricity 0
 #' igraph::radius(g_i_iso)  # also 0, should raise a flag about isolates
 #' g_radius(g_i, mode = "all")

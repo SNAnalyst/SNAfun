@@ -11,6 +11,9 @@ attributes.
 \source{
 \url{http://networkdata.ics.uci.edu/netdata/html/florentine.html}
 }
+\usage{
+data(florentine, package = "snafun")
+}
 \description{
 Network data of 16 Florentine families, in \code{igraph} format.
 }

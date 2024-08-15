@@ -60,18 +60,18 @@ remove_vertices.network <- function(x, vertices) {
 #' Remove all isolates from the graph
 #' 
 #' Removes the isolates from an object of class \code{igraph} or \code{network}.
-#' First, the algorithm identifies the isolates, using the \code{\link{find_isolates}} 
+#' First, the algorithm identifies the isolates, using the \code{\link{extract_isolates}} 
 #' function. Then, the identified isolates are removed and the new, smaller, 
 #' graph is returned. Obviously, if \code{x} does not contain any isolates, 
 #' \code{x} will be returned unaltered.
 #' 
 #' @param x graph of class \code{igraph} or \code{network}
 #' @param loops should self-loops count when deciding if a vertex is an isolate? 
-#' See  \code{\link{find_isolates}} for details.
+#' See  \code{\link{extract_isolates}} for details.
 #'
 #' @return graph with the isolates (if any) removed
 #' @export
-#' @seealso Finding isolates: \code{\link{find_isolates}}
+#' @seealso Finding isolates: \code{\link{extract_isolates}}
 remove_isolates <- function(x, loops = FALSE) {
   UseMethod("remove_isolates")
 }
@@ -89,7 +89,7 @@ remove_isolates.default <- function(x, loops = FALSE) {
 
 #' @export
 remove_isolates.igraph <- function(x, loops = FALSE) {
-  isols <- find_isolates.igraph(x, names = FALSE, loops = loops)
+  isols <- extract_isolates.igraph(x, names = FALSE, loops = loops)
   if (length(isols) > 0) {
     remove_vertices.igraph(x, isols)
   } else {
@@ -100,7 +100,7 @@ remove_isolates.igraph <- function(x, loops = FALSE) {
 
 #' @export
 remove_isolates.network <- function(x, loops = FALSE) {
-  isols <- find_isolates.network(x, names = FALSE, loops = loops)
+  isols <- extract_isolates.network(x, names = FALSE, loops = loops)
   if (length(isols) > 0) {
     remove_vertices.network(x, isols)
   } else {

@@ -11,6 +11,9 @@ Object of class igraph of size 40, undirected, with predefined layout.
 Own calculation by Michal Bojanowski, based on \href{https://saos-test.icm.edu.pl}{SAOS}.
 Originally published in the \code{isnar} package at \href{https://github.com/mbojan/isnar}{isnar}.
 }
+\usage{
+data(judge_net, package = "snafun")
+}
 \description{
 Network of judges from one of the Polish regional courts. Relation indicates
 which judges have ruled in at least one case together.

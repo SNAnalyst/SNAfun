@@ -219,7 +219,7 @@ extract_vertex_attribute.default <- function(x, name) {
 
 #' @export
 extract_vertex_attribute.igraph <- function(x, name) {
-  igraph::get.vertex.attribute(x, name = name)
+  igraph::vertex_attr(x, name = name)
 }
 
 
@@ -243,7 +243,7 @@ extract_vertex_names.default <- function(x) {
 
 #' @export
 extract_vertex_names.igraph <- function(x) {
-  igraph::get.vertex.attribute(x, name = "name")
+  igraph::vertex_attr(x, name = "name")
 }
 
 
@@ -267,7 +267,7 @@ extract_edge_attribute.default <- function(x, name) {
 
 #' @export
 extract_edge_attribute.igraph <- function(x, name) {
-  igraph::get.edge.attribute(x, name = name)
+  igraph::edge_attr(x, name = name)
 }
 
 
@@ -623,5 +623,226 @@ get_neigbors_network <- function(x, vertices, type, steps = 1) {
   }
   
   sort(all_alters)
+}
+
+
+
+
+
+
+
+
+# extract_loops ---------------------------------------------------------------
+
+
+#' Extract loops
+#' 
+#' Extract the edges that run from an actor to himself
+#' 
+#' Several functions in this package deal with loops (also sometimes redundantly 
+#' called "self-loops")"ties that run from a vertex to that same vertex. 
+#' 
+#' This specific function extracts the edge id's for these loops, so they can be 
+#' identified and, if required, removed.
+#' 
+#' \code{extract_loops} returns the edge ID's of the loops in the graph
+#' 
+#' \code{extract_loops_vertex} returns a table with two columns, the first 
+#' contains the vertex that has at least one loop in the graph and the 
+#' second gives the number of loops for that vertex in the graph.
+#'
+#' @param x input graph of class \code{igraph} or \code{network}
+#'
+#' @return see above
+#' @export
+#' @name extract_loops
+#'
+#' @examples
+#' data(florentine, package = "snafun")
+#' x <- florentine$flobusiness
+#' has_loops(x)             # FALSE
+#' extract_loops(x)         # NULL
+#' extract_loops_vertex(x)  # NULL
+#' x <- igraph::add_edges(x, c("Barbadori", "Barbadori", "Medici", "Medici"))
+#' has_loops(x)             # FALSE
+#' extract_loops(x)         # loops detected
+#' extract_loops_vertex(x)
+NULL
+
+
+#' @export
+#' @rdname extract_loops
+extract_loops <- function(x) {
+  UseMethod("extract_loops")
+}
+
+#' @export
+extract_loops.default <- function(x) {
+  txt <- methods_error_message("x", "extract_loops")
+  stop(txt)
+}
+
+#' @export
+extract_loops.igraph <- function(x) {
+  welke <- which(igraph::which_loop(x))
+  if (length(welke) > 0) {
+    welke
+  } else {
+    NULL
+  }
+}
+
+
+#' @export
+extract_loops.network <- function(x) {
+  welke <- lapply(x$mel, function(zz) {zz$inl == zz$outl}) |> 
+    unlist() |> 
+    which()
+  if (length(welke) > 0) {
+    welke
+  } else {
+    NULL
+  }
+}
+
+
+
+
+# extract_loops_vertex ---------------------------------------------------------
+
+#' @rdname extract_loops
+#' @export
+extract_loops_vertex <- function(x) {
+  UseMethod("extract_loops_vertex")
+}
+
+
+#' @export
+extract_loops_vertex.default <- function(x) {
+  txt <- methods_error_message("x", "extract_loops_vertex")
+  stop(txt)
+}
+
+
+#' @export
+extract_loops_vertex.igraph <- function(x) {
+  tab <- snafun::to_edgelist(x)
+  tab <- tab[tab$from == tab$to, 1] |> 
+    table() |> 
+    as.matrix(ncol = 2) |> 
+    as.data.frame.table()
+  if (nrow(tab) == 0) {return(NULL)}
+  tab <- tab[, c("Var1", "Freq")]
+  colnames(tab) <- c("vertex", "number_of_loops")
+  tab
+}
+
+
+#' @export
+extract_loops_vertex.network <- function(x) {
+  tab <- snafun::to_edgelist(x)
+  welke <- which(tab$from == tab$to)
+  tab <- tab[welke, "from"] |> 
+    table() |> 
+    as.matrix(ncol = 2) |> 
+    as.data.frame.table()
+  if (nrow(tab) == 0) {return(NULL)}
+  tab <- tab[, c("Var1", "Freq")]
+  colnames(tab) <- c("vertex", "number_of_loops")
+  tab
+}
+
+
+
+
+
+
+
+# extract_isolates -------------------------------------------------------------
+
+#' Extract the isolates
+#' 
+#' Who are the isolates in the network?
+#' 
+#' Identifies the isolates (if any) in the network. 
+#' This function works for objects of class \code{network} or \code{graph}, 
+#' potentially bipartite.
+#' 
+#' The output is a vector with the numbers of the isolates or their names. 
+#' The latter is the default, but the numbers are returned if there are no 
+#' names in the network object.
+#' 
+#' If there are self-loops in the network (ie. a vertex has a tie 
+#' to or from himself), vertices who do not have ties with others will not 
+#' be seen as isolates. Therefore, the user can decide whether these self-ties 
+#' should be taken into account. If \code{FALSE}, the default, any self-loops 
+#' will be ignored and vertices with no ties with others will be identified as 
+#' isolates. However, in the (uncommon) case where a tie with oneself should 
+#' no longer make the vertex an isolate, one can set the \code{loops} 
+#' argument to \code{TRUE}. 
+#'
+#' @param x network of class \code{network} or \code{igraph}
+#' @param names logical, should the names of the isolates be returned (
+#' \code{TRUE} or their IDs (\code{FALSE})? The default is \code{TRUE}.
+#' @param loops logical, should self-loops (if there are any) be taken into 
+#' account? Default is \code{FALSE}, which is (almost) always what you want.
+#'
+#' @return vector with the isolates
+#' @export
+#' @seealso \code{\link{remove_isolates}}
+#'
+#' @examples
+#' mat <- matrix(0, nrow = 4, ncol = 4)
+#' # edges, incl one self-loop
+#' mat[1, 3] <- mat[4,4] <- 1
+#' ig <- igraph::graph_from_adjacency_matrix(mat)
+#' extract_isolates(ig)  # 2 4
+#' # 4 has a loop to itself, including this removes its isolate-ship
+#' extract_isolates(ig, loops = TRUE)  # 2
+#' igraph::V(ig)$name <-  LETTERS[1:4]
+#' extract_isolates(ig)  # B D
+#' extract_isolates(ig, names = FALSE)  # 2 4
+#' 
+#' nw <- network::as.network(mat, loops = TRUE)
+#' extract_isolates(nw)  # 2 4
+#' network::set.vertex.attribute(nw, "vertex.names", LETTERS[1:4])
+#' extract_isolates(nw)  # B D
+#' extract_isolates(nw, names = FALSE)  # 2 4
+extract_isolates <- function(x, names = TRUE, loops = FALSE) {
+  UseMethod("extract_isolates")
+}
+
+
+
+
+#' @export
+extract_isolates.default <- function(x, names = TRUE, loops = FALSE) {
+  txt <- methods_error_message("x", "extract_isolates")
+  stop(txt)
+}
+
+
+
+
+#' @export
+extract_isolates.igraph <- function(x, names = TRUE, loops = FALSE) {
+  degs <- igraph::degree(x, mode = "all", loops = loops)
+  isols <- which(degs == 0)
+  if (names & has_vertexnames.igraph(x)) {
+    names(isols)
+  } else if (!names | !has_vertexnames.igraph(x)) {
+    unname(isols)
+  }
+}
+
+
+
+#' @export
+extract_isolates.network <- function(x, names = TRUE, loops = FALSE) {
+  welke <- sna::isolates(x, diag = loops)
+  if (names & has_vertexnames.network(x)) {
+    welke <- network::get.vertex.attribute(x, "vertex.names")[welke]
+  }
+  welke
 }
 

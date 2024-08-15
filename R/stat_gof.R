@@ -39,7 +39,7 @@
 #' time to run. This is why it is useful that the gof results themselves are not 
 #' only calculated by this function, but also returned for further inspection.
 #'
-#' @param m a fitted \code{ergm} or {btergm} model
+#' @param m a fitted \code{ergm} or \code{btergm} model
 #' @param ... optional arguments, see description
 #' @param btergm_statistics vector of statistics to be used in the gof
 #' @param silent logical, if \code{TRUE} fewer messages will be printed during the 

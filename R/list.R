@@ -25,7 +25,7 @@ list_vertex_attributes.default <- function(x) {
 
 #' @export
 list_vertex_attributes.igraph <- function(x) {
-  igraph::list.vertex.attributes(x)
+  igraph::vertex_attr_names(x)
 }
 
 
@@ -50,7 +50,7 @@ list_edge_attributes.default <- function(x) {
 
 #' @export
 list_edge_attributes.igraph <- function(x) {
-  igraph::list.edge.attributes(x)
+  igraph::edge_attr_names(x)
 }
 
 

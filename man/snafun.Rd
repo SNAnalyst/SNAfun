@@ -2,8 +2,8 @@
 % Please edit documentation in R/SNAfun-package.r
 \docType{package}
 \name{snafun}
-\alias{snafun}
 \alias{snafun-package}
+\alias{snafun}
 \title{snafun}
 \description{
 Package supporting the SNA4DS course
@@ -18,4 +18,21 @@ Where that switch is still needed, the \code{snafun} makes it much less
 painful and, yes, even fun.
 In short: SNA FUN!
 }
-\keyword{package}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/SNAnalyst/SNAfun}
+  \item Report bugs at \url{https://github.com/SNAnalyst/SNAfun/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Roger Leenders \email{SNA4DS@jads.nl}
+
+Authors:
+\itemize{
+  \item Claudia Zucca \email{SNA4DS@jads.nl}
+}
+
+}
+\keyword{internal}

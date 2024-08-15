@@ -73,7 +73,7 @@
 #' the subset of explanatory variables to lag
 #' @param quiet default \code{NULL}, use !verbose global option value; 
 #' if \code{FALSE}, reports function values during optimization.
-#' @param zero.policy if {TRUE}, the default, assign zero to the lagged value of 
+#' @param zero.policy if \code{TRUE}, the default, assign zero to the lagged value of 
 #' vertices without neighbours, if \code{FALSE} assign \code{NA} - causing 
 #' \code{spatialreg::lagsarlm()} to terminate with an error
 #' @param check_vars if \code{TRUE}, the default, a check is performed as to 

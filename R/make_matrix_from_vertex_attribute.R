@@ -83,11 +83,11 @@ make_matrix_from_vertex_attribute <- function (x, name,
   kall <- as.list(match.call())
 
   if (inherits(x, "igraph")) {
-    all_att <- igraph::list.vertex.attributes(x)
+    all_att <- igraph::vertex_attr_names(x)
     if (!name %in% all_att) {
       stop("The attribute ", name, " does not occur in the graph")
     }
-    att <- igraph::get.vertex.attribute(graph = x, name = name)
+    att <- igraph::vertex_attr(graph = x, name = name)
     att <- fix_list_attribute(att)
   } else if (inherits(x, "network")) {
     all_att <- network::list.vertex.attributes(x)

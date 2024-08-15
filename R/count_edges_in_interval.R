@@ -4,7 +4,7 @@
 #' Count number of edges in time interval
 #'
 #' Counts how many edges happen (ie. have their start within an interval)
-#' over the time period {start, end}. The toime period is split into
+#' over the time period (start, end). The time period is split into
 #' \code{number} intervals, each of equal time length. So, if \code{start = 0},
 #' \code{end = 10}, and \code{number = 2}, then the time period is divided
 #' into the time intervals from 0 (inclusive) to 5 (exclusive) and from 5
@@ -46,7 +46,7 @@ count_edges_in_interval <- function(x, start = NULL, end = NULL, number = 30) {
 #' Count number of unique edges in time interval
 #'
 #' Counts how many edges happen (ie. have their start within an interval)
-#' over the time period {start, end}. The toime period is split into
+#' over the time period (start, end). The toime period is split into
 #' \code{number} intervals, each of equal time length. So, if \code{start = 0},
 #' \code{end = 10}, and \code{number = 2}, then the time period is divided
 #' into the time intervals from 0 (inclusive) to 5 (exclusive) and from 5

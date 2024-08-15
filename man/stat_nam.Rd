@@ -45,7 +45,7 @@ the subset of explanatory variables to lag}
 \item{quiet}{default \code{NULL}, use !verbose global option value; 
 if \code{FALSE}, reports function values during optimization.}
 
-\item{zero.policy}{if {TRUE}, the default, assign zero to the lagged value of 
+\item{zero.policy}{if \code{TRUE}, the default, assign zero to the lagged value of 
 vertices without neighbours, if \code{FALSE} assign \code{NA} - causing 
 \code{spatialreg::lagsarlm()} to terminate with an error}
 

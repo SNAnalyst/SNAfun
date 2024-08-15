@@ -71,7 +71,7 @@ v_distance.default <- function(x, mode = c("all", "out", "in"),
 v_distance.igraph <- function(x, mode = c("all", "out", "in"),
                        weights = NULL, count_unnconnected = FALSE) {
   if (!is.null(weights)) {
-    if (!weights %in% igraph::list.edge.attributes(x)) {
+    if (!weights %in% igraph::edge_attr_names(x)) {
       stop("The 'weights' attribute does not occur in x")
     }
   }

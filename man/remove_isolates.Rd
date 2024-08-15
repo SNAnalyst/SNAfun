@@ -10,7 +10,7 @@ remove_isolates(x, loops = FALSE)
 \item{x}{graph of class \code{igraph} or \code{network}}
 
 \item{loops}{should self-loops count when deciding if a vertex is an isolate? 
-See  \code{\link{find_isolates}} for details.}
+See  \code{\link{extract_isolates}} for details.}
 }
 \value{
 graph with the isolates (if any) removed
@@ -20,11 +20,11 @@ Remove all isolates from the graph
 }
 \details{
 Removes the isolates from an object of class \code{igraph} or \code{network}.
-First, the algorithm identifies the isolates, using the \code{\link{find_isolates}} 
+First, the algorithm identifies the isolates, using the \code{\link{extract_isolates}} 
 function. Then, the identified isolates are removed and the new, smaller, 
 graph is returned. Obviously, if \code{x} does not contain any isolates, 
 \code{x} will be returned unaltered.
 }
 \seealso{
-Finding isolates: \code{\link{find_isolates}}
+Finding isolates: \code{\link{extract_isolates}}
 }

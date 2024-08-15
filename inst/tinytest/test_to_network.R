@@ -21,8 +21,8 @@ rename_name <- function(x) {
 flobus_i <- florentine$flobusiness
 flomar_i <- florentine$flomarriage
 # add two edge attributes
-flomar_i <- igraph::set.edge.attribute(flomar_i, "att1", value = round(runif(igraph::ecount(flomar_i)), digits = 2))
-flomar_i <- igraph::set.edge.attribute(flomar_i, "att2", value = 10*round(runif(igraph::ecount(flomar_i)), digits = 2))
+flomar_i <- igraph::set_edge_attr(flomar_i, "att1", value = round(runif(igraph::ecount(flomar_i)), digits = 2))
+flomar_i <- igraph::set_edge_attr(flomar_i, "att2", value = 10*round(runif(igraph::ecount(flomar_i)), digits = 2))
 
 flobus_m <- to_matrix(flobus_i)
 flomar_m <- to_matrix(flomar_i)
@@ -40,12 +40,12 @@ directed_g_i <- igraph::random.graph.game(n = 10, p.or.m = 12, type = "gnm", dir
 directed_g2_i <- add_edge_attributes(directed_g_i, attr_name = "weight", 1:count_edges(directed_g_i))
 directed_g3_i <- add_edge_attributes(directed_g2_i, attr_name = "blabla", count_edges(directed_g2_i):1)
 # add name
-undirected_g_i_name <- igraph::set.vertex.attribute(undirected_g_i, "name", value = LETTERS[1:igraph::vcount(undirected_g_i)])
-undirected_g2_i_name <- igraph::set.vertex.attribute(undirected_g2_i, "name", value = LETTERS[1:igraph::vcount(undirected_g2_i)])
-undirected_g3_i_name <- igraph::set.vertex.attribute(undirected_g3_i, "name", value = LETTERS[1:igraph::vcount(undirected_g3_i)])
-directed_g_i_name <- igraph::set.vertex.attribute(directed_g_i, "name", value = LETTERS[1:igraph::vcount(directed_g_i)])
-directed_g2_i_name <- igraph::set.vertex.attribute(directed_g2_i, "name", value = LETTERS[1:igraph::vcount(directed_g2_i)])
-directed_g3_i_name <- igraph::set.vertex.attribute(directed_g3_i, "name", value = LETTERS[1:igraph::vcount(directed_g3_i)])
+undirected_g_i_name <- igraph::set_vertex_attr(undirected_g_i, "name", value = LETTERS[1:igraph::vcount(undirected_g_i)])
+undirected_g2_i_name <- igraph::set_vertex_attr(undirected_g2_i, "name", value = LETTERS[1:igraph::vcount(undirected_g2_i)])
+undirected_g3_i_name <- igraph::set_vertex_attr(undirected_g3_i, "name", value = LETTERS[1:igraph::vcount(undirected_g3_i)])
+directed_g_i_name <- igraph::set_vertex_attr(directed_g_i, "name", value = LETTERS[1:igraph::vcount(directed_g_i)])
+directed_g2_i_name <- igraph::set_vertex_attr(directed_g2_i, "name", value = LETTERS[1:igraph::vcount(directed_g2_i)])
+directed_g3_i_name <- igraph::set_vertex_attr(directed_g3_i, "name", value = LETTERS[1:igraph::vcount(directed_g3_i)])
 
 
 
@@ -63,53 +63,53 @@ expect_equal(network::network.edgecount(judge_n), igraph::ecount(judge_i))
 # check if all vertex attrs are carried over
 expect_true(all(
   network::list.vertex.attributes(flobus_n) |> remove_na_attr()|> rename_vertex.names() %in%
-    igraph::list.vertex.attributes(flobus_i)
+    igraph::vertex_attr_names(flobus_i)
 ))
 expect_true(all(
   network::list.vertex.attributes(flomar_n) |> remove_na_attr()|> rename_vertex.names() %in%
-    igraph::list.vertex.attributes(flomar_i)
+    igraph::vertex_attr_names(flomar_i)
 ))
 expect_true(all(
   network::list.vertex.attributes(judge_n) |> remove_na_attr()|> rename_vertex.names() %in%
-    igraph::list.vertex.attributes(judge_i)
+    igraph::vertex_attr_names(judge_i)
 ))
 
 expect_equal(
   network::get.vertex.attribute(flobus_n, "Wealth"),
-  igraph::get.vertex.attribute(flobus_i, "Wealth")
+  igraph::vertex_attr(flobus_i, "Wealth")
 )
 expect_equal(
   network::get.vertex.attribute(flobus_n, "NumberPriorates"),
-  igraph::get.vertex.attribute(flobus_i, "NumberPriorates")
+  igraph::vertex_attr(flobus_i, "NumberPriorates")
 )
 expect_equal(
   network::get.vertex.attribute(flobus_n, "vertex.names"),
-  igraph::get.vertex.attribute(flobus_i, "name")
+  igraph::vertex_attr(flobus_i, "name")
 )
 expect_equal(
   network::get.vertex.attribute(flomar_n, "Wealth"),
-  igraph::get.vertex.attribute(flomar_i, "Wealth")
+  igraph::vertex_attr(flomar_i, "Wealth")
 )
 expect_equal(
   network::get.vertex.attribute(flomar_n, "NumberPriorates"),
-  igraph::get.vertex.attribute(flomar_i, "NumberPriorates")
+  igraph::vertex_attr(flomar_i, "NumberPriorates")
 )
 
 expect_equal(
   network::get.vertex.attribute(flomar_n, "vertex.names"),
-  igraph::get.vertex.attribute(flomar_i, "name")
+  igraph::vertex_attr(flomar_i, "name")
 )
 
 # vertex attributes, but not a name attribute
-g <- igraph::remove.vertex.attribute(flomar_i, "name")
+g <- igraph::delete_vertex_attr(flomar_i, "name")
 g_n <- to_network(g)
 expect_equal(
   network::get.vertex.attribute(g_n, "Wealth"),
-  igraph::get.vertex.attribute(g, "Wealth")
+  igraph::vertex_attr(g, "Wealth")
 )
 expect_equal(
   network::get.vertex.attribute(g_n, "NumberPriorates"),
-  igraph::get.vertex.attribute(g, "NumberPriorates")
+  igraph::vertex_attr(g, "NumberPriorates")
 )
 
 
@@ -130,24 +130,24 @@ eid_n <- extract_edge_id(i_n, edgelist = edges[, 1:2])
 expect_equal(eid_n[, 1:2], eid_i[, 1:2])
 reorder <- match(eid_n$eid, eid_i$eid)
 expect_equal(network::get.edge.attribute(i_n, "weight")[reorder], 
-             igraph::get.edge.attribute(i_g, "weight"))
+             igraph::edge_attr(i_g, "weight"))
 expect_equal(network::get.edge.attribute(i_n, "code")[reorder], 
-             igraph::get.edge.attribute(i_g, "code"))
+             igraph::edge_attr(i_g, "code"))
 
 # flomar has 'weight' edge attribute
 # first remove names to make sure the edgelist uses vertex id's instead of names
-flomar_i <- igraph::remove.vertex.attribute(flomar_i, "name")
+flomar_i <- igraph::delete_vertex_attr(flomar_i, "name")
 edges <- to_edgelist(flomar_i)
 eid_i <- extract_edge_id(flomar_i, edgelist = edges[, 1:2])
 eid_n <- extract_edge_id(flomar_n, edgelist = edges[, 1:2])
 expect_equal(eid_n[, 1:2], eid_i[, 1:2])
 reorder <- match(eid_n$eid, eid_i$eid)
 expect_equal(network::get.edge.attribute(flomar_n, "weight")[reorder], 
-             igraph::get.edge.attribute(flomar_i, "weight"))
+             igraph::edge_attr(flomar_i, "weight"))
 expect_equal(network::get.edge.attribute(flomar_n, "att1")[reorder], 
-             igraph::get.edge.attribute(flomar_i, "att1"))
+             igraph::edge_attr(flomar_i, "att1"))
 expect_equal(network::get.edge.attribute(flomar_n, "att2")[reorder], 
-             igraph::get.edge.attribute(flomar_i, "att2"))
+             igraph::edge_attr(flomar_i, "att2"))
 
 
 # random graphs
@@ -217,7 +217,7 @@ expect_equal(list_vertex_attributes(directed_g3_n_name), c("na", "vertex.names")
 
 
 ### bipartite
-b_i <- igraph::bipartite.random.game(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
+b_i <- igraph::sample_bipartite(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
 b_n <- to_network(b_i)
 expect_true(is_bipartite(b_n))
 expect_true(b_n$gal$bipartite == 20)
@@ -235,22 +235,22 @@ eid_n <- extract_edge_id(b_n2, edgelist = edges[, 1:2])
 expect_equal(eid_n[, 1:2], eid_i[, 1:2])
 reorder <- match(eid_n$eid, eid_i$eid)
 expect_equal(network::get.edge.attribute(b_n2, "new_attr")[reorder], 
-             igraph::get.edge.attribute(b_i2, "new_attr"))
+             igraph::edge_attr(b_i2, "new_attr"))
 
 
 
 # continue with vertex attributes
 expect_equal(
   network::get.vertex.attribute(judge_n, "color"),
-  igraph::get.vertex.attribute(judge_i, "color")
+  igraph::vertex_attr(judge_i, "color")
 )
 expect_equal(
   network::get.vertex.attribute(judge_n, "JudgeSex"),
-  igraph::get.vertex.attribute(judge_i, "JudgeSex")
+  igraph::vertex_attr(judge_i, "JudgeSex")
 )
 expect_equal(
   network::get.vertex.attribute(judge_n, "vertex.names"),
-  igraph::get.vertex.attribute(judge_i, "name")
+  igraph::vertex_attr(judge_i, "name")
 )
 
 
@@ -306,7 +306,7 @@ expect_equal(sum(m1), network::network.edgecount(n1))
 
 
 ## bipartite
-b_i <- igraph::bipartite.random.game(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
+b_i <- igraph::sample_bipartite(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
 b_n <- to_network(b_i)
 b_m <- network::as.matrix.network.adjacency(b_n)
 expect_equal(sum(b_m), network::network.edgecount(b_n))

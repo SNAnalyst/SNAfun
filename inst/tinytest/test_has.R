@@ -33,9 +33,9 @@ expect_true(has_vertexnames(nw))
 # has_edge_attributes ----
 ## igraph
 expect_false(has_edge_attributes(ig))
-ig2 <- igraph::set.edge.attribute(ig, "gewicht", value = runif(igraph::ecount(ig)))
+ig2 <- igraph::set_edge_attr(ig, "gewicht", value = runif(igraph::ecount(ig)))
 expect_true(has_edge_attributes(ig2))
-ig3 <- igraph::set.edge.attribute(ig2, "gewicht2", value = runif(igraph::ecount(ig)))
+ig3 <- igraph::set_edge_attr(ig2, "gewicht2", value = runif(igraph::ecount(ig)))
 expect_true(has_edge_attributes(ig3))
 
 ## network
@@ -48,5 +48,20 @@ expect_false(has_edge_attributes(i_n))
 
 
 
+
+
+
+# has_isolates
+data(soccer98, package = "snafun")
+expect_true(has_isolates(soccer98))
+g <- remove_isolates(soccer98)
+expect_false(has_isolates(g))
+
+
+data(florentine, package = "snafun")
+has_isolates(florentine$flobusiness)
+has_isolates(florentine$flomarriage)
+expect_false(has_isolates(remove_isolates(florentine$flobusiness)))
+expect_false(has_isolates(remove_isolates(florentine$flomarriage)))
 
 

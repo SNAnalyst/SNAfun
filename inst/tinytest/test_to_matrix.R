@@ -71,7 +71,7 @@ expect_equal(sum(mat), sum(val))
 
 
 ### bipartite
-b_i <- igraph::bipartite.random.game(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
+b_i <- igraph::sample_bipartite(n1 = 20, n2 = 30, type = "gnp", p = .15, directed = FALSE, mode = "out")
 b_m <- to_matrix(b_i)
 expect_equal(nrow(b_m), 20)
 expect_equal(ncol(b_m), 30)
@@ -138,7 +138,7 @@ expect_equal(sum(mat), sum(val))
 
 ### bipartite, weighted
 g <- igraph::make_bipartite_graph(c(rep(0, 3), rep(1, 7)), c(1,4,2,6,2,7,1,8,3,9,1,4,2,6,3,5))
-mat <- igraph::as_incidence_matrix(g, sparse = FALSE)
+mat <- igraph::as_biadjacency_matrix(g, sparse = FALSE)
 b_n <- to_network(mat, bipartite = TRUE)
 b_m <- to_matrix(b_n)
 expect_identical(mat, b_m)

@@ -272,7 +272,7 @@ g_i <- snafun::create_random_graph(10, strategy = "gnp", p = .2,
 g_i_iso <- igraph::add_vertices(g_i, nv = 1)
 igraph::radius(g_i)
 snafun::v_eccentricity(g_i)
-snafun::find_isolates(g_i_iso)
+snafun::extract_isolates(g_i_iso)
 snafun::v_eccentricity(g_i_iso)  # the isolate has eccentricity 0
 igraph::radius(g_i_iso)  # also 0, should raise a flag about isolates
 g_radius(g_i, mode = "all")

@@ -474,7 +474,7 @@ v_eigenvector.network <- function(x,
 #' 
 #' The closeness centrality of a vertex \eqn{v} is calculated as the inverse of 
 #' the sum of distances to all the other vertices in the graph. In other words, 
-#' for a vertex \eqn{v}, determine the lengths of the shortest paths from {v} 
+#' for a vertex \eqn{v}, determine the lengths of the shortest paths from \code{v} 
 #' to all other vertices (in caae of "out"), add those. This measures the 
 #' "farness" of \eqn{v}. The closeness of \eqn{v} is the inverse of this sum.
 #' The higher the number, the shorter the number of steps to reach all other 
@@ -855,7 +855,7 @@ v_geokpath.igraph <- function(x, vids = NULL,
   
   # check vertex names
   v <- vids
-  if (is.character(v) && "name" %in% igraph::list.vertex.attributes(x)) {
+  if (is.character(v) && "name" %in% igraph::vertex_attr_names(x)) {
     v <- as.numeric(match(v, igraph::V(x)$name))
     if (any(is.na(v))) {
       stop("Invalid vertex names: there are NA's in the names")
@@ -883,7 +883,7 @@ v_geokpath.igraph <- function(x, vids = NULL,
   for (v in igraph::V(x)[vids]) {
     res <- append(res, length(sp[v, sp[v,] <= k]) - 1);
   }
-  if (igraph::is.named(x)) {
+  if (igraph::is_named(x)) {
     names(res) <- igraph::V(x)$name[vids]
   }  
   rescale_sum_to_one(res, rescaled)

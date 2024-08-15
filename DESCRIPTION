@@ -1,7 +1,7 @@
 Package: snafun
 Type: Package
 Title: Bringing more fun to Social Network Analysis 
-Version: 0.2023.2
+Version: 0.2024.2
 Authors@R:
 	c(person(given = "Roger",
 					family = "Leenders",
@@ -29,9 +29,7 @@ Suggests:
 	btergm (>= 1.10.6),
 	desc,
 	ergm (>= 4.2.2),
-	gradethis (>= 0.2.4.9000),
-	igraph (>= 1.3.2),
-	learnr (>= 0.10.1.9000),
+	igraph (>= 2.0.3),
 	Matrix,
 	network (>= 1.17.2),
 	networkDynamic (>= 0.11.2),
@@ -40,4 +38,4 @@ Suggests:
 	tinytest,
 	usethis
 License: AGPL (>= 3) + file LICENSE
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

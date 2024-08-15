@@ -20,8 +20,8 @@ mat <- structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
 
 ### IGRAPH ----
 ig <- igraph::graph_from_adjacency_matrix(mat)
-expect_equal(length(find_isolates(ig)), 4)
-expect_equal(length(find_isolates(ig, loops = TRUE)), 2)
+expect_equal(length(extract_isolates(ig)), 4)
+expect_equal(length(extract_isolates(ig, loops = TRUE)), 2)
 expect_true(igraph::vcount(ig) == 10)
 expect_true(igraph::ecount(ig) == 15)
 expect_true(igraph::vcount(remove_isolates(ig)) == 6)
@@ -61,8 +61,8 @@ big <- igraph::make_bipartite_graph(c(rep(0, 6), rep(1, 8)),
                                   edges = c(1, 10, 2, 11, 3, 12, 4, 10, 
                                             5, 7, 5, 8, 5, 12))
 
-expect_equal(find_isolates(big), c(6, 9, 13, 14))
-expect_equal(find_isolates(big, loops = TRUE), c(6, 9, 13, 14))
+expect_equal(extract_isolates(big), c(6, 9, 13, 14))
+expect_equal(extract_isolates(big, loops = TRUE), c(6, 9, 13, 14))
 expect_true(igraph::vcount(big) == 14)
 expect_true(igraph::ecount(big) == 7)
 expect_true(igraph::vcount(remove_isolates(big)) == 10)
@@ -95,8 +95,8 @@ mat <- structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
 
 
 nw <- network::as.network.matrix(mat, loops = TRUE)
-expect_equal(length(find_isolates(nw)), 4)
-expect_equal(length(find_isolates(nw, loops = TRUE)), 2)
+expect_equal(length(extract_isolates(nw)), 4)
+expect_equal(length(extract_isolates(nw, loops = TRUE)), 2)
 expect_true(network::network.size(nw) == 10)
 expect_true(network::network.edgecount(nw) == 15)
 expect_true(network::network.size(remove_isolates(nw)) == 6)
@@ -130,8 +130,8 @@ expect_identical(nw_no_isolates, remove_isolates(nw_no_isolates))
 bmat <- igraph::as_adjacency_matrix(big, sparse = FALSE)[1:6, 7:14]
 colnames(bmat) <- rownames(bmat) <- NULL
 bnw <- network::network.bipartite(bmat, network::as.network.matrix(bmat))
-expect_equal(find_isolates(bnw), c(6, 9, 13, 14))
-expect_equal(find_isolates(bnw, loops = TRUE), c(6, 9, 13, 14))
+expect_equal(extract_isolates(bnw), c(6, 9, 13, 14))
+expect_equal(extract_isolates(bnw, loops = TRUE), c(6, 9, 13, 14))
 expect_true(network::network.size(bnw) == 14)
 expect_true(network::network.edgecount(bnw) == 14) # since undirected, edges count twice in `network`
 expect_true(network::network.size(remove_isolates(bnw)) == 10)
