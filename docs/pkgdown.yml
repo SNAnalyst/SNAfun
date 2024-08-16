@@ -1,0 +1,19 @@
+pandoc: 3.1.11
+pkgdown: 2.1.0
+pkgdown_sha: ~
+articles:
+  Converting-between-graph-classes: Converting-between-graph-classes.html
+  Creating-a-graph-object: Creating-a-graph-object.html
+  Dyad-level-indices: Dyad-level-indices.html
+  ERGM-for-temporal-networks: ERGM-for-temporal-networks.html
+  ERGMs: ERGMs.html
+  Graph-level-indices: Graph-level-indices.html
+  Introduction: Introduction.html
+  Manipulating-the-graph-object: Manipulating-the-graph-object.html
+  Plotting: Plotting.html
+  Statistical-models: Statistical-models.html
+  Temporal-networks-exploration: Temporal-networks-exploration.html
+last_built: 2024-08-16T21:22Z
+urls:
+  reference: https://snanalyst.github.io/SNAfun/reference
+  article: https://snanalyst.github.io/SNAfun/articles
