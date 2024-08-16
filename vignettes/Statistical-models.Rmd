@@ -1,0 +1,335 @@
+---
+title: "Statistical Models"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{Statistical-models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  echo = FALSE,
+  comment = "#>",
+  eval = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+```{r gt_tables, include = FALSE, eval = TRUE, file='create_tables.R'}
+```
+
+```{=html}
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+```
+```{=html}
+<style type="text/css">
+pre {
+    border-style: hidden;
+}
+</style>
+```
+
+
+
+
+
+# Statistical models
+
+## Overview table
+
+Here is an overview of the statistical models discussed in the course.
+
+<br>
+
+```{r, echo = FALSE, eval = TRUE}
+table_models
+```
+
+<br>
+
+## Network autocorrelation models
+
+The network autocorrelation model is run through the `snafun::stat_nam`
+function. The implementation is appropriate for continuous dependent
+variables.
+
+The basic function call is as follows:
+
+```{r}
+snafun::stat_nam(
+  formula,
+  data = list(),
+  W,
+  W2 = NULL,
+  model = c("lag", "error", "combined"),
+  na.action,
+  Durbin = FALSE,
+  quiet = TRUE,
+  zero.policy = TRUE,
+  check_vars = TRUE
+)
+```
+
+Here,
+
+-   `formula` is a formula of the form `DEP ~ EXO1 + EXO2 + EXO3` or
+    `DEP ~ .` This follows the standard way of formulating formulas
+    in R. Run `?stats::formula` in your console for details.
+
+-   `data` is a `data.frame` or a `list` containing the variables to be
+    included into the model.
+
+-   `W` is a matrix of the same dimension as the network, containing the
+    weights that drive the network influence process (for the `lag`
+    model) or the network disturbances process (for the `error` model).
+
+-   `W2` is a matrix of the same dimension as the network, containing
+    the weights that drive the network disturbances when running a
+    `combined` model.
+
+An intercept is added to the model by default, it is best to NOT include
+this as a separate exogenous variable.
+
+The weigh matrix (matrices) is (are) row-normalized by this function. If
+you want to run the model using non-standardized weight matrices, use
+the `sna::lnam` function instead.
+
+The `snafun` package provides a useful `stat_nam_summary` method (that
+shows you an overview of the results) and a `plot_nam` method (that you
+use to check model assumptions).
+
+<br>
+
+## Conditional Uniform graphs (CUG)
+
+There are two methods to perform a conditional Uniform graph test.
+
+The first is to generate the graphs manually and calculate the measures
+on each graph. Generation of these graphs can be done using
+`snafun::create_random_graph` (which conditions on size and density).
+The equivalent functions in `sna` are `sna::rgraph` and `sna::rgnm`
+(note that these generate a matrix, rather than an `igraph` or `network`
+graph). See [the data generation table](#generate) for these functions.
+
+The second approach is to use a function that does the graph generation
+and computes the network measure for you. The preferred is
+`sna::cugtest`, which is specified as follows:
+
+```{r}
+sna::cug.test(g, FUN, mode = c("digraph", "graph"), cmode = c("size",
+    "edges", "dyad.census"), reps = 1000,
+    ignore.eval = TRUE, FUN.args = list())
+```
+
+See the `sna` help function for details.
+
+Here
+
+-   `FUN` is the function that needs to be calculated on each graph
+
+-   `FUN.args` contains any arguments that are required for the function
+    you specified in `FUN`
+
+-   `cmode` determines the type of graphs that are drawn (ie. what you
+    condition on). The options are
+
+    -   "size": this generates graphs with a particular size and density
+        0.5. You rarely want this.
+
+    -   "edges": this conditions on a specific edge count (or an exact
+        edge value distribution)
+
+    -   "dyad.census": this conditions on a dyad census (or dyad value
+        distribution)
+
+For example, in order to test whether the transitivity in your graph `g`
+is exceptional for a network of the same size and density as in `g`, you
+would run
+
+```{r}
+sna::cug.test(g, sna::gtrans, cmode = "edges")
+```
+
+It is wise to always explicitly tell the function whether your graph is
+directed or not, so a better way to specify the previous function is
+
+```{r}
+sna::cug.test(g, mode = "graph", FUN = sna::gtrans,
+              cmode = "edges", reps = 1000,
+              FUN.args = list(mode = "graph"))
+```
+
+Testing the betweenness centralization of you network `g` could be
+performed as follows, again conditioning on size and density:
+
+```{r}
+sna::cug.test(g,
+              sna::centralization,
+              FUN.arg=list(FUN = sna::betweenness),
+              mode="graph",
+              cmode="edges")
+```
+
+There is also a useful `plot` method for the result of the CUG test.
+
+<br>
+
+The huuuuuge downside of the `cug.test` function is that it only takes
+specific input graps (perferably in matrix-format) and only allows one
+to test with functions implemented within the `sna` package. However,
+`snafun` can fix that. You only need to construct a simple function with
+the following structure <small>(yes, always start the function with
+`x <- snafun::fix_cug_input(x, directed = directed)`, this fixes some
+peculiarities related to the `sna::cug.test` function)</small>:
+
+```{r}
+trans_f <- function(x, directed = FALSE) {
+  x <- snafun::fix_cug_input(x, directed = directed)
+  snafun::g_transitivity(x)
+}
+```
+
+and you can now test for transitivity with ANY graph that works with
+`snafun::g_transitivity(x)` (which includes most formats you'll work
+with). Then, perform the CUG test as follows:
+
+```{r}
+sna::cug.test(graph_object, 
+              mode = "graph", 
+              FUN = trans_f, 
+              cmode = "edges", 
+              reps = 200)
+```
+
+Et voila. It simply works.
+
+Wanna use a more involved measure that doesn't exist in the `sna`
+package anyway? Sure, this is how you run a CUG test on the number of
+walktrap communities in the graph:
+
+```{r}
+walk_num <- function(x, directed = FALSE) {
+  x <- snafun::fix_cug_input(x, directed = directed)
+  snafun::extract_comm_walktrap(x) |> length()
+}
+
+sna::cug.test(graph_object, mode = "graph", FUN = walk_num, cmode = "edges", reps = 200)
+```
+
+As said, `snafun` puts the *FUN* straight into SNA.
+
+<br>
+
+## QAP test
+
+There are two methods to perform a QAP test.
+
+The first is to manually permute the graph. Generation of these graphs
+can be done using `igraph::permute` or `sna::rmperm`. See [the data
+generation table](#generate) for these functions.
+
+The second approach is to use a function that does the graph permutation
+and computes the required measure (typically a correlation) for you. The
+preferred is `sna::qaptest`, which is specified as follows:
+
+```{r}
+sna::qaptest(g, FUN, reps = 1000, ...)
+```
+
+See the `sna` help function for details.
+
+Here
+
+-   `FUN` is the function that needs to be calculated after each
+    permutation
+
+-   `...` contains any arguments that are required for the function you
+    specified in `FUN`
+
+Typically, you want to test the correlation between two graphs, as
+follows:
+
+```{r}
+sna::qaptest(list(firstNetwork, secondNetwork),
+             FUN = sna::gcor, reps = 1000,
+             g1 = 1, g2 = 2)
+```
+
+There is a useful `summary` method and a `plot` method for the output of
+the function.
+
+<br>
+
+## QAP linear regression
+
+QAP linear regression is performed through the `sna::netlm` function.
+The function looks as follows:
+
+```{r}
+sna::netlm(y, x, intercept = TRUE, mode = "digraph",
+    nullhyp = "qapspp", reps = 1000)
+```
+
+Make sure to always set `intercept = TRUE` and `nullhyp = "qapspp"`. For
+small networks, 1000 replications should be enough, for larger networks
+you should typically use a higher number (say, 2000).
+
+As an example, this is how you specify a model where graph `g` is
+modeled as a linear function of graphs `g1`, `g2`, and `g3`.
+
+```{r}
+mod <- sna::netlm(y = g, x = list(g1, g2, g3), intercept = TRUE,
+                              nullhyp = 'qapspp', reps = 1001)
+mod$names <- c("Intcpt", "Net1", "Net2", "Net3")
+summary(mod)
+```
+
+It is wise to add the names of the networks to the output object, like
+you see above. That is not strictly necessary, but it makes the output
+of the function easier to read.
+
+<br>
+
+## QAP logistic regression
+
+QAP logistic regression is performed through the `sna::netlogit`
+function. The function looks as follows:
+
+```{r}
+sna::netlogit(y, x, intercept = TRUE, mode = "digraph",
+    nullhyp = "qapspp", reps = 1000)
+```
+
+Make sure to always set `intercept = TRUE` and `nullhyp = "qapspp"`. For
+small networks, 1000 replications should be enough, for larger networks
+you should typically use a higher number (say, 2000).
+
+As an example, this is how you specify a model where binary graph `g` is
+modeled as a function of graphs `g1`, `g2`, and `g3`.
+
+```{r netlogit1, exercise = TRUE}
+mod <- sna::netlogit(g, list(g1, g2, g3),
+                     intercept = TRUE,
+                     nullhyp = "qapspp", reps = 1001)
+mod$names <- c("Intcpt", "Net1", "Net2", "Net3")
+summary(mod)
+```

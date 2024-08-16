@@ -1,0 +1,116 @@
+---
+title: "Graph level indices"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Graph-level-indices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  echo = FALSE,
+  comment = "#>",
+  eval = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+```{r gt_tables, include = FALSE, eval = TRUE, file='create_tables.R'}
+```
+
+```{=html}
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+```
+```{=html}
+<style type="text/css">
+pre {
+    border-style: hidden;
+}
+</style>
+```
+
+
+
+# Graph level indices
+
+Below you will find a table to determine the foundational indices of a
+graph at the graph-level.
+
+```{r table_graph, echo = FALSE, eval = TRUE}
+table_graph
+```
+
+## Communities and other subgroups
+
+It is informative to know that the `snafun` functions to extract
+communities yield results that can be scrutinized by `igraph`. The
+`snafun` package is smart enough to do this, regardless of whether the
+original input graph was of class `igraph` or `network`. Really handy.
+
+Here's an example.
+
+```{r walktrap, echo = TRUE, eval = TRUE}
+# generate a random directed graph with 20 vertices and 30 edges
+g <- snafun::create_random_graph(20, "gnm", m = 30)
+
+# determine the walktrap communities
+walk <- snafun::extract_comm_walktrap(g)
+print(walk)
+
+# get the modularity score
+igraph::modularity(walk)
+
+# who is member of which community
+igraph::communities(walk)
+
+# which community is a vertex member of
+igraph::membership(walk)
+
+# number of communities
+length(walk)
+
+# size of each community
+igraph::sizes(walk)
+
+# which edge connects multiple communities
+igraph::crossing(walk, g)
+
+# plot the network, highlighting the communities
+plot(walk, g)
+```
+
+If you are so inclined, you can plot the community division as a
+dendrogram, as follows:
+
+```{r dendro, echo = TRUE, eval = TRUE}
+snafun::plot_comm_dendrogram(walk)
+```
+
+# Vertex-level indices
+
+Here are the functions to determine many of the vertex-level indices you
+will want to use in this course.
+
+```{r table_vertex, echo = FALSE, eval = TRUE}
+table_vertices
+```
