@@ -2,19 +2,22 @@ Package: snafun
 Type: Package
 Title: Bringing more fun to Social Network Analysis 
 Version: 0.2024.2
-Authors@R: c(
-    person("Roger", "Leenders", , "SNA4DS@jads.nl", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-0556-2550")),
-    person("Claudia", "Zucca", , "SNA4DS@jads.nl", role = "aut",
-           comment = c(ORCID = "0000-0003-4448-8389"))
-  )
+Authors@R:
+	c(person(given = "Roger",
+					family = "Leenders",
+					role = c("aut", "cre"),
+					email = "SNA4DS@jads.nl"),
+	  person(given = "Claudia",
+					family = "Zucca",
+					role = c("aut"),
+					email = "SNA4DS@jads.nl"))
 Maintainer: Roger Leenders <r.t.a.j.leenders@jads.nl>
 Description: Contains useful functions for Social Network Analysis. SNA is fun, but even more fun when you do not constantly need to switch beteen R packages and graph object classes. This package helps you to focus on the analysis itself, rather than on having to remember which function was in what package with which arguments and unexpected output formats. You can now focus on the fun of SNA, without experiencing the frustration of graph manipulation between different formats/classes/packages/aaaargh! Instead: ENJOY THE RIDE!
 Depends: 
 	R (>= 4.2.1)
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/SNAnalyst/SNAfun, https://snanalyst.github.io/SNAfun/
+URL: https://github.com/SNAnalyst/SNAfun
 BugReports: https://github.com/SNAnalyst/SNAfun/issues
 Imports:
 	methods,
@@ -23,19 +26,16 @@ Imports:
 Remotes:
 	github::SNAnalyst/SNA4DSData
 Suggests:
-    btergm (>= 1.10.6),
-    desc,
-    ergm (>= 4.2.2),
-    igraph (>= 2.0.3),
-    knitr,
-    Matrix,
-    network (>= 1.17.2),
-    networkDynamic (>= 0.11.2),
-    rmarkdown,
-    spatialreg (>= 1.2-9),
-    spdep (>= 1.2-8),
-    tinytest,
-    usethis
+	btergm (>= 1.10.6),
+	desc,
+	ergm (>= 4.2.2),
+	igraph (>= 2.0.3),
+	Matrix,
+	network (>= 1.17.2),
+	networkDynamic (>= 0.11.2),
+	spatialreg (>= 1.2-9),
+	spdep (>= 1.2-8),
+	tinytest,
+	usethis
 License: AGPL (>= 3) + file LICENSE
 RoxygenNote: 7.3.2
-VignetteBuilder: knitr
