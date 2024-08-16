@@ -4,7 +4,7 @@
 #'
 #' This function processes the output of an Exponential Random Graph or a logistic models model and estimates
 #' the intensity of the effects using either Odds ratios or Probabilities
-#' The function returns a data frame with four colums:
+#' The function returns a data frame with four columns:
 #' - Estimates
 #' - Either Odds ratios or Probabilities
 #' - Standard Errors

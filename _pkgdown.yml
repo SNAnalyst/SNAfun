@@ -1,0 +1,119 @@
+url: https://snanalyst.github.io/SNAfun/
+template:
+  bootstrap: 5
+  light-switch: true
+  
+
+authors:
+  Roger Leenders:
+    href: https://www.tilburguniversity.edu/staff/r-t-a-j-leenders
+  Claudia Zucca:
+    href: https://www.tilburguniversity.edu/staff/c-zucca
+
+
+home:
+  icon: fa-home fa-lg
+  href: index.html
+  aria-label: Go to home
+
+
+reference:
+- title: Create and manipulate graph objects
+- subtitle: Create graph objects
+  contents: starts_with("create_")
+- subtitle: Remove parts of the graph
+  contents: starts_with("remove_")
+- subtitle: Add elements to the graph
+  contents: starts_with("add_")
+- subtitle: Extract parts of the graph
+  desc: |
+    Functions starting with `extract_*`.  The functions that contain `_comm_` extract community structures from the graph.
+  contents: starts_with("extract_")
+- subtitle: List parts of the graph
+  contents: starts_with("list_")
+- subtitle: Indicators
+  desc: Indicators of specific traits of the graph, returning `TRUE` or `FALSE`
+  contents:
+  - has
+  - starts_with("has_")
+  - starts_with("is_")
+- subtitle: Make new objects from the graph object
+  desc: Use (info from) the graph object(s) to construct some useful output object
+  contents: starts_with("make_")
+- subtitle: Conversion between graph classes
+  contents: starts_with("to_")
+- subtitle: Some additional graph manipulation
+  contents:
+  - contract_vertices
+  - merge_membership
+- title: Display the graph object
+  contents:
+  - print
+  - starts_with("print")
+- title: Network measures
+- subtitle: Graph-level indices
+  desc: |
+    Indices at the level of the graph itself Functions starting with `count_*` provide a count of specific greaph-level attributes.  Functions starting with `g_*` calculate common graph-level indices, such as  mean distance, centralization, or reciprocity.
+  contents:
+  - gli
+  - starts_with("count_")
+  - starts_with("g_")
+- subtitle: Edge-level indices
+  desc: |
+    Indices at the level of the dyads (directed or undirected) (Almost) all functions start with d_*
+  contents:
+  - dli
+  - starts_with("d_")
+- subtitle: Vertex-level indices
+  desc: Indices at the level of the vertices
+  contents:
+  - vli
+  - starts_with("v_")
+- title: Tools for statistical modeling
+  contents:
+  - fix_cug_input
+  - starts_with("stat")
+  - plot_nam
+- title: Plotting
+  desc: |
+    Generic functions to plot graph objects. Also, functions to plot features of the graph or output from statistical network models.
+  contents:
+  - plot
+  - starts_with("plot")
+- title: Datasets
+  desc: |
+    A small set of datasets, mainly used in examples or testing. A more interesting set of data for the SNA4DS course can be found in the `SNA4DSData` package.
+  contents:
+  - florentine
+  - judge_net
+  - Madrid_bombing
+  - soccer98
+
+
+articles:
+- title: Basics
+  navbar: Getting started
+  contents:
+  - Introduction
+  - Creating-a-graph-object
+  - Manipulating-the-graph-object
+  - Converting-between-graph-classes
+- title: Measures
+  navbar: Network measures
+  contents:
+  - Graph-level-indices
+  - Dyad-level-indices
+- title: Statistical Models
+  navbar: Statistical Models
+  contents:
+  - Statistical-models
+  - ERGMs
+- title: Temporal network analysis
+  navbar: Temporal network analysis
+  contents:
+  - ERGM-for-temporal-networks
+  - Temporal-networks-exploration
+- title: Plotting
+  navbar: Plotting the graph
+  contents: Plotting
+

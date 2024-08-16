@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 snafun.Rproj
+docs
+inst/doc

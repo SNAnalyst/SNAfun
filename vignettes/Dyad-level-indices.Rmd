@@ -1,0 +1,61 @@
+---
+title: "Dyad-level indices"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Dyad-level-indices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  echo = FALSE,
+  comment = "#>",
+  eval = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
+
+```{r gt_tables, include = FALSE, eval = TRUE, file='create_tables.R'}
+```
+
+```{=html}
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+```
+```{=html}
+<style type="text/css">
+pre {
+    border-style: hidden;
+}
+</style>
+```
+
+
+
+# Dyad-level indices
+
+Here are the functions for several of the dyad-level indices you will
+want to use in this course.
+
+```{r table_dyad, echo = FALSE, eval = TRUE}
+table_dyads
+```

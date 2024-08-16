@@ -22,6 +22,7 @@ In short: SNA FUN!
 Useful links:
 \itemize{
   \item \url{https://github.com/SNAnalyst/SNAfun}
+  \item \url{https://snanalyst.github.io/SNAfun/}
   \item Report bugs at \url{https://github.com/SNAnalyst/SNAfun/issues}
 }
 
