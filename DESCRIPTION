@@ -11,7 +11,6 @@ Authors@R:
 					family = "Zucca",
 					role = c("aut"),
 					email = "SNA4DS@jads.nl"))
-Maintainer: Roger Leenders <r.t.a.j.leenders@jads.nl>
 Description: Contains useful functions for Social Network Analysis. SNA is fun, but even more fun when you do not constantly need to switch beteen R packages and graph object classes. This package helps you to focus on the analysis itself, rather than on having to remember which function was in what package with which arguments and unexpected output formats. You can now focus on the fun of SNA, without experiencing the frustration of graph manipulation between different formats/classes/packages/aaaargh! Instead: ENJOY THE RIDE!
 Depends: 
 	R (>= 4.2.1)
