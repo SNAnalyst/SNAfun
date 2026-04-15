@@ -22,10 +22,7 @@ BugReports: https://github.com/SNAnalyst/SNAfun/issues
 Imports:
 	methods,
 	sna (>= 2.7),
-	utils
-Remotes:
-	github::SNAnalyst/SNA4DSData
-Suggests:
+	utils,
 	btergm (>= 1.10.6),
 	desc,
 	ergm (>= 4.2.2),
@@ -35,7 +32,17 @@ Suggests:
 	networkDynamic (>= 0.11.2),
 	spatialreg (>= 1.2-9),
 	spdep (>= 1.2-8),
-	tinytest,
 	usethis
+Remotes:
+	github::SNAnalyst/SNA4DSData
+Suggests:
+	SNA4DSData,
+	tinytest,
+	gt, 
+	magrittr, 
+	knitr, 
+	rmarkdown
+VignetteBuilder: 
+	knitr
 License: AGPL (>= 3) + file LICENSE
 RoxygenNote: 7.3.2
