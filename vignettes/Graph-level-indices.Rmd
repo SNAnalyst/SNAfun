@@ -2,7 +2,7 @@
 title: "Graph level indices"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Graph-level-indices}
+  %\VignetteIndexEntry{Graph level indices}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

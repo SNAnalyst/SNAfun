@@ -15,10 +15,12 @@
 #' second column contains the receivers. If there are any additional 
 #' columns, these are considered to be edge attributes.
 #' 
-#' NOTE: The created \code{igraph} object is considered to be directed, 
-#' depending on the structure of the input. 
-#' If an undirected network is required, 
-#' run \code{\link[igraph]{as.undirected}} on the output from this function.}
+#' Edgelists created by \code{snafun::to_edgelist()} preserve the original
+#' directedness through hidden metadata. For plain external edgelists,
+#' \code{snafun} infers an undirected one-mode graph only when every visible row
+#' has an exact reciprocal counterpart; otherwise the safest default is a
+#' directed graph. Use \code{directed = FALSE} when a plain external edgelist
+#' lists each undirected edge only once.}
 #' }
 #' 
 #' When a matrix is used as input, the function the number of rows is equal  
@@ -39,6 +41,11 @@
 #' vertex attributes. If \code{vertices} is not \code{NULL} 
 #' then the symbolic edge list given in \code{x} is checked to contain only
 #' vertex names listed in vertices. 
+#' 
+#' When \code{x} originates from \code{snafun::to_edgelist()}, these vertex
+#' metadata are recovered automatically from hidden attributes. That lets
+#' isolates survive a graph -> edgelist -> igraph roundtrip without changing
+#' the visible edgelist columns.
 #' See \code{\link[igraph]{graph_from_data_frame}} for the underlying function.
 #' 
 #' @param x input object
@@ -47,6 +54,11 @@
 #' only used when a matrix is converted to an \code{igraph} object and is 
 #' ignored otherwise.
 #' @param vertices A data frame with vertex metadata, or \code{NULL}. See details below.
+#' @param directed Optional logical override that is only used for
+#' \code{data.frame} edgelists. Leave \code{NULL} to let \code{snafun} infer
+#' the most plausible interpretation from hidden metadata and the visible rows.
+#' Set \code{FALSE} to force an undirected one-mode graph when a plain external
+#' edgelist only lists each undirected edge once.
 #' @export
 #' @note The functions are largely based upon \code{as_igraph} functions from 
 #' the \code{migraph} package. 
@@ -85,7 +97,8 @@
 #' to_igraph(aa, bipartite = TRUE)  
 #' }
 to_igraph <- function(x, bipartite = FALSE,
-                      vertices = NULL) {
+                      vertices = NULL,
+                      directed = NULL) {
   UseMethod("to_igraph")
 }
 
@@ -93,7 +106,8 @@ to_igraph <- function(x, bipartite = FALSE,
 
 #' @export
 to_igraph.default <- function(x, bipartite = FALSE,
-                              vertices = NULL) {
+                              vertices = NULL,
+                              directed = NULL) {
   txt <- methods_error_message("x", "to_igraph")
   stop(txt)
 }
@@ -102,7 +116,8 @@ to_igraph.default <- function(x, bipartite = FALSE,
 
 #' @export
 to_igraph.matrix <- function(x, bipartite = FALSE,
-                             vertices = NULL) {
+                             vertices = NULL,
+                             directed = NULL) {
   if (nrow(x) != ncol(x) | bipartite) {
     if (!(all(x %in% c(0, 1)))) {
       graph <- igraph::graph_from_incidence_matrix(x,
@@ -129,7 +144,8 @@ to_igraph.matrix <- function(x, bipartite = FALSE,
 
 #' @export
 to_igraph.network <- function (x, bipartite = FALSE,
-                               vertices = NULL) {
+                               vertices = NULL,
+                               directed = NULL) {
   if (network::is.hyper(x)) 
     stop("hypergraphs are not supported")
   attr <- names(x[[3]][[1]])
@@ -183,7 +199,8 @@ to_igraph.network <- function (x, bipartite = FALSE,
 
 #' @export
 to_igraph.igraph <- function(x, bipartite = FALSE,
-                             vertices = NULL) {
+                             vertices = NULL,
+                             directed = NULL) {
   x
 }
 
@@ -192,22 +209,60 @@ to_igraph.igraph <- function(x, bipartite = FALSE,
 #' @export
 to_igraph.data.frame <- function(x,
                                  bipartite = FALSE,
-                                 vertices = NULL) {
+                                 vertices = NULL,
+                                 directed = NULL) {
+  bipartite_was_missing <- missing(bipartite)
+  vertices_were_missing <- missing(vertices)
+  
   # just in case this is done by a tidyverse user
   if (inherits(x, "tbl_df")) x <- as.data.frame(x)
-  graph <- tryCatch(igraph::graph_from_data_frame(x, directed = TRUE, vertices = vertices), error = function(e) e)
-  if (inherits(graph, "simpleError")) {
-    if (graph$message == "Some vertex names in edge list are not listed in vertex data frame") {
-      stop("Some vertices that occur in your edgelist are 
-           missing in 'vertices'. Make sure all vertices are 
-           included in 'vertices'.")
+  
+  # Edgelists cannot display isolates directly. When the edgelist comes from
+  # snafun::to_edgelist(), we recover the stored vertex table here so the full
+  # vertex set is retained during the conversion back to a graph object.
+  if (vertices_were_missing) {
+    vertices <- extract_stored_edgelist_vertices(x)
+  }
+  semantics <- resolve_edgelist_conversion(
+    x,
+    directed = directed,
+    bipartite = if (bipartite_was_missing) NULL else bipartite
+  )
+  x <- semantics$x
+  bipartite <- semantics$bipartite
+  directed <- semantics$directed
+  
+  graph <- tryCatch(
+    igraph::graph_from_data_frame(x, directed = directed, vertices = vertices),
+    error = function(e) e
+  )
+  
+  # Recent igraph versions signal this as an rlang error with updated text,
+  # while older versions used a base-style simpleError and a different
+  # message. We normalize both cases to the same user-facing snafun message.
+  if (inherits(graph, "error")) {
+    graph_message <- conditionMessage(graph)
+    if (grepl("Some vertex names.*not listed in.*vertices", graph_message)) {
+      stop(
+        paste0(
+          "Some vertices that occur in your edgelist are missing in ",
+          "'vertices'. Make sure all vertices are included in 'vertices'."
+        ),
+        call. = FALSE
+      )
     }
+    stop(graph)
   }
   
   # make bipartite 
   if (bipartite) {
     if (length(intersect(c(x[,1]), c(x[, 2]))) == 0) { 
-      igraph::V(graph)$type <- igraph::V(graph)$name %in% x[, 2]
+      # For ordinary edgelists we infer the second partition from the receiver
+      # column. When stored vertex metadata are available, that metadata are
+      # more reliable because isolated vertices may never occur in the edge list.
+      if (is.null(vertices) || !("type" %in% colnames(vertices))) {
+        igraph::V(graph)$type <- igraph::V(graph)$name %in% x[, 2]
+      }
     } else {
       stop("'NOTE: You asked for a bipartite network, but there are overlapping 
            sender and receiver names. 
@@ -223,6 +278,3 @@ to_igraph.data.frame <- function(x,
   }
   return(graph)
 }
-
-
-

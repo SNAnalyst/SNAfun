@@ -169,7 +169,10 @@ verts3 <- data.frame(c(1:4, 15:18),
                      role = c(rep("person", 4), rep("firm", 4)),
                      attr1 = LETTERS[1:8],
                      attr2 = letters[11:18])
-expect_error(to_igraph(aa, vertices = verts3))
+expect_error(
+  to_igraph(aa, vertices = verts3),
+  "Some vertices that occur in your edgelist are missing in 'vertices'"
+)
 # check if the correct error is triggered
 fout <- tryCatch(to_igraph(aa, vertices = verts3), error = function(e) e)
 expect_true(grepl("^Some vertices that occur in your edgelist are", x = fout$message))

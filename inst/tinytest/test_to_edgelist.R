@@ -4,6 +4,13 @@
 
 report_side_effects()
 
+drop_edgelist_metadata <- function(x) {
+  attr(x, "snafun_vertices") <- NULL
+  attr(x, "snafun_bipartite") <- NULL
+  attr(x, "snafun_directed") <- NULL
+  x
+}
+
 # matrix ----
 g_m <- sapply(runif(10, 0, 1), rep, 10)
 g_m <- sna::rgraph(10, tprob = g_m)
@@ -64,12 +71,12 @@ igraph::E(g2_i)$weight <- seq_len(igraph::ecount(g2_i))  # named and weighted
 g3_i <- g2_i |> 
   igraph::set_edge_attr("color", value = "red")
 
-expect_identical(to_edgelist(g_i, sort = "to"), igraph::as_data_frame(g_i))
-expect_identical(to_edgelist(g1_i, sort = "to"), igraph::as_data_frame(g1_i))
-expect_identical(to_edgelist(g2_i, sort = "weight"), igraph::as_data_frame(g2_i))
+expect_identical(drop_edgelist_metadata(to_edgelist(g_i, sort = "to")), igraph::as_data_frame(g_i))
+expect_identical(drop_edgelist_metadata(to_edgelist(g1_i, sort = "to")), igraph::as_data_frame(g1_i))
+expect_identical(drop_edgelist_metadata(to_edgelist(g2_i, sort = "weight")), igraph::as_data_frame(g2_i))
 expect_identical(colnames(to_edgelist(g3_i)), c("from", "to", "weight", "color"))
 
-expect_identical(to_edgelist(g_i), to_edgelist(g_i, named = FALSE))
+expect_identical(drop_edgelist_metadata(to_edgelist(g_i)), drop_edgelist_metadata(to_edgelist(g_i, named = FALSE)))
 expect_identical(to_edgelist(g3_i)$weight, to_edgelist(g3_i, named = FALSE)$weight)
 expect_identical(to_edgelist(g3_i)$color, to_edgelist(g3_i, named = FALSE)$color)
 
@@ -88,8 +95,6 @@ expect_true(all(to_edgelist(g2_n, sort = "to") == network::as.data.frame.network
 expect_equal(to_edgelist(g2_n, sort = "weight")$weight, 1:network::network.edgecount(g2_n))
 expect_identical(colnames(to_edgelist(g3_n)), c("from", "to", "weight", "color"))
 
-expect_identical(to_edgelist(g_n), to_edgelist(g_n, named = FALSE))
+expect_identical(drop_edgelist_metadata(to_edgelist(g_n)), drop_edgelist_metadata(to_edgelist(g_n, named = FALSE)))
 expect_identical(to_edgelist(g3_n)$weight, to_edgelist(g3_n, named = FALSE)$weight)
 expect_identical(to_edgelist(g3_n)$color, to_edgelist(g3_n, named = FALSE)$color)
-
-

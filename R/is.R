@@ -139,7 +139,8 @@ is_weighted.data.frame <- function(x) {
 #' for the appropriate attribute in the graph x.
 #' 
 #' For a \code{matrix} the function returns \code{TRUE} if the matrix is 
-#' not symmetric.
+#' square and not symmetric. Rectangular matrices are treated as bipartite
+#' incidence matrices and therefore return \code{FALSE}.
 #'  
 #' For a \code{data.frame} the function returns \code{TRUE} if the reciprocity 
 #' of the network is not exactly 0 or 1.
@@ -183,6 +184,14 @@ is_directed.igraph <- function(x) {
 
 #' @export
 is_directed.matrix <- function(x) {
+  # Incidence matrices are rectangular by definition. They do not encode edge
+  # direction in the adjacency-matrix sense, so treating them as undirected is
+  # the only stable answer here. Calling isSymmetric() on a non-square matrix
+  # can yield NA, which then leaks into downstream converters such as
+  # to_network.matrix().
+  if (!identical(nrow(x), ncol(x))) {
+    return(FALSE)
+  }
   !isSymmetric(x)
 }
 
@@ -432,8 +441,6 @@ is_igraph.igraph <- function(x) {
 is_igraph.matrix <- function(x) {
   FALSE
 }
-
-
 
 
 

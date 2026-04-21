@@ -26,7 +26,6 @@ Imports:
 	desc,
 	ergm (>= 4.2.2),
 	igraph (>= 2.0.3),
-	Matrix,
 	network (>= 1.17.2),
 	networkDynamic (>= 0.11.2),
 	spatialreg (>= 1.2-9),
@@ -38,10 +37,12 @@ Suggests:
 	SNA4DSData,
 	tinytest,
 	gt, 
+	htmltools,
 	magrittr, 
 	knitr, 
-	rmarkdown
+	rmarkdown,
+	tsna
 VignetteBuilder: 
 	knitr
 License: AGPL (>= 3) + file LICENSE
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

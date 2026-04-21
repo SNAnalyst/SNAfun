@@ -352,7 +352,7 @@ add_edge_attributes.igraph <- function(object, attr_name, value, edgelist, overw
   
   if (is_edgelist) {
     vp <- t(edgelist[, 1:2]) |> matrix(nrow = 1, byrow = TRUE) |> as.vector()
-    eids <- igraph::get.edge.ids(object, vp = vp)
+    eids <- igraph::get_edge_ids(object, vp = vp)
     
     # check for duplicate edges in the edgelist
     dups <- which(duplicated(eids))
@@ -360,7 +360,10 @@ add_edge_attributes.igraph <- function(object, attr_name, value, edgelist, overw
       stop("There are duplicate edges you try to set values for, these are rows ", dups)
     }
     # check if all edges in the graph are included in the edgelist
-    miss <- which(!1:igraph::ecount(object) %in% eids)
+    # Use explicit edge id sequences here. This avoids precedence ambiguity in
+    # expressions like !1:n %in% eids and guarantees that only valid positive
+    # edge ids are passed to igraph::ends().
+    miss <- setdiff(seq_len(igraph::ecount(object)), eids)
     if (length(miss) > 0) {  # some edges are missing in the edgelist
       miss_edges <- igraph::ends(object, es = miss, names = FALSE)
       miss_edges <- paste0(miss_edges[, 1], "-", miss_edges[, 2]) |> paste(collapse = ", ")
@@ -448,7 +451,9 @@ add_edge_attributes.network <- function(object, attr_name, value, edgelist, over
       stop("There are duplicate edges you try to set values for, these are rows ", dups)
     }
     # check if all edges in the graph are included in the edgelist
-    miss <- which(!1:network::network.edgecount(object) %in% eids)
+    # Mirror the igraph path above: compute the missing edge ids explicitly so
+    # only valid ids are inspected further.
+    miss <- setdiff(seq_len(network::network.edgecount(object)), eids)
     if (length(miss) > 0) {  # some edges are missing in the edgelist
       miss_edges <- matrix(ncol = 2, nrow = length(miss))
       for (mm in 1:length(miss)) {

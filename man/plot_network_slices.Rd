@@ -34,6 +34,11 @@ This function splits the time interval between the starting time
 into \code{number} equal-sized intervals.
 The plots include all edges that occur in that interval.
 
+Edge attributes are ignored while constructing the slices. This keeps the
+plot focused on edge presence and avoids warnings from
+\code{networkDynamic::network.collapse()} when the same edge has multiple
+active attribute values within one plotted interval.
+
 By default, the overall interval covers the period from where the first
 edges starts to where the last one ends.
 

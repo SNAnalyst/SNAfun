@@ -24,11 +24,16 @@ stat_nam(
 By default the variables are taken from the environment which the function is called.}
 
 \item{W}{Spatial weight matrix for the lagged model or the error model. 
-This can be a matrix or a graph of class \code{network} or \code{igraph}.}
+This can be a square matrix, an edgelist data frame, or a graph of class
+\code{network} or \code{igraph}. Edge weights and diagonal values are kept
+as supplied and are row-standardized internally through
+\code{\link[spdep]{mat2listw}}.}
 
 \item{W2}{Spatial weight matrix for the error, in case of a combined model 
-(otherwise, it is discarded). This can be a matrix or a graph of 
-class \code{network} or \code{igraph}}
+(otherwise, it is discarded). This can be a square matrix, an edgelist data
+frame, or a graph of class \code{network} or \code{igraph}. As for
+\code{W}, edge weights and diagonal values are preserved before internal
+row-standardization.}
 
 \item{model}{character, either \code{lag}, \code{error}, or \code{combined}}
 
@@ -111,6 +116,26 @@ Also note that the original functions do not allow graphs of class
 another benefit is our function which does make this possible.
 
 A useful \code{summary} function is implemented within the \pkg{spatialreg} package.
+
+Weight handling in this wrapper follows a few network-analysis-oriented
+conventions:
+
+\itemize{
+  \item \code{W} and \code{W2} may be supplied as matrices, edgelists,
+  \code{igraph} objects, or \code{network} objects, but they must represent
+  square one-mode weight matrices after conversion.
+  \item Non-zero rows are row-standardized internally through
+  \code{spdep::mat2listw(style = "W")}. A message is shown only when those
+  non-zero rows are not already standardized.
+  \item Zero rows are allowed when \code{zero.policy = TRUE}; these encode
+  vertices without neighbours and are not treated as malformed input.
+  \item Diagonal values are preserved. If self-weights are present, they are
+  part of the fitted network autocorrelation model rather than being removed
+  silently.
+  \item Edge weights are preserved during conversion. For edgelists, the
+  first two columns are treated as sender and receiver, and the third column
+  (if present) is used as the numeric weight.
+}
 }
 \examples{
 # Simulate data for the lagged model

@@ -28,6 +28,10 @@
 #' has_loops(m)                                 # TRUE
 #' diag(m) <- 0
 #' has_loops(m)                                 # FALSE
+#'
+#' g_multi <- igraph::make_empty_graph(n = 3, directed = TRUE)
+#' g_multi <- igraph::add_edges(g_multi, c(1, 2, 1, 2, 2, 3))
+#' has_multiple_edges(g_multi)                  # TRUE
 NULL
 
 
@@ -273,5 +277,80 @@ has_isolates.network <- function(x) {
 #' @export
 has_isolates.matrix <- function(x) {
   length(extract_isolates(x)) != 0
+}
+
+
+
+
+
+#' Build stable dyad keys for multiple-edge detection
+#'
+#' Multiple-edge checks need a backend-independent way to decide whether two
+#' edges connect the same dyad. For directed graphs we keep the sender/receiver
+#' ordering. For undirected graphs we canonicalize each dyad by sorting its two
+#' endpoints, so A--B and B--A are treated as the same edge.
+#'
+#' The keys are intentionally based on character values because that works for
+#' both numeric vertex ids and vertex names without changing the calling code.
+#'
+#' @param from vector of senders / tails
+#' @param to vector of receivers / heads
+#' @param directed logical, whether edge direction matters
+#'
+#' @return Character vector with one canonical key per edge.
+#' @keywords internal
+#' @noRd
+multiple_edge_keys <- function(from, to, directed) {
+  from_chr <- as.character(from)
+  to_chr <- as.character(to)
+  
+  if (!directed) {
+    swap_rows <- from_chr > to_chr
+    if (any(swap_rows)) {
+      from_tmp <- from_chr[swap_rows]
+      from_chr[swap_rows] <- to_chr[swap_rows]
+      to_chr[swap_rows] <- from_tmp
+    }
+  }
+  
+  paste(from_chr, to_chr, sep = "\r")
+}
+
+
+
+
+
+#' @export
+#' @describeIn has Check whether a graph contains multiple edges between at
+#' least one dyad. For matrices, values larger than 1 are interpreted as
+#' collapsed multiple edges; this is useful for multigraph-style adjacency or
+#' incidence matrices, but it is ambiguous for genuinely weighted matrices.
+has_multiple_edges <- function(x) {
+  UseMethod("has_multiple_edges")
+}
+
+
+#' @export
+has_multiple_edges.default <- function(x) {
+  txt <- methods_error_message("x", "has_multiple_edges")
+  stop(txt)
+}
+
+
+#' @export
+has_multiple_edges.igraph <- function(x) {
+  igraph::any_multiple(x)
+}
+
+
+#' @export
+has_multiple_edges.network <- function(x) {
+  !is.null(snafun::extract_multiple_edges(x))
+}
+
+
+#' @export
+has_multiple_edges.matrix <- function(x) {
+  any(x > 1)
 }
 

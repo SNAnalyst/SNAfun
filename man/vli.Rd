@@ -9,6 +9,8 @@
 \alias{v_eigenvector}
 \alias{v_closeness}
 \alias{v_harmonic}
+\alias{v_diffusion}
+\alias{v_fragment}
 \alias{v_pagerank}
 \alias{v_geokpath}
 \alias{v_shapley}
@@ -33,6 +35,18 @@ v_eigenvector(x, directed = TRUE, rescaled = FALSE)
 v_closeness(x, vids = NULL, mode = c("all", "out", "in"), rescaled = FALSE)
 
 v_harmonic(x, vids = NULL, mode = c("all", "out", "in"), rescaled = FALSE)
+
+v_diffusion(x, vids = NULL, T = NULL, rescaled = FALSE)
+
+v_fragment(
+  x,
+  vids = NULL,
+  M = Inf,
+  binary = FALSE,
+  large = TRUE,
+  geodist.precomp = NULL,
+  rescaled = FALSE
+)
 
 v_pagerank(x, vids = NULL, damping = 0.85, directed = TRUE, rescaled = FALSE)
 
@@ -66,6 +80,26 @@ This rarely makes sense. Default is \code{FALSE}.}
 
 \item{directed}{Logical, whether the graph should be considered directed (if 
 it is directed to begin with)}
+
+\item{T}{Integer indicating the maximum number of diffusion steps. In the
+first step the adjacency or probability matrix itself is used, in the second
+step its square, and so on. If \code{NULL}, \code{T} defaults to the network
+size, matching \code{keyplayer::diffusion()}.}
+
+\item{M}{Maximum geodistance between two nodes, above which they are treated
+as disconnected for fragmentation centrality. The default is \code{Inf}.}
+
+\item{binary}{Logical scalar. If \code{TRUE}, edge values are ignored and the
+graph is treated as binary for fragmentation centrality.}
+
+\item{large}{Logical scalar. If \code{TRUE}, the baseline geodistance matrix
+for fragmentation centrality is computed with \code{igraph}; otherwise the
+\code{sna} implementation is used. This mirrors the interface of
+\code{keyplayer::fragment()}.}
+
+\item{geodist.precomp}{Optional precomputed geodistance matrix for the
+original graph, used by \code{v_fragment()}. This can save work if the same
+graph is scored repeatedly.}
 
 \item{damping}{The damping factor (‘d’ in the original paper).}
 
@@ -191,6 +225,48 @@ The measure is closely related to \code{closeness}. While closeness
 centrality is meaningful only for connected graphs, harmonic centrality can 
 be calculated also for disconnected graphs and provides a useful alternative 
 in those cases.
+
+\item \code{v_diffusion()}: Diffusion centrality of a vertex.
+
+Diffusion centrality measures the expected number of information receivers
+that can be reached from a vertex within \code{T} diffusion steps. The
+implementation follows the definition used by
+\code{keyplayer::diffusion()}: it sums the matrix powers
+\eqn{A + A^2 + \dots + A^T} and then sums each row of that total matrix.
+
+The input matrix is interpreted directly as an adjacency or probability
+matrix. For weighted graphs, the edge weights are therefore treated as the
+probabilities or strengths with which information is passed along an edge.
+No additional transformation is applied inside this function.
+
+Compared with \code{keyplayer::diffusion()}, this \code{snafun} version adds
+S3 methods for \code{igraph}, \code{network}, adjacency matrices, and edge
+lists, so the same measure can be requested through one consistent API.
+
+Diffusion centrality is defined for one-mode graphs only. Bipartite inputs,
+and other inputs that convert to a non-square matrix, are rejected.
+
+\item \code{v_fragment()}: Fragmentation centrality of a vertex.
+
+Fragmentation centrality measures how fragmented the residual network becomes
+after removing a vertex or set of vertices. The more fragmented the residual
+network is, the more central the removed vertex is under this criterion.
+
+This implementation mirrors the logic of \code{keyplayer::fragment()} while
+fitting into the \code{snafun} S3 interface. In particular, the baseline
+normalization factor is computed from the original graph, and residual
+networks are evaluated from their geodistances after node removal.
+
+Edge values are interpreted as distances when \code{binary = FALSE}. If your
+data encode tie strengths or probabilities instead, transform them to
+distances before calling \code{v_fragment()}.
+
+Fragmentation centrality is defined for one-mode graphs only. Bipartite
+inputs, and other inputs that convert to a non-square matrix, are rejected.
+
+Although the score is aggregated at the network level, the geodistances are
+computed on the directed graph whenever the input is directed, matching the
+behavior of \code{keyplayer::fragment()}.
 
 \item \code{v_pagerank()}: Google Pagerank centrality of a vertex. Weights are discarded. 
 
@@ -364,6 +440,49 @@ g <- igraph::make_star(10, "in")
 v_harmonic(g)  # "1" has the highest harmonic, the rest has the same value
 v_harmonic(g, mode= "in")  # only "1"
 v_harmonic(g, mode= "out") # all except "1"
+#
+# v_diffusion
+P <- matrix(
+  c(0, 0.2, 0.6, 0,   0,
+    0, 0,   0,   0.8, 0,
+    0.2, 0.2, 0, 0.4, 0,
+    0, 0,   0,   0,   0.6,
+    0, 0.4, 0,   0,   0),
+  nrow = 5,
+  byrow = TRUE
+)
+v_diffusion(P, T = 2)
+v_diffusion(P, vids = c(1, 3), T = 2)
+
+g_i <- snafun::to_igraph(P)
+v_diffusion(g_i, T = 2)
+
+g_n <- snafun::to_network(P)
+v_diffusion(g_n, T = 2)
+#
+# v_fragment
+W <- matrix(
+  c(0, 1, 3, 0, 0,
+    0, 0, 0, 4, 0,
+    1, 1, 0, 2, 0,
+    0, 0, 0, 0, 3,
+    0, 2, 0, 0, 0),
+  nrow = 5,
+  byrow = TRUE
+)
+A <- W
+A[W != 0] <- 1 / W[W != 0]
+
+v_fragment(A)
+v_fragment(A, vids = c(1, 3))
+v_fragment(A, M = 1)
+v_fragment(A, binary = TRUE)
+
+g_i <- snafun::to_igraph(A)
+v_fragment(g_i)
+
+g_n <- snafun::to_network(A)
+v_fragment(g_n)
 # 
 # v_pagerank
 g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 
@@ -417,6 +536,18 @@ Research, 46, pp.607-650.
 
 The code for the Shapley centrality is adapted from \code{CINNA::group_centrality} 
 and gives the same result (but our version is slightly more robust).
+
+An, W. and Liu, Y.-H. (2016). keyplayer: An R Package for Locating Key
+Players in Social Networks. \emph{The R Journal}, 8(1), 257-268.
+
+Banerjee, A., Chandrasekhar, A., Duflo, E. and Jackson, M. (2013). Diffusion
+of Microfinance. \emph{Science}, 341(6144).
+
+An, W. and Liu, Y.-H. (2016). keyplayer: An R Package for Locating Key
+Players in Social Networks. \emph{The R Journal}, 8(1), 257-268.
+
+Borgatti, S. P. (2006). Identifying Sets of Key Players in a Network.
+\emph{Computational and Mathematical Organization Theory}, 12(1), 21-34.
 }
 \seealso{
 For \code{igraph} objects: \code{\link[igraph]{eccentricity}}, 

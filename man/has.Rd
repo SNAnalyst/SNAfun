@@ -9,6 +9,7 @@
 \alias{has_vertexnames}
 \alias{has_loops}
 \alias{has_isolates}
+\alias{has_multiple_edges}
 \title{Check for the existence of edge attributes in the graph}
 \usage{
 has_edge_attributes(x)
@@ -24,6 +25,8 @@ has_vertexnames(x)
 has_loops(x)
 
 has_isolates(x)
+
+has_multiple_edges(x)
 }
 \arguments{
 \item{x}{graph of class \code{igraph} or \code{network}}
@@ -73,6 +76,11 @@ an edge from a vertex to itself). Also works on a \code{matrix}.
 \item \code{has_isolates()}: Check whether a graph contains at least one isolate vertex. 
 Returns \code{TRUE} or \code{FAlsE}
 
+\item \code{has_multiple_edges()}: Check whether a graph contains multiple edges between at
+least one dyad. For matrices, values larger than 1 are interpreted as
+collapsed multiple edges; this is useful for multigraph-style adjacency or
+incidence matrices, but it is ambiguous for genuinely weighted matrices.
+
 }}
 \examples{
 data(florentine, package = "snafun")
@@ -88,4 +96,8 @@ m <- matrix(c(1, 0, 0, 0, 0, 1, 0, 1, 1), byrow = TRUE, ncol = 3)
 has_loops(m)                                 # TRUE
 diag(m) <- 0
 has_loops(m)                                 # FALSE
+
+g_multi <- igraph::make_empty_graph(n = 3, directed = TRUE)
+g_multi <- igraph::add_edges(g_multi, c(1, 2, 1, 2, 2, 3))
+has_multiple_edges(g_multi)                  # TRUE
 }

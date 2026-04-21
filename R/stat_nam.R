@@ -54,14 +54,39 @@
 #' 
 #' A useful \code{summary} function is implemented within the \pkg{spatialreg} package.
 #'
+#' Weight handling in this wrapper follows a few network-analysis-oriented
+#' conventions:
+#'
+#' \itemize{
+#'   \item \code{W} and \code{W2} may be supplied as matrices, edgelists,
+#'   \code{igraph} objects, or \code{network} objects, but they must represent
+#'   square one-mode weight matrices after conversion.
+#'   \item Non-zero rows are row-standardized internally through
+#'   \code{spdep::mat2listw(style = "W")}. A message is shown only when those
+#'   non-zero rows are not already standardized.
+#'   \item Zero rows are allowed when \code{zero.policy = TRUE}; these encode
+#'   vertices without neighbours and are not treated as malformed input.
+#'   \item Diagonal values are preserved. If self-weights are present, they are
+#'   part of the fitted network autocorrelation model rather than being removed
+#'   silently.
+#'   \item Edge weights are preserved during conversion. For edgelists, the
+#'   first two columns are treated as sender and receiver, and the third column
+#'   (if present) is used as the numeric weight.
+#' }
+#'
 #' @param formula a symbolic description of the model to be fit. 
 #' @param data an optional data frame containing the variables in the model. 
 #' By default the variables are taken from the environment which the function is called.
 #' @param W Spatial weight matrix for the lagged model or the error model. 
-#' This can be a matrix or a graph of class \code{network} or \code{igraph}.
+#' This can be a square matrix, an edgelist data frame, or a graph of class
+#' \code{network} or \code{igraph}. Edge weights and diagonal values are kept
+#' as supplied and are row-standardized internally through
+#' \code{\link[spdep]{mat2listw}}.
 #' @param W2 Spatial weight matrix for the error, in case of a combined model 
-#' (otherwise, it is discarded). This can be a matrix or a graph of 
-#' class \code{network} or \code{igraph}
+#' (otherwise, it is discarded). This can be a square matrix, an edgelist data
+#' frame, or a graph of class \code{network} or \code{igraph}. As for
+#' \code{W}, edge weights and diagonal values are preserved before internal
+#' row-standardization.
 #' @param model character, either \code{lag}, \code{error}, or \code{combined}
 #' @param na.action a function (default \code{options("na.action")}), 
 #' can also be \code{na.omit} or \code{na.exclude} with consequences for residuals 
@@ -82,7 +107,7 @@
 #' not wanted or needed on the rhs of the formula.
 #'
 #' @return an object of class \code{Sarlm}
-#' @export
+#' @name stat_nam
 #' @examples
 #' # Simulate data for the lagged model
 #' aantal_vars <- 10
@@ -156,6 +181,156 @@
 #' nam2 <- snafun::stat_nam(y ~ ., data = hukYX, W = hukWstd, model = "error")
 #' nam3 <- snafun::stat_nam(y ~ ., data = hukYX, W = hukWstd, W2 = hukWstd, model = "combined")
 #' }
+NULL
+
+#' Prepare a weight matrix for network autocorrelation models
+#'
+#' Convert supported network inputs to the \code{listw} format expected by
+#' \pkg{spatialreg}. The helper keeps user-supplied edge weights and diagonal
+#' values intact, checks that the resulting matrix is square and matches the
+#' number of observations, and lets \code{spdep::mat2listw(style = "W")}
+#' perform the actual row-standardization.
+#'
+#' @param x A square matrix, edgelist data frame, \code{network}, or
+#' \code{igraph} object.
+#' @param arg_name Name of the calling argument, used in informative error
+#' messages.
+#' @param n_observations Expected number of rows in the fitted model frame.
+#' @param zero.policy Logical scalar passed through to
+#' \code{\link[spdep]{mat2listw}}.
+#' @param tolerance Numeric tolerance used to decide whether non-zero rows are
+#' already row-standardized.
+#'
+#' @return An object of class \code{listw}.
+#' @keywords internal
+#' @noRd
+prepare_nam_weight_listw <- function(x, arg_name, n_observations,
+                                     zero.policy,
+                                     tolerance = sqrt(.Machine$double.eps)) {
+    if (!inherits(x, "network") &&
+        !inherits(x, "igraph") &&
+        !is.matrix(x) &&
+        !is.data.frame(x)) {
+        stop(arg_name,
+             " should be a square matrix, an edgelist data frame, or be of class ",
+             "'network' or 'igraph'")
+    }
+
+    weight_matrix <- snafun::to_matrix(x)
+    if (!is.matrix(weight_matrix) ||
+        nrow(weight_matrix) != ncol(weight_matrix)) {
+        stop(arg_name, " should represent a square one-mode weight matrix")
+    }
+    if (nrow(weight_matrix) != n_observations) {
+        stop(arg_name, " should have ", n_observations,
+             " rows and columns, matching the number of observations in the model")
+    }
+    if (!is.numeric(weight_matrix)) {
+        stop(arg_name, " should contain numeric weights")
+    }
+    if (anyNA(weight_matrix)) {
+        stop(arg_name, " should not contain missing values")
+    }
+
+    # The spatialreg backend expects row-standardized weights, but users in
+    # network analysis often provide raw adjacency-style matrices. We therefore
+    # only message when a genuinely non-zero row is not already standardized and
+    # let spdep do the canonical row normalization.
+    row_sums <- base::rowSums(weight_matrix)
+    non_zero_rows <- row_sums > tolerance
+    if (any(non_zero_rows) &&
+        any(abs(row_sums[non_zero_rows] - 1) > tolerance)) {
+        message("You supplied a weight matrix",
+                if (identical(arg_name, "W2")) " (W2)" else "",
+                " that was not row-normalized\n",
+                "      this is still automatically done for this analysis.")
+    }
+
+    spdep::mat2listw(weight_matrix,
+                     style = "W",
+                     zero.policy = zero.policy)
+}
+
+
+#' Check whether NAM design columns vary
+#'
+#' Build the right-hand-side design matrix and warn when one or more columns are
+#' constant. This is more robust than checking the raw variables directly,
+#' because factors and transformed terms may expand to multiple columns.
+#'
+#' @param formula Model formula passed to \code{stat_nam()}.
+#' @param model_frame Model frame constructed from \code{formula} and
+#' \code{data}.
+#'
+#' @return Invisibly returns \code{NULL}; it is used for its warning side
+#' effect.
+#' @keywords internal
+#' @noRd
+check_nam_design_variation <- function(formula, model_frame) {
+    rhs_terms <- stats::delete.response(stats::terms(formula,
+                                                     data = model_frame))
+    rhs_matrix <- stats::model.matrix(rhs_terms, data = model_frame)
+    keep_columns <- colnames(rhs_matrix) != "(Intercept)"
+    rhs_matrix <- rhs_matrix[, keep_columns, drop = FALSE]
+
+    if (ncol(rhs_matrix) == 0L) {
+        return(invisible(NULL))
+    }
+
+    constant_columns <- apply(rhs_matrix, 2, function(column) {
+        column <- column[!is.na(column)]
+        length(unique(column)) <= 1L
+    })
+    if (any(constant_columns)) {
+        warning("There are ", sum(constant_columns),
+                " constant design-matrix column(s) on the right hand side: ",
+                paste(colnames(rhs_matrix)[constant_columns], collapse = ", "),
+                ". Please remove them.")
+    }
+
+    invisible(NULL)
+}
+
+
+#' Fit a network autocorrelation model via spatialreg
+#'
+#' Assemble the argument list for \pkg{spatialreg} while preserving the
+#' optional \code{na.action} argument only when the user supplied it.
+#'
+#' @param fit_function Fitting function from \pkg{spatialreg}.
+#' @param formula,data,listw,listw2,Durbin,quiet,zero.policy Model arguments
+#' forwarded to the selected backend.
+#' @param na_action Optional \code{na.action} value supplied by the user.
+#' @param na_action_supplied Logical scalar indicating whether the user
+#' explicitly supplied \code{na.action}.
+#'
+#' @return The fitted \code{Sarlm} object returned by \pkg{spatialreg}.
+#' @keywords internal
+#' @noRd
+fit_nam_spatialreg <- function(fit_function, formula, data, listw,
+                               listw2 = NULL, Durbin, quiet, zero.policy,
+                               na_action = NULL,
+                               na_action_supplied = FALSE) {
+    fit_arguments <- list(
+        formula = formula,
+        data = data,
+        listw = listw,
+        Durbin = Durbin,
+        quiet = quiet,
+        zero.policy = zero.policy
+    )
+    if (isTRUE(na_action_supplied)) {
+        fit_arguments$na.action <- na_action
+    }
+    if (!is.null(listw2)) {
+        fit_arguments$listw2 <- listw2
+    }
+
+    do.call(fit_function, fit_arguments)
+}
+
+#' @rdname stat_nam
+#' @export
 stat_nam <- function(formula, data = list(), W, 
                      W2 = NULL,
                      model = c("lag", "error", "combined"),
@@ -173,61 +348,77 @@ stat_nam <- function(formula, data = list(), W,
     if (!inherits(formula, "formula")) 
         formula <- stats::as.formula(formula)
 
-    if (!snafun::is_network(W) & !snafun::is_igraph(W) & !is.matrix(W)) {
-        stop("W should be a matrix or be of class 'network' or 'igraph'")
-    } 
-    W <- snafun::to_matrix(W)  # W is now a matrix
-    if (!all(rowSums(W) - 1 < .1e-5)) {
-        message("You supplied a weight matrix that was not row-normalized\n",
-                "      this is still automatically done for this analysis.")
+    na_action_supplied <- !missing(na.action)
+    if (na_action_supplied) {
+        na_action_value <- na.action
+    } else {
+        na_action_value <- NULL
     }
-    W <- spdep::mat2listw(W, style = "W")
-    
-    if (!is.null(W2)) {
-        if (!snafun::is_network(W2) & !snafun::is_igraph(W2) & !is.matrix(W2)) {
-            stop("W2 should be a matrix or be of class 'network' or 'igraph'")
-        } 
-        W2 <- snafun::to_matrix(W2)  # W2 is now a matrix
-        if (!all(rowSums(W2) - 1 < .1e-5)) {
-            message("You supplied a weight matrix (W2) that was not row-normalized\n",
-                    "      this is still automatically done for this analysis.")
-        }
-        W2 <- spdep::mat2listw(W2, style = "W")
-    }
-    
 
-    if(check_vars) {
-        vars <- attr(stats::terms(formula, data = data), "term.labels")
-        modeldata <- data[, vars]
-        sds <- sapply(modeldata, stats::sd)
-        sd_nul <- which(sds == 0)
-        if (length(sd_nul) > 0) {
-            warning("There are ", length(sd_nul), "constant variable(s), please remove.")
-        }
+    if (identical(model, "combined") && is.null(W2)) {
+        stop("For model = 'combined', you need to supply 'W2'")
     }
-    
-    if (model == "lag") {
-        spatialreg::lagsarlm(formula = formula, data = data,
-                             listw = W, na.action = na.action,
-                             Durbin = Durbin,
-                             quiet = quiet, 
-                             zero.policy = zero.policy
-        )  
-    } else if (model == "error") {
-        spatialreg::errorsarlm(formula = formula, data = data,
-                             listw = W, na.action = na.action,
-                             Durbin = Durbin,
-                             quiet = quiet, 
-                             zero.policy = zero.policy
-        )  
-    } else if (model == "combined") {
-        spatialreg::sacsarlm(formula = formula, data = data,
-                               listw = W, listw2 = W2, na.action = na.action,
-                               Durbin = Durbin, 
-                               quiet = quiet, 
-                               zero.policy = zero.policy
-        )  
-    } 
+
+    model_frame <- stats::model.frame(formula = formula,
+                                      data = data,
+                                      na.action = stats::na.pass)
+    n_observations <- nrow(model_frame)
+
+    W <- prepare_nam_weight_listw(x = W,
+                                  arg_name = "W",
+                                  n_observations = n_observations,
+                                  zero.policy = zero.policy)
+
+    if (!is.null(W2)) {
+        W2 <- prepare_nam_weight_listw(x = W2,
+                                       arg_name = "W2",
+                                       n_observations = n_observations,
+                                       zero.policy = zero.policy)
+    }
+
+    if (isTRUE(check_vars)) {
+        check_nam_design_variation(formula = formula,
+                                   model_frame = model_frame)
+    }
+
+    if (identical(model, "lag")) {
+        fit_nam_spatialreg(
+            fit_function = spatialreg::lagsarlm,
+            formula = formula,
+            data = data,
+            listw = W,
+            Durbin = Durbin,
+            quiet = quiet,
+            zero.policy = zero.policy,
+            na_action = na_action_value,
+            na_action_supplied = na_action_supplied
+        )
+    } else if (identical(model, "error")) {
+        fit_nam_spatialreg(
+            fit_function = spatialreg::errorsarlm,
+            formula = formula,
+            data = data,
+            listw = W,
+            Durbin = Durbin,
+            quiet = quiet,
+            zero.policy = zero.policy,
+            na_action = na_action_value,
+            na_action_supplied = na_action_supplied
+        )
+    } else {
+        fit_nam_spatialreg(
+            fit_function = spatialreg::sacsarlm,
+            formula = formula,
+            data = data,
+            listw = W,
+            listw2 = W2,
+            Durbin = Durbin,
+            quiet = quiet,
+            zero.policy = zero.policy,
+            na_action = na_action_value,
+            na_action_supplied = na_action_supplied
+        )
+    }
 }
 
 

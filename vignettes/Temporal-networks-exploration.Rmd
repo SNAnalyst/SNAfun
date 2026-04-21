@@ -2,7 +2,7 @@
 title: "Temporal networks exploration and description"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Temporal-networks-exploration}
+  %\VignetteIndexEntry{Temporal networks exploration and description}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -134,6 +134,37 @@ table](#manipulate%7D). As long as you want to access and/or set
 attributes that are *static*, this works much easier and uses functions
 that you have used multiple times already in this course and should be
 second nature to you by now.
+
+For `snafun`, it is important to remember the difference between
+`active = FALSE` and `active = TRUE` when the input is a
+`networkDynamic` object:
+
+-   with the default `active = FALSE`, `snafun` treats the object as an
+    ordinary `network` object and returns the attributes as they are
+    stored internally. Static attributes use their usual names, while
+    dynamic TEAs show up with names such as `gender.active` or
+    `weight.active`.
+
+-   with `active = TRUE`, `snafun` uses the `networkDynamic` accessors
+    and interprets the attribute over time. In that case you query the
+    logical attribute name (for example `"weight"` instead of
+    `"weight.active"`) and also provide a time point or interval.
+
+For example:
+
+```{r, echo = TRUE, eval = TRUE}
+data("McFarland_cls33_10_16_96", package = "networkDynamic")
+classroom <- cls33_10_16_96
+
+snafun::list_edge_attributes(classroom)
+snafun::list_edge_attributes(classroom, active = TRUE, at = 1)
+
+# raw stored TEA
+snafun::extract_edge_attribute(classroom, "weight.active")
+
+# interpreted value at a specific time point
+snafun::extract_edge_attribute(classroom, "weight", active = TRUE, at = 1)
+```
 
 ## Network measures and descriptives
 

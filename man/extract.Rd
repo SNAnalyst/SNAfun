@@ -8,22 +8,76 @@
 \alias{extract_graph_attribute}
 \title{Extract attributes from the graph object}
 \usage{
-extract_vertex_attribute(x, name)
+extract_vertex_attribute(
+  x,
+  name,
+  active = FALSE,
+  onset = NULL,
+  terminus = NULL,
+  length = NULL,
+  at = NULL,
+  ...
+)
 
 extract_vertex_names(x)
 
-extract_edge_attribute(x, name)
+extract_edge_attribute(
+  x,
+  name,
+  active = FALSE,
+  onset = NULL,
+  terminus = NULL,
+  length = NULL,
+  at = NULL,
+  ...
+)
 
 extract_graph_attribute(x, name)
 }
 \arguments{
-\item{x}{graph object of class \code{igraph} or \code{network}}
+\item{x}{graph object of class \code{igraph}, \code{network}, or
+\code{networkDynamic}}
 
 \item{name}{name of the attribute to be accessed}
+
+\item{active}{logical; should an active attribute be retrieved from a
+\code{networkDynamic} object? Defaults to \code{FALSE}.}
+
+\item{onset}{start of the queried time interval. Only used when
+\code{active = TRUE} and \code{x} is a \code{networkDynamic} object.}
+
+\item{terminus}{end of the queried time interval. Only used when
+\code{active = TRUE} and \code{x} is a \code{networkDynamic} object.}
+
+\item{length}{interval length. Only used when \code{active = TRUE} and
+\code{x} is a \code{networkDynamic} object.}
+
+\item{at}{single time point to query. Only used when \code{active = TRUE}
+and \code{x} is a \code{networkDynamic} object.}
+
+\item{...}{additional arguments passed to the underlying
+\code{networkDynamic} active-attribute accessors, for example
+\code{rule}, \code{dynamic.only}, \code{unlist}, \code{v}, or \code{e}.}
 }
 \value{
 the values of the requested attributes (if any)
 }
 \description{
-Extract attributes from the graph object
+These accessors provide one consistent API for static \code{igraph} and
+\code{network} objects, and they can also retrieve active attributes from
+\code{networkDynamic} objects.
+}
+\details{
+With the default \code{active = FALSE}, a \code{networkDynamic} object is
+treated like a regular \code{network} object. In other words, the function
+returns the attribute exactly as it is stored in the object. Static
+attributes can therefore be requested by their usual names, whereas
+temporally extended attributes need their raw TEA names such as
+\code{status.active} or \code{weight.active}.
+
+When \code{active = TRUE}, the \code{networkDynamic} backend is used and the
+timing arguments are forwarded to the corresponding
+\code{networkDynamic::get.*.attribute.active()} function. This makes it
+possible to request attribute values at a single time point (\code{at}) or
+over an interval (\code{onset}, \code{terminus}, \code{length}).
 }

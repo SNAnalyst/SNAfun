@@ -80,7 +80,7 @@
 #' \code{disconnected}, the first value will be used only.
 #' 
 #' @note This function is inspired by the
-#'  \code{\link[NetSwan]{swan_efficiency}} function.
+#'  \code{NetSwan::swan_efficiency()} function.
 #' Our function is more robust and a lot more useful (e.g., the 
 #' original function was useless for not-fully connected graphs.)
 #' Our function yields the same SCORE as \code{swan_efficiency} 

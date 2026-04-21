@@ -4,7 +4,7 @@
 \alias{to_igraph}
 \title{Make igraph object}
 \usage{
-to_igraph(x, bipartite = FALSE, vertices = NULL)
+to_igraph(x, bipartite = FALSE, vertices = NULL, directed = NULL)
 }
 \arguments{
 \item{x}{input object}
@@ -15,6 +15,12 @@ only used when a matrix is converted to an \code{igraph} object and is
 ignored otherwise.}
 
 \item{vertices}{A data frame with vertex metadata, or \code{NULL}. See details below.}
+
+\item{directed}{Optional logical override that is only used for
+\code{data.frame} edgelists. Leave \code{NULL} to let \code{snafun} infer
+the most plausible interpretation from hidden metadata and the visible rows.
+Set \code{FALSE} to force an undirected one-mode graph when a plain external
+edgelist only lists each undirected edge once.}
 }
 \description{
 Make an igraph object from various input types.
@@ -32,10 +38,12 @@ The data.frame requires the first column to contain the senders and the
 second column contains the receivers. If there are any additional 
 columns, these are considered to be edge attributes.
 
-NOTE: The created \code{igraph} object is considered to be directed, 
-depending on the structure of the input. 
-If an undirected network is required, 
-run \code{\link[igraph]{as.undirected}} on the output from this function.}
+Edgelists created by \code{snafun::to_edgelist()} preserve the original
+directedness through hidden metadata. For plain external edgelists,
+\code{snafun} infers an undirected one-mode graph only when every visible row
+has an exact reciprocal counterpart; otherwise the safest default is a
+directed graph. Use \code{directed = FALSE} when a plain external edgelist
+lists each undirected edge only once.}
 }
 
 When a matrix is used as input, the function the number of rows is equal  
@@ -56,6 +64,11 @@ vertex attribute. Other columns will be added as additional
 vertex attributes. If \code{vertices} is not \code{NULL} 
 then the symbolic edge list given in \code{x} is checked to contain only
 vertex names listed in vertices. 
+
+When \code{x} originates from \code{snafun::to_edgelist()}, these vertex
+metadata are recovered automatically from hidden attributes. That lets
+isolates survive a graph -> edgelist -> igraph roundtrip without changing
+the visible edgelist columns.
 See \code{\link[igraph]{graph_from_data_frame}} for the underlying function.
 }
 \note{

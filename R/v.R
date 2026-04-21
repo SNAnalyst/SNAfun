@@ -22,6 +22,21 @@
 #' @param rescaled if \code{TRUE}, the scores are rescaled so they sum to 1.
 #' @param damping The damping factor (‘d’ in the original paper).
 #' @param k The k parameter. The default is 3.
+#' @param T Integer indicating the maximum number of diffusion steps. In the
+#' first step the adjacency or probability matrix itself is used, in the second
+#' step its square, and so on. If \code{NULL}, \code{T} defaults to the network
+#' size, matching \code{keyplayer::diffusion()}.
+#' @param M Maximum geodistance between two nodes, above which they are treated
+#' as disconnected for fragmentation centrality. The default is \code{Inf}.
+#' @param binary Logical scalar. If \code{TRUE}, edge values are ignored and the
+#' graph is treated as binary for fragmentation centrality.
+#' @param large Logical scalar. If \code{TRUE}, the baseline geodistance matrix
+#' for fragmentation centrality is computed with \code{igraph}; otherwise the
+#' \code{sna} implementation is used. This mirrors the interface of
+#' \code{keyplayer::fragment()}.
+#' @param geodist.precomp Optional precomputed geodistance matrix for the
+#' original graph, used by \code{v_fragment()}. This can save work if the same
+#' graph is scored repeatedly.
 #' @param add.vertex.names logical, should the output contain vertex names. 
 #' This requires a vertex attribute \code{name} to be present in the graph. 
 #' It is ignored if the attributed is missing.
@@ -650,6 +665,497 @@ v_harmonic.network <- function(x, vids = NULL,
 
 
 
+
+
+
+####----------------------------------------------------------------------------
+#' @describeIn vli Diffusion centrality of a vertex.
+#'
+#' Diffusion centrality measures the expected number of information receivers
+#' that can be reached from a vertex within \code{T} diffusion steps. The
+#' implementation follows the definition used by
+#' \code{keyplayer::diffusion()}: it sums the matrix powers
+#' \eqn{A + A^2 + \dots + A^T} and then sums each row of that total matrix.
+#'
+#' The input matrix is interpreted directly as an adjacency or probability
+#' matrix. For weighted graphs, the edge weights are therefore treated as the
+#' probabilities or strengths with which information is passed along an edge.
+#' No additional transformation is applied inside this function.
+#'
+#' Compared with \code{keyplayer::diffusion()}, this \code{snafun} version adds
+#' S3 methods for \code{igraph}, \code{network}, adjacency matrices, and edge
+#' lists, so the same measure can be requested through one consistent API.
+#'
+#' Diffusion centrality is defined for one-mode graphs only. Bipartite inputs,
+#' and other inputs that convert to a non-square matrix, are rejected.
+#' @references
+#' An, W. and Liu, Y.-H. (2016). keyplayer: An R Package for Locating Key
+#' Players in Social Networks. \emph{The R Journal}, 8(1), 257-268.
+#'
+#' Banerjee, A., Chandrasekhar, A., Duflo, E. and Jackson, M. (2013). Diffusion
+#' of Microfinance. \emph{Science}, 341(6144).
+#' @examples
+#' #
+#' # v_diffusion
+#' P <- matrix(
+#'   c(0, 0.2, 0.6, 0,   0,
+#'     0, 0,   0,   0.8, 0,
+#'     0.2, 0.2, 0, 0.4, 0,
+#'     0, 0,   0,   0,   0.6,
+#'     0, 0.4, 0,   0,   0),
+#'   nrow = 5,
+#'   byrow = TRUE
+#' )
+#' v_diffusion(P, T = 2)
+#' v_diffusion(P, vids = c(1, 3), T = 2)
+#'
+#' g_i <- snafun::to_igraph(P)
+#' v_diffusion(g_i, T = 2)
+#'
+#' g_n <- snafun::to_network(P)
+#' v_diffusion(g_n, T = 2)
+#' @export
+v_diffusion <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  UseMethod("v_diffusion")
+}
+
+
+#' @export
+v_diffusion.default <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_diffusion")
+  stop(txt)
+}
+
+
+#' @export
+v_diffusion.matrix <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  if (nrow(x) != ncol(x)) {
+    stop(
+      "Diffusion centrality requires a square adjacency or probability matrix.",
+      call. = FALSE
+    )
+  }
+  if (!(is.numeric(x) || is.logical(x))) {
+    stop(
+      "'x' should be a numeric adjacency or probability matrix.",
+      call. = FALSE
+    )
+  }
+  if (any(is.na(x))) {
+    stop(
+      "'x' should not contain missing values.",
+      call. = FALSE
+    )
+  }
+  if (is.null(T)) {
+    T <- ncol(x)
+  }
+  if (!is.numeric(T) || length(T) != 1 || is.na(T) || T < 1 || T != as.integer(T)) {
+    stop(
+      "Please provide a positive integer for 'T'.",
+      call. = FALSE
+    )
+  }
+  T <- as.integer(T)
+  
+  x_numeric <- as.matrix(x)
+  storage.mode(x_numeric) <- "double"
+  
+  # We intentionally build the matrix powers iteratively instead of using an
+  # extra dependency. This mirrors the logic of keyplayer::diffusion() while
+  # keeping the implementation fully self-contained inside snafun.
+  power_matrix <- x_numeric
+  sum_of_powers <- x_numeric * 0
+  for (step in seq_len(T)) {
+    sum_of_powers <- sum_of_powers + power_matrix
+    if (step < T) {
+      power_matrix <- power_matrix %*% x_numeric
+    }
+  }
+  
+  ret <- rowSums(sum_of_powers)
+  if (!is.null(vids)) {
+    if (is.character(vids)) {
+      if (is.null(names(ret))) {
+        stop(
+          "Character 'vids' can only be used when vertex names are available.",
+          call. = FALSE
+        )
+      }
+      if (any(!vids %in% names(ret))) {
+        stop("You asked for vertices that are not present in the graph")
+      }
+    }
+    ret <- ret[vids]
+    if (any(is.na(ret))) {
+      stop("You asked for vertices that are not present in the graph")
+    }
+  }
+  
+  rescale_sum_to_one(ret, rescaled)
+}
+
+
+#' @export
+v_diffusion.igraph <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  if (snafun::is_bipartite(x)) {
+    stop(
+      "Diffusion centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_diffusion.matrix(x = mat, vids = vids, T = T, rescaled = rescaled)
+}
+
+
+#' @export
+v_diffusion.network <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  if (snafun::is_bipartite(x)) {
+    stop(
+      "Diffusion centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_diffusion.matrix(x = mat, vids = vids, T = T, rescaled = rescaled)
+}
+
+
+#' @export
+v_diffusion.data.frame <- function(x, vids = NULL, T = NULL, rescaled = FALSE) {
+  # An edge list with fully non-overlapping sender and receiver sets is a
+  # bipartite incidence description, not a one-mode adjacency structure.
+  if (length(intersect(as.character(x[, 1]), as.character(x[, 2]))) == 0) {
+    stop(
+      "Diffusion centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_diffusion.matrix(x = mat, vids = vids, T = T, rescaled = rescaled)
+}
+
+
+
+####----------------------------------------------------------------------------
+#' @describeIn vli Fragmentation centrality of a vertex.
+#'
+#' Fragmentation centrality measures how fragmented the residual network becomes
+#' after removing a vertex or set of vertices. The more fragmented the residual
+#' network is, the more central the removed vertex is under this criterion.
+#'
+#' This implementation mirrors the logic of \code{keyplayer::fragment()} while
+#' fitting into the \code{snafun} S3 interface. In particular, the baseline
+#' normalization factor is computed from the original graph, and residual
+#' networks are evaluated from their geodistances after node removal.
+#'
+#' Edge values are interpreted as distances when \code{binary = FALSE}. If your
+#' data encode tie strengths or probabilities instead, transform them to
+#' distances before calling \code{v_fragment()}.
+#'
+#' Fragmentation centrality is defined for one-mode graphs only. Bipartite
+#' inputs, and other inputs that convert to a non-square matrix, are rejected.
+#'
+#' Although the score is aggregated at the network level, the geodistances are
+#' computed on the directed graph whenever the input is directed, matching the
+#' behavior of \code{keyplayer::fragment()}.
+#' @references
+#' An, W. and Liu, Y.-H. (2016). keyplayer: An R Package for Locating Key
+#' Players in Social Networks. \emph{The R Journal}, 8(1), 257-268.
+#'
+#' Borgatti, S. P. (2006). Identifying Sets of Key Players in a Network.
+#' \emph{Computational and Mathematical Organization Theory}, 12(1), 21-34.
+#' @examples
+#' #
+#' # v_fragment
+#' W <- matrix(
+#'   c(0, 1, 3, 0, 0,
+#'     0, 0, 0, 4, 0,
+#'     1, 1, 0, 2, 0,
+#'     0, 0, 0, 0, 3,
+#'     0, 2, 0, 0, 0),
+#'   nrow = 5,
+#'   byrow = TRUE
+#' )
+#' A <- W
+#' A[W != 0] <- 1 / W[W != 0]
+#'
+#' v_fragment(A)
+#' v_fragment(A, vids = c(1, 3))
+#' v_fragment(A, M = 1)
+#' v_fragment(A, binary = TRUE)
+#'
+#' g_i <- snafun::to_igraph(A)
+#' v_fragment(g_i)
+#'
+#' g_n <- snafun::to_network(A)
+#' v_fragment(g_n)
+#' @export
+v_fragment <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                       large = TRUE, geodist.precomp = NULL,
+                       rescaled = FALSE) {
+  UseMethod("v_fragment")
+}
+
+
+#' @export
+v_fragment.default <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                               large = TRUE, geodist.precomp = NULL,
+                               rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_fragment")
+  stop(txt)
+}
+
+
+#' @export
+v_fragment.matrix <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                              large = TRUE, geodist.precomp = NULL,
+                              rescaled = FALSE) {
+  if (nrow(x) != ncol(x)) {
+    stop(
+      "Fragmentation centrality requires a square adjacency or distance matrix.",
+      call. = FALSE
+    )
+  }
+  if (!(is.numeric(x) || is.logical(x))) {
+    stop(
+      "'x' should be a numeric adjacency or distance matrix.",
+      call. = FALSE
+    )
+  }
+  if (any(is.na(x))) {
+    stop(
+      "'x' should not contain missing values.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(M) || length(M) != 1 || is.na(M) || M <= 0) {
+    stop(
+      "Please provide a positive numeric value for 'M'.",
+      call. = FALSE
+    )
+  }
+  if (!is.logical(binary) || length(binary) != 1 || is.na(binary)) {
+    stop(
+      "Please provide a single logical value for 'binary'.",
+      call. = FALSE
+    )
+  }
+  if (!is.logical(large) || length(large) != 1 || is.na(large)) {
+    stop(
+      "Please provide a single logical value for 'large'.",
+      call. = FALSE
+    )
+  }
+  
+  x_numeric <- as.matrix(x)
+  storage.mode(x_numeric) <- "double"
+  vertex_ids <- v_fragment_resolve_vids(vids = vids, x = x_numeric)
+  
+  original_distances <- v_fragment_get_original_distances(
+    x = x_numeric,
+    binary = binary,
+    large = large,
+    geodist.precomp = geodist.precomp
+  )
+  normalization_factor <- v_fragment_get_normalization_factor(original_distances)
+  
+  if (is.null(vertex_ids)) {
+    scores <- vapply(
+      seq_len(ncol(x_numeric)),
+      function(k) {
+        residual_matrix <- x_numeric[-k, -k, drop = FALSE]
+        v_fragment_score_removed_nodes(
+          residual_matrix = residual_matrix,
+          M = M,
+          binary = binary,
+          normalization_factor = normalization_factor
+        )
+      },
+      numeric(1)
+    )
+    if (!is.null(rownames(x_numeric))) {
+      names(scores) <- rownames(x_numeric)
+    }
+  } else {
+    residual_matrix <- x_numeric[-vertex_ids, -vertex_ids, drop = FALSE]
+    scores <- v_fragment_score_removed_nodes(
+      residual_matrix = residual_matrix,
+      M = M,
+      binary = binary,
+      normalization_factor = normalization_factor
+    )
+  }
+  
+  rescale_sum_to_one(scores, rescaled)
+}
+
+
+#' @export
+v_fragment.igraph <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                              large = TRUE, geodist.precomp = NULL,
+                              rescaled = FALSE) {
+  if (snafun::is_bipartite(x)) {
+    stop(
+      "Fragmentation centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_fragment.matrix(
+    x = mat,
+    vids = vids,
+    M = M,
+    binary = binary,
+    large = large,
+    geodist.precomp = geodist.precomp,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_fragment.network <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                               large = TRUE, geodist.precomp = NULL,
+                               rescaled = FALSE) {
+  if (snafun::is_bipartite(x)) {
+    stop(
+      "Fragmentation centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_fragment.matrix(
+    x = mat,
+    vids = vids,
+    M = M,
+    binary = binary,
+    large = large,
+    geodist.precomp = geodist.precomp,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_fragment.data.frame <- function(x, vids = NULL, M = Inf, binary = FALSE,
+                                  large = TRUE, geodist.precomp = NULL,
+                                  rescaled = FALSE) {
+  if (length(intersect(as.character(x[, 1]), as.character(x[, 2]))) == 0) {
+    stop(
+      "Fragmentation centrality is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  mat <- snafun::to_matrix(x)
+  v_fragment.matrix(
+    x = mat,
+    vids = vids,
+    M = M,
+    binary = binary,
+    large = large,
+    geodist.precomp = geodist.precomp,
+    rescaled = rescaled
+  )
+}
+
+
+# Normalize possible geodistance inputs to a plain matrix so callers can pass
+# either a matrix directly or the full return value from sna::geodist().
+v_fragment_normalize_geodist <- function(geodist.precomp) {
+  if (is.list(geodist.precomp) && "gdist" %in% names(geodist.precomp)) {
+    geodist.precomp <- geodist.precomp$gdist
+  }
+  if (!is.matrix(geodist.precomp)) {
+    stop(
+      "'geodist.precomp' should be a square matrix or a list containing 'gdist'.",
+      call. = FALSE
+    )
+  }
+  geodist.precomp
+}
+
+
+v_fragment_get_original_distances <- function(x, binary, large, geodist.precomp) {
+  if (!is.null(geodist.precomp)) {
+    distances <- v_fragment_normalize_geodist(geodist.precomp)
+  } else if (isTRUE(large)) {
+    graph <- igraph::graph_from_adjacency_matrix(
+      x,
+      mode = "directed",
+      weighted = if (isTRUE(binary)) NULL else "weight",
+      diag = TRUE
+    )
+    distances <- igraph::distances(graph, mode = "out")
+  } else {
+    distances <- sna::geodist(x, ignore.eval = binary)$gdist
+  }
+  if (!all(dim(distances) == dim(x))) {
+    stop(
+      "'geodist.precomp' should have the same dimensions as 'x'.",
+      call. = FALSE
+    )
+  }
+  distances
+}
+
+
+v_fragment_get_normalization_factor <- function(distances) {
+  distances <- as.matrix(distances)
+  diag(distances) <- Inf
+  max(1 / distances)
+}
+
+
+v_fragment_apply_reachability_limit <- function(distances, M) {
+  distances <- as.matrix(distances)
+  distances[distances > M] <- Inf
+  distances
+}
+
+
+v_fragment_score_removed_nodes <- function(residual_matrix, M, binary,
+                                           normalization_factor) {
+  residual_distances <- sna::geodist(residual_matrix, ignore.eval = binary)$gdist
+  residual_distances <- v_fragment_apply_reachability_limit(
+    distances = residual_distances,
+    M = M
+  )
+  diag(residual_distances) <- Inf
+  residual_weights <- 1 / residual_distances
+  residual_sum <- sum(residual_weights)
+  node_count <- ncol(residual_distances)
+  1 - residual_sum / (node_count * (node_count - 1) * normalization_factor)
+}
+
+
+v_fragment_resolve_vids <- function(vids, x) {
+  if (is.null(vids)) {
+    return(NULL)
+  }
+  if (is.character(vids)) {
+    if (is.null(rownames(x))) {
+      stop(
+        "Character 'vids' can only be used when vertex names are available.",
+        call. = FALSE
+      )
+    }
+    vids_numeric <- match(vids, rownames(x))
+    if (any(is.na(vids_numeric))) {
+      stop("You asked for vertices that are not present in the graph")
+    }
+    return(vids_numeric)
+  }
+  if (!is.numeric(vids)) {
+    stop("'vids' should be numeric or character.", call. = FALSE)
+  }
+  vids_numeric <- as.integer(vids)
+  if (any(is.na(vids_numeric)) || any(vids_numeric < 1) || any(vids_numeric > nrow(x))) {
+    stop("You asked for vertices that are not present in the graph")
+  }
+  vids_numeric
+}
 
 
 

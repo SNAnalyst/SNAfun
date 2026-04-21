@@ -76,16 +76,29 @@ count_unique_edges_in_interval <- function(x, start = NULL, end = NULL, number =
   if (is.null(start)) {start <- min(c(df$onset))}
   if (is.null(end)) {end <- max(c(df$terminus))}
   times <- seq(from = start, to = end, length.out = number + 1)
-  count <- sapply(1:length(times), function(z) {
+  
+  # There are 'number' intervals between 'number + 1' breakpoints. The earlier
+  # implementation iterated over all breakpoints, which added a spurious final
+  # interval with an NA upper bound.
+  count <- vapply(seq_len(number), function(z) {
     df_sub <- df[df$onset >= times[z] & df$onset < times[z + 1], c("head", "tail")]
+    
+    # For directed graphs, (A, B) and (B, A) are distinct ties and should stay
+    # distinct. For undirected graphs we sort each row first so that the two
+    # orientations collapse to the same canonical representation.
+    if (nrow(df_sub) == 0) {
+      return(0L)
+    }
+    
     if (directed) {
-      not_unique <- duplicated(t(apply(df_sub, 1, sort)))
-      df_sub <- df_sub[-not_unique, ]
+      df_sub <- unique(df_sub)
     } else {  # undirected network
+      df_sub <- as.data.frame(t(apply(df_sub, 1, sort)))
+      names(df_sub) <- c("head", "tail")
       df_sub <- unique(df_sub)
     }
-    return(nrow(df_sub))
-  })
+    as.integer(nrow(df_sub))
+  }, integer(1))
   count <- stats::as.ts(count)
   count
 }

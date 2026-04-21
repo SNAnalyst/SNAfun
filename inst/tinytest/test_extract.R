@@ -122,6 +122,15 @@ expect_inherits(m[[1]], "network")
 expect_true(count_vertices(m[[1]]) == 6)
 expect_true(count_edges(m[[1]]) == 9)
 
+# The default should return one egonet per vertex, not per edge.
+m_all <- extract_egonet(g_n)
+expect_equal(length(m_all), count_vertices(g_n))
+expect_true(all(vapply(m_all, inherits, logical(1), "network")))
+expect_equal(
+  snafun::to_matrix(m_all[[1]]),
+  snafun::to_matrix(extract_egonet(g_n, vertices = 1)[[1]])
+)
+
 
 # extract_loops ----------------------------------------------------------------
 # Create an adjacency matrix with loops

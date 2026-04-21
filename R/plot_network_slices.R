@@ -14,6 +14,11 @@
 #' into \code{number} equal-sized intervals.
 #' The plots include all edges that occur in that interval.
 #'
+#' Edge attributes are ignored while constructing the slices. This keeps the
+#' plot focused on edge presence and avoids warnings from
+#' \code{networkDynamic::network.collapse()} when the same edge has multiple
+#' active attribute values within one plotted interval.
+#'
 #' By default, the overall interval covers the period from where the first
 #' edges starts to where the last one ends.
 #'
@@ -45,8 +50,14 @@ plot_network_slices <- function (x, number = 9, start = NULL, end = NULL,
   if (is.null(end)) {end <- max(c(df$terminus))}
   times <- seq(from = start, to = end, length.out = number + 1)
 
+  # The plot only uses temporal edge presence, not edge attributes. Removing
+  # the non-essential edge attributes beforehand avoids networkDynamic warnings
+  # when a single plotted interval contains multiple active values for the same
+  # attribute on one edge.
+  x_plot <- drop_slice_plot_edge_attributes(x)
+
   sliced_nets <- lapply(1:(length(times) - 1), function(z) {
-    networkDynamic::network.collapse(x, onset = times[z],
+    networkDynamic::network.collapse(x_plot, onset = times[z],
                                      terminus = times[z + 1] - .00001)
   })
 
@@ -82,6 +93,27 @@ plot_network_slices <- function (x, number = 9, start = NULL, end = NULL,
 
   on.exit(par(mfrow = opar))
   invisible(NULL)
+}
+
+
+
+
+
+# Remove edge attributes that are irrelevant for slice plotting while keeping
+# the temporal edge activity itself intact. The 'active' attribute encodes when
+# edges exist; 'na' is retained because it is a standard network edge attribute.
+drop_slice_plot_edge_attributes <- function(x) {
+  attrs <- network::list.edge.attributes(x)
+  attrs_to_keep <- c("active", "na")
+  attrs_to_drop <- setdiff(attrs, attrs_to_keep)
+  if (length(attrs_to_drop) == 0) {
+    return(x)
+  }
+  x_plot <- x
+  for (attr in attrs_to_drop) {
+    x_plot <- network::delete.edge.attribute(x_plot, attr)
+  }
+  x_plot
 }
 
 
@@ -144,7 +176,6 @@ layout.distance <- function (net,
   dg <- sna::geodist(raw, inf.replace = default.dist, ignore.eval = is.null(weight.attr))$gdist
   return(dg)
 }
-
 
 
 

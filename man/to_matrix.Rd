@@ -4,10 +4,16 @@
 \alias{to_matrix}
 \title{Make a matrix from a graph}
 \usage{
-to_matrix(x)
+to_matrix(x, directed = NULL)
 }
 \arguments{
 \item{x}{graph object}
+
+\item{directed}{Optional logical override that is only used for
+\code{data.frame} edgelists. Leave \code{NULL} to let \code{snafun} infer
+the most plausible interpretation from hidden metadata and the visible rows.
+Set \code{FALSE} to force an undirected one-mode matrix when a plain
+external edgelist only lists each undirected edge once.}
 }
 \value{
 a \code{matrix} object
@@ -32,10 +38,14 @@ matrix is weighted as well.}
 'from' and 'to'. If it exists, the third column is used for the values of the 
 cells in the matrix. If there are only two columns in the edgelist, 
 the matrix is weighted in case an edge occurs multiple times.
-The graph is assumed to be directed, so one needs to symmetrize the matrix 
-afterwards if the graph is undirected. In case the senders and receivers have 
-no overlap in the edgelist, the graph is assumed to be bipartite and an 
-incidence matrix (potentially weighted) is returned}
+Edgelists created by \code{snafun::to_edgelist()} carry hidden metadata that
+preserve isolates and the original directedness. For plain external
+edgelists, \code{snafun} infers an undirected one-mode matrix when every row
+has an exact reciprocal counterpart; otherwise the safest default is a
+directed interpretation. In case the senders and receivers have no overlap in
+the edgelist, the graph is treated as bipartite and an incidence matrix
+(potentially weighted) is returned. Use \code{directed = FALSE} when a plain
+external edgelist lists each undirected edge only once.}
 }
 }
 \examples{

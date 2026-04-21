@@ -2,7 +2,7 @@
 title: "Creating a graph object"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Creating-a-graph-object}
+  %\VignetteIndexEntry{Creating a graph object}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

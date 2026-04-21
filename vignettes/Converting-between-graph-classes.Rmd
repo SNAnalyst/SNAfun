@@ -2,7 +2,7 @@
 title: "Converting between graph classes"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Converting-between-graph-classes}
+  %\VignetteIndexEntry{Converting between graph classes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

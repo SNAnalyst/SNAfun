@@ -2,7 +2,7 @@
 title: "ERGM for temporal networks"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{ERGM-for-temporal-networks}
+  %\VignetteIndexEntry{ERGM for temporal networks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

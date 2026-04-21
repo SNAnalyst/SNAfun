@@ -23,7 +23,6 @@
 #'
 #' @return nothing, the object is merely printed
 #' @name print
-#' @export
 #' @examples 
 #' g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
 #' g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
@@ -43,5 +42,4 @@ print.igraph <- function(x, ...) {
 print.network <- function(x, na.omit = FALSE, ...) {
   network::print.network(x = x, na.omit = na.omit, ...)
 }
-
 

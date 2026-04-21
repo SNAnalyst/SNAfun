@@ -151,10 +151,14 @@ i -> j and j -> k (regardless of whether there is an i -> k edge).
 Weights are discarded. Specific functions that can alternatively be used (and are 
 called by this function) include \code{\link[sna]{gtrans}} (for objects of 
 class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
-class \code{igraph}).
+class \code{igraph}). Internally, \code{snafun} now computes weak
+transitivity from a binary adjacency matrix for all supported input formats.
+This keeps the result consistent across backends and also allows the
+function to work for one-mode matrices and edge lists.
 
-The \code{network} and \code{igraph} implementations differ and can give 
-somewhat different results.
+Self-loops are ignored, weights are discarded, and the result is
+\code{NaN} when there are no valid length-2 paths that could potentially be
+transitive. Bipartite inputs are not supported.
 
 \item \code{g_diameter()}: Diameter of a graph. Weights are discarded. The diameter is 
 equal to the maximum eccentricity scores across all vertices. 
@@ -253,6 +257,12 @@ g <- florentine$flobusiness
 is_directed(g)  # FALSE
 g_transitivity(g)
 g_transitivity(to_network(g))
+
+m <- snafun::to_matrix(g)
+g_transitivity(m)
+
+el <- snafun::to_edgelist(g)
+g_transitivity(el)
 #
 # diameter
 g <- igraph::make_ring(10)

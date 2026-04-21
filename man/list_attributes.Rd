@@ -7,18 +7,71 @@
 \alias{list_graph_attributes}
 \title{List the attributes in the graph object}
 \usage{
-list_vertex_attributes(x)
+list_vertex_attributes(
+  x,
+  active = FALSE,
+  onset = NULL,
+  terminus = NULL,
+  length = NULL,
+  at = NULL,
+  ...
+)
 
-list_edge_attributes(x)
+list_edge_attributes(
+  x,
+  active = FALSE,
+  onset = NULL,
+  terminus = NULL,
+  length = NULL,
+  at = NULL,
+  ...
+)
 
 list_graph_attributes(x)
 }
 \arguments{
-\item{x}{graph object of class \code{igraph} or \code{network}}
+\item{x}{graph object of class \code{igraph}, \code{network}, or
+\code{networkDynamic}}
+
+\item{active}{logical; should active attributes be listed for a
+\code{networkDynamic} object? Defaults to \code{FALSE}.}
+
+\item{onset}{start of the queried time interval. Only used when
+\code{active = TRUE} and \code{x} is a \code{networkDynamic} object.}
+
+\item{terminus}{end of the queried time interval. Only used when
+\code{active = TRUE} and \code{x} is a \code{networkDynamic} object.}
+
+\item{length}{interval length. Only used when \code{active = TRUE} and
+\code{x} is a \code{networkDynamic} object.}
+
+\item{at}{single time point to query. Only used when \code{active = TRUE}
+and \code{x} is a \code{networkDynamic} object.}
+
+\item{...}{additional arguments passed to the underlying
+\code{networkDynamic} active-attribute accessors, for example
+\code{dynamic.only}.}
 }
 \value{
 the names of the requested attributes (if any)
 }
 \description{
 List the attributes in the graph object using a consistent API
+}
+\details{
+For static \code{igraph} and \code{network} objects this function returns
+the regular vertex, edge, or graph attributes. For \code{networkDynamic}
+objects you can also request the attributes that are active at a specific
+time point or over a time interval by setting \code{active = TRUE}.
+
+With the default \code{active = FALSE}, a \code{networkDynamic} object is
+treated like a regular \code{network} object. That means you get the
+attribute names exactly as they are stored inside the object. Static
+attributes keep their usual names, while temporally extended attributes are
+listed by their raw TEA names such as \code{weight.active}.
+
+When \code{active = TRUE}, the \code{networkDynamic} backend is used and
+additional timing arguments such as \code{at}, \code{onset}, and
+\code{terminus} are forwarded to the corresponding
+\code{networkDynamic::list.*.attributes.active()} function.
 }

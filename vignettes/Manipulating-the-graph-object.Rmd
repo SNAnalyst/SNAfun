@@ -2,7 +2,7 @@
 title: "Manipulating the graph object"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Manipulating-the-graph-object}
+  %\VignetteIndexEntry{Manipulating the graph object}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -62,4 +62,47 @@ any SNA project.
 ```{r table_manipulate, echo = FALSE, eval = TRUE}
 table_manipulate
 ```
+
+One common manipulation for two-mode data is to create one-mode
+projections. `snafun::make_projection()` now offers the same core
+behaviour as `igraph::bipartite_projection()`, but with a consistent API
+across `igraph`, `network`, edge lists, and incidence matrices.
+
+The clearest way to request a projection is with `which = "row"` or
+`which = "column"`, referring to the row and column partitions of the
+underlying incidence matrix. If you want both projections, use
+`which = "both"`.
+
+```{r projection_example, eval = TRUE}
+incidence <- matrix(
+  c(
+    1, 1,
+    1, 1,
+    0, 1
+  ),
+  nrow = 3,
+  byrow = TRUE,
+  dimnames = list(
+    c("Alice", "Bob", "Cecil"),
+    c("Project1", "Project2")
+  )
+)
+
+row_projection <- snafun::make_projection(
+  incidence,
+  which = "row"
+)
+column_projection <- snafun::make_projection(
+  incidence,
+  which = "column",
+  multiplicity = FALSE
+)
+
+row_projection
+column_projection
+```
+
+The row projection above is weighted by default, because the edge values
+count how many events two actors share. Setting `multiplicity = FALSE`
+returns a binary projection instead.
 

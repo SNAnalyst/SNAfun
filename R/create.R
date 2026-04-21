@@ -472,7 +472,7 @@ create_census_graph <- function (n_vertices, mut = 0.25, asym = 0.5, null = 0.25
 #' of edges between vertices of different communities and a specified fraction of
 #' edges is removed from the graph.
 #' 
-#' The internal code is largely based upon \code{\link[wfg]{network.simu}}, 
+#' The internal code is largely based upon \code{wfg::network.simu()},
 #' in the \pkg{wfg} package, which
 #' implements simulation of networks under the framework by Girvan and Newman.
 #' 
@@ -605,7 +605,7 @@ create_community_graph <- function(communitySizes = c(10, 20, 30),
 #'
 #' @return a graph of the specified class
 #' @export
-#' @note Much of the code comes from \code{\link[manynet]{create_components}} 
+#' @note Much of the code comes from \code{manynet::create_components()}
 #' in the \pkg{manynet} package.
 #'
 #' @examples
@@ -675,7 +675,6 @@ create_components_graph <- function(n_vertices, directed = FALSE,
     out
   }
 }
-
 
 
 

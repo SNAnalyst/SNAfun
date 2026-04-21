@@ -352,6 +352,5 @@ b_i <- create_bipartite(n_type1 = 10, n_type2 = 15, strategy = "gnp", p = .2)
 edges <- to_edgelist(b_i)
 b_n <- to_network(edges, bipartite = TRUE)
 expect_true(is_bipartite(b_n))
-expect_equal(network::network.size(b_n), length(unique(unlist(edges))))
+expect_equal(network::network.size(b_n), igraph::vcount(b_i))
 expect_equal(network::network.edgecount(b_n), igraph::ecount(b_i))
-

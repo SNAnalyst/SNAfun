@@ -22,7 +22,8 @@ For an x of class \code{igraph} or \code{network}, the function checks
 for the appropriate attribute in the graph x.
 
 For a \code{matrix} the function returns \code{TRUE} if the matrix is 
-not symmetric.
+square and not symmetric. Rectangular matrices are treated as bipartite
+incidence matrices and therefore return \code{FALSE}.
  
 For a \code{data.frame} the function returns \code{TRUE} if the reciprocity 
 of the network is not exactly 0 or 1.

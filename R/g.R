@@ -400,10 +400,14 @@ g_reciprocity.network <- function(x) {
 #' Weights are discarded. Specific functions that can alternatively be used (and are 
 #' called by this function) include \code{\link[sna]{gtrans}} (for objects of 
 #' class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
-#' class \code{igraph}).
+#' class \code{igraph}). Internally, \code{snafun} now computes weak
+#' transitivity from a binary adjacency matrix for all supported input formats.
+#' This keeps the result consistent across backends and also allows the
+#' function to work for one-mode matrices and edge lists.
 #' 
-#' The \code{network} and \code{igraph} implementations differ and can give 
-#' somewhat different results. 
+#' Self-loops are ignored, weights are discarded, and the result is
+#' \code{NaN} when there are no valid length-2 paths that could potentially be
+#' transitive. Bipartite inputs are not supported.
 #' 
 #' @export
 #' @examples
@@ -420,6 +424,12 @@ g_reciprocity.network <- function(x) {
 #' is_directed(g)  # FALSE
 #' g_transitivity(g)
 #' g_transitivity(to_network(g))
+#'
+#' m <- snafun::to_matrix(g)
+#' g_transitivity(m)
+#'
+#' el <- snafun::to_edgelist(g)
+#' g_transitivity(el)
 g_transitivity <- function(x) {
   UseMethod("g_transitivity")
 }
@@ -434,16 +444,80 @@ g_transitivity.default <- function(x) {
 
 #' @export
 g_transitivity.igraph <- function(x) {
-  igraph::transitivity(x, type = "global")
+  g_transitivity_matrix_backend(snafun::to_matrix(x))
 }
 
 
 #' @export
 g_transitivity.network <- function(x) {
-  sna::gtrans(x, 
-              mode = ifelse(is_directed(x), "digraph", "graph"),
-              measure = "weak",
-              use.adjacency = TRUE)
+  g_transitivity_matrix_backend(snafun::to_matrix(x))
+}
+
+
+#' @export
+g_transitivity.matrix <- function(x) {
+  g_transitivity_matrix_backend(x)
+}
+
+
+#' @export
+g_transitivity.data.frame <- function(x) {
+  g_transitivity_matrix_backend(snafun::to_matrix(x))
+}
+
+
+
+#' Compute weak transitivity from a binary adjacency matrix
+#'
+#' Internal helper that standardizes the transitivity calculation across the
+#' supported one-mode backends. Each non-zero entry is treated as a tie,
+#' self-loops are ignored, and the result is returned as the share of
+#' transitive length-2 paths among all length-2 paths.
+#'
+#' @param x adjacency matrix for a one-mode network
+#'
+#' @return numeric scalar with the weak transitivity, or \code{NaN} if there
+#' are no valid length-2 paths
+#' @keywords internal
+g_transitivity_matrix_backend <- function(x) {
+  if (!is.matrix(x)) {
+    x <- as.matrix(x)
+  }
+  
+  if (nrow(x) != ncol(x)) {
+    stop("'g_transitivity' is only defined for one-mode networks; bipartite inputs are not supported")
+  }
+  
+  x <- matrix(
+    data = x,
+    nrow = nrow(x),
+    ncol = ncol(x),
+    dimnames = dimnames(x)
+  )
+  storage.mode(x) <- "numeric"
+  x[is.na(x)] <- 0
+  x[x != 0] <- 1
+  
+  # Weak transitivity is defined on ties between distinct vertices, so loops do
+  # not create valid 2-paths or transitive closures here.
+  if (nrow(x) > 0) {
+    diag(x) <- 0
+  }
+  
+  if (nrow(x) == 0) {
+    return(NaN)
+  }
+  
+  two_paths <- x %*% x
+  diag(two_paths) <- 0
+  
+  denominator <- sum(two_paths)
+  if (denominator == 0) {
+    return(NaN)
+  }
+  
+  numerator <- sum(two_paths * x)
+  numerator / denominator
 }
 
 

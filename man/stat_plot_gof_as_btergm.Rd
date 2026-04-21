@@ -109,6 +109,7 @@ gof_btergm <- stat_plot_gof_as_btergm(m_btergm,
 }
 \seealso{
 Other statistics functions: 
+\code{\link{stat_cug}()},
 \code{\link{stat_ef_int}()},
 \code{\link{stat_plot_gof}()}
 }

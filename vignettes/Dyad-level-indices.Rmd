@@ -2,7 +2,7 @@
 title: "Dyad-level indices"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Dyad-level-indices}
+  %\VignetteIndexEntry{Dyad-level indices}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

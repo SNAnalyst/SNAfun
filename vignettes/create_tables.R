@@ -15,11 +15,9 @@ basic_theme <- function(data) {
       data_row.padding = 5,   # vertical padding around data cell content
       data_row.padding.horizontal = 20
     ) |>
-    gt::fmt_markdown(    # toon code als rmarkdown layout
-      columns = c(code)) |> 
     gt::tab_style(         # font and size title
       style = gt::cell_text(
-        font = gt::google_font("Titan One"),
+        font = "Helvetica",
         align = "center",
         size = "xx-large"
       ),
@@ -54,6 +52,29 @@ basic_theme <- function(data) {
         style = 'italic',
       ),
       locations = gt::cells_body(columns = "note")
+    ) |>
+    gt::text_transform(
+      locations = gt::cells_body(columns = "code"),
+      fn = function(x) {
+        vapply(
+          x,
+          FUN = function(one_code) {
+            if (is.na(one_code)) {
+              return(as.character(gt::html("")))
+            }
+            as.character(
+              gt::html(
+                paste0(
+                  "<div style=\"white-space: pre-wrap; font-family: monospace;\">",
+                  htmltools::htmlEscape(one_code),
+                  "</div>"
+                )
+              )
+            )
+          },
+          FUN.VALUE = character(1)
+        )
+      }
     )
 }
 
@@ -523,7 +544,13 @@ df_convert <- rbind(
   c(
     "Project a bipartite graph",
     "snafun",
-    NA,
+    "
+    snafun::make_projection(x, which = \"both\")
+
+    # or request a single partition
+    snafun::make_projection(x, which = \"row\")
+    snafun::make_projection(x, which = \"column\")
+    ",
     NA
   ),
   c(
@@ -670,7 +697,7 @@ df_manipulate <- rbind(
     "Print the graph object",
     "snafun",
     '
-    snafun::print(x)
+    print(x)
     ',
     NA
   ),
@@ -1844,7 +1871,7 @@ table_graph <- df_graph |>
     )
   ) |> 
   gt::tab_footnote(
-    footnote = "`$res` or `$vector` return the centrality scores",
+    footnote = "`\\$res` or `\\$vector` return the centrality scores",
     locations = gt::cells_body(
       rows = note == "freeman" & pkg == "igraph",
       columns = c(pkg)
@@ -2409,7 +2436,7 @@ df_models <- rbind(
   c("A statistic on a single network",
     "Conditional Uniform Graph test",
     "
-    sna::cug.test
+    snafun::stat_cug
     "),
   
   c("Association between two networks",
@@ -2456,7 +2483,7 @@ table_models <-
   ) |>
   gt::tab_style(         # font and size title
     style = gt::cell_text(
-      font = gt::google_font("Titan One"),
+      font = "Helvetica",
       align = "center",
       size = "xx-large"
     ),
@@ -2581,7 +2608,7 @@ table_btergm_terms <- df_btergm_terms |>
   ) |>
   gt::tab_style(         # font and size title
     style = gt::cell_text(
-      font = gt::google_font("Titan One"),
+      font = "Helvetica",
       align = "center",
       size = "xx-large"
     ),
@@ -2589,7 +2616,7 @@ table_btergm_terms <- df_btergm_terms |>
   ) |>
   gt::tab_style(     # font voor rijlabels
     style = gt::cell_text(
-      font = gt::google_font("IBM Plex Sans"),
+      font = "Helvetica",
       align = "left",
       size = "large",
       weight = 'bold',

@@ -25,7 +25,6 @@
 #'
 #' @return nothing, the object is merely plotted
 #' @name plot
-#' @export
 #' @examples 
 #' g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
 #' g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
@@ -49,5 +48,4 @@ plot.igraph <- function(x, ...) {
 plot.network <- function(x, ...) {
   network::plot.network(x = x, ...)
 }
-
 

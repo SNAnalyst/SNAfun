@@ -47,6 +47,7 @@
 #' @param verbose logical, if \code{FALSE}, the printing of most details 
 #' by the gof function is suppressed (but some warnings may still appear and 
 #' errors are always shown)
+#' @import ergm
 #' @family statistics functions
 #' @return the goodness of fit is silently returned
 #' @export
@@ -100,15 +101,31 @@ stat_plot_gof_as_btergm <- function(m,
     stop("'m' should be a fitted 'ergm' or 'btergm' model, but you inputted a ", klasse, " object")
   }
   
-  gofbtergm <- utils::getFromNamespace("gof.btergm", "btergm")
+  # Retrieve the optional dependency only now, so loading 'snafun' itself does
+  # not depend on 'btergm' being installed.
+  gofbtergm <- require_optional_namespace_object(
+    name = "gof.btergm",
+    package = "btergm",
+    caller = "stat_plot_gof_as_btergm"
+  )
   if (silent) {
-    g <- suppressMessages(gofbtergm(m, statistics = btergm_statistics, ...,
-                                              verbose = verbose),
-                          classes = c("message", "warning"))
+    # Compute the GOF only once. The earlier implementation evaluated the same
+    # expensive model diagnostics twice when 'silent = TRUE'.
+    g <- suppressWarnings(
+      suppressMessages(
+        gofbtergm(m, statistics = btergm_statistics, ..., verbose = verbose)
+      )
+    )
+  } else {
+    g <- suppressWarnings(
+      gofbtergm(m, statistics = btergm_statistics, ..., verbose = verbose)
+    )
   }
-  g <- suppressWarnings(gofbtergm(m, statistics = btergm_statistics, ...,
-                                            verbose = verbose))
-  plotgof <- utils::getFromNamespace("plot.gof", "btergm")
+  plotgof <- require_optional_namespace_object(
+    name = "plot.gof",
+    package = "btergm",
+    caller = "stat_plot_gof_as_btergm"
+  )
   plotgof(g)
   invisible(g)
 }
@@ -195,10 +212,18 @@ stat_plot_gof <- function(gof,
                           mean_lwd = 1, mean_lty = "dashed", 
                           ...) {
   if (inherits(gof, "gof.ergm")) {
-    plotgof <- utils::getFromNamespace("plot.gof", "ergm")
+    plotgof <- require_optional_namespace_object(
+      name = "plot.gof",
+      package = "ergm",
+      caller = "stat_plot_gof"
+    )
     plotgof(gof, ...)
   } else if (inherits(gof, "gof")) {
-    plotgof <- utils::getFromNamespace("plot.gof", "btergm")
+    plotgof <- require_optional_namespace_object(
+      name = "plot.gof",
+      package = "btergm",
+      caller = "stat_plot_gof"
+    )
     plotgof(gof, 
                       mean = mean_include, mean.lwd = mean_lwd, 
                       mean.lty = mean_lty, mean.col = mean_col,

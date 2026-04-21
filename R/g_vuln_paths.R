@@ -56,7 +56,7 @@
 #' @param digits number of decimals for \code{vuln_prop}.
 #'
 #' @note This function is inspired by
-#'  \code{\link[NetSwan]{swan_connectivity}}. 
+#'  \code{NetSwan::swan_connectivity()}. 
 #'  However, that function 
 #' is incorrect when the network is not fully connected. 
 #' Moreover, it does not correct for the ties to and from the 

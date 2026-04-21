@@ -240,8 +240,7 @@ expect_equal(g_density(g_m_u, loops = TRUE), den_u_l)
 full_m <- matrix(1, ncol = 10, nrow = 10)
 full_i_d <- snafun::to_igraph(full_m) |> 
   igraph::as.directed()
-full_i_d <- igraph::delete_edges(full_i_d, 
-            which(igraph::which_multiple(full_i_d, eids = igraph::E(full_i_d))))
+full_i_d <- igraph::delete_edges(full_i_d, snafun::extract_multiple_edges(full_i_d))
 full_i_u <- snafun::to_igraph(full_m)
 full_n_d <- network::as.network(full_m, directed = TRUE, loops = TRUE)
 full_n_u <- network::as.network(full_m, directed = FALSE, loops = TRUE)

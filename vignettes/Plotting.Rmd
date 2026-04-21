@@ -57,11 +57,12 @@ pre {
 
 ## Plotting in `snafun`
 
-The `snafun` package provides a `plot(x)` function, which allows the
-user to make a quick plot of a network, regardless of whether `x` is a
-graph of class `network` or `igraph`. This function wraps
-`network::plot.network` and `igraph::plot.igraph` and will use the
-default settings of these functions.
+The `snafun` package provides S3 plotting methods, which means that a
+plain call to `plot(x)` allows the user to make a quick plot of a
+network, regardless of whether `x` is a graph of class `network` or
+`igraph`. These methods wrap `network::plot.network` and
+`igraph::plot.igraph` and will use the default settings of these
+functions.
 
 However, one can also use all of the arguments from
 `network::plot.network` and `igraph::plot.igraph` to make the plots
@@ -71,8 +72,8 @@ Here is an example for a `network` object.
 
 ```{r snafun_plot_nw, echo = TRUE, eval = TRUE}
 g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
-snafun::plot(g_n)
-snafun::plot(g_n, vertex.cex = 3, vertex.col = "green", edge.lwd = 10, 
+plot(g_n)
+plot(g_n, vertex.cex = 3, vertex.col = "green", edge.lwd = 10, 
   edge.col = "darkgrey", usecurve = TRUE, edge.curve = .05, 
   arrowhead.cex = 3, displaylabels = TRUE, label.pos = 5)
 ```
@@ -81,8 +82,8 @@ And for an `igraph` graph object:
 
 ```{r snafun_plot_ig, echo = TRUE, eval = TRUE}
 g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
-snafun::plot(g_i)
-snafun::plot(g_i, vertex.size = 12, vertex.color = "green", edge.width = 5, edge.curved = TRUE)
+plot(g_i)
+plot(g_i, vertex.size = 12, vertex.color = "green", edge.width = 5, edge.curved = TRUE)
 ```
 
 The most common use case for the function is to make as quick plot of

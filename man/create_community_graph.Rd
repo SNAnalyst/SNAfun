@@ -38,7 +38,7 @@ vertices within each community. In addition, there is an overall probability
 of edges between vertices of different communities and a specified fraction of
 edges is removed from the graph.
 
-The internal code is largely based upon \code{\link[wfg]{network.simu}}, 
+The internal code is largely based upon \code{wfg::network.simu()},
 in the \pkg{wfg} package, which
 implements simulation of networks under the framework by Girvan and Newman.
 }

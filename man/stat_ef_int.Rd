@@ -38,6 +38,7 @@ stat_ef_int(m, "prob")
 }
 \seealso{
 Other statistics functions: 
+\code{\link{stat_cug}()},
 \code{\link{stat_plot_gof}()},
 \code{\link{stat_plot_gof_as_btergm}()}
 }

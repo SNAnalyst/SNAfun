@@ -4,13 +4,19 @@
 \alias{to_network}
 \title{Make network object}
 \usage{
-to_network(x, bipartite = FALSE)
+to_network(x, bipartite = FALSE, directed = NULL)
 }
 \arguments{
 \item{x}{graph data object}
 
 \item{bipartite}{logical, should \code{x} be considered to be bipartite? 
 This overrides the function's default choices.}
+
+\item{directed}{Optional logical override that is only used for
+\code{data.frame} edgelists. Leave \code{NULL} to let \code{snafun} infer
+the most plausible interpretation from hidden metadata and the visible rows.
+Set \code{FALSE} to force an undirected one-mode network when a plain
+external edgelist only lists each undirected edge once.}
 }
 \value{
 a \code{network} object
@@ -33,9 +39,12 @@ The data.frame requires the first column to contain the senders and the
 second column contains the receivers. If there are any additional 
 columns, these are considered to be edge attributes.
 
-NOTE: The created \code{network} object is considered to be directed. 
-If an undirected network is required, run \code{\link[igraph]{as.undirected}} 
-on the output from this function.}
+Edgelists created by \code{snafun::to_edgelist()} preserve the original
+directedness through hidden metadata. For plain external edgelists,
+\code{snafun} infers an undirected one-mode network only when every visible
+row has an exact reciprocal counterpart; otherwise the safest default is a
+directed network. Use \code{directed = FALSE} when a plain external edgelist
+lists each undirected edge only once.}
 }
 
 The argument \code{bipartite} is used to tell the function whether the input 
@@ -49,4 +58,8 @@ NOTE: as far as we know, this function is the only function that correctly
 deals with vertex attributes that themselves are lists in the conversion 
 from \code{igraph} (which allows lists) to \code{network} (which can not 
 deal with lists as attributes).
+
+When the input edgelist was created by \code{snafun::to_edgelist()}, hidden
+vertex metadata are reused automatically so isolates can survive a graph ->
+edgelist -> network roundtrip.
 }

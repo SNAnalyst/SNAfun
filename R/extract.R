@@ -197,8 +197,39 @@ extract_edge_id.igraph <- function(object, ego, alter, edgelist, ordered = FALSE
 
 #' Extract attributes from the graph object
 #'
-#' @param x graph object of class \code{igraph} or \code{network}
+#' These accessors provide one consistent API for static \code{igraph} and
+#' \code{network} objects, and they can also retrieve active attributes from
+#' \code{networkDynamic} objects.
+#'
+#' With the default \code{active = FALSE}, a \code{networkDynamic} object is
+#' treated like a regular \code{network} object. In other words, the function
+#' returns the attribute exactly as it is stored in the object. Static
+#' attributes can therefore be requested by their usual names, whereas
+#' temporally extended attributes need their raw TEA names such as
+#' \code{status.active} or \code{weight.active}.
+#'
+#' When \code{active = TRUE}, the \code{networkDynamic} backend is used and the
+#' timing arguments are forwarded to the corresponding
+#' \code{networkDynamic::get.*.attribute.active()} function. This makes it
+#' possible to request attribute values at a single time point (\code{at}) or
+#' over an interval (\code{onset}, \code{terminus}, \code{length}).
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, or
+#' \code{networkDynamic}
 #' @param name name of the attribute to be accessed
+#' @param active logical; should an active attribute be retrieved from a
+#' \code{networkDynamic} object? Defaults to \code{FALSE}.
+#' @param onset start of the queried time interval. Only used when
+#' \code{active = TRUE} and \code{x} is a \code{networkDynamic} object.
+#' @param terminus end of the queried time interval. Only used when
+#' \code{active = TRUE} and \code{x} is a \code{networkDynamic} object.
+#' @param length interval length. Only used when \code{active = TRUE} and
+#' \code{x} is a \code{networkDynamic} object.
+#' @param at single time point to query. Only used when \code{active = TRUE}
+#' and \code{x} is a \code{networkDynamic} object.
+#' @param ... additional arguments passed to the underlying
+#' \code{networkDynamic} active-attribute accessors, for example
+#' \code{rule}, \code{dynamic.only}, \code{unlist}, \code{v}, or \code{e}.
 #'
 #' @return the values of the requested attributes (if any)
 #' @name extract
@@ -207,25 +238,73 @@ NULL
 
 #' @export
 #' @rdname extract
-extract_vertex_attribute <- function(x, name) {
+extract_vertex_attribute <- function(x, name, active = FALSE, onset = NULL,
+                                     terminus = NULL, length = NULL, at = NULL,
+                                     ...) {
   UseMethod("extract_vertex_attribute")
 }
 
 #' @export
-extract_vertex_attribute.default <- function(x, name) {
+extract_vertex_attribute.default <- function(x, name, active = FALSE, onset = NULL,
+                                             terminus = NULL, length = NULL,
+                                             at = NULL, ...) {
   txt <- methods_error_message("x", "extract_vertex_attribute")
   stop(txt)
 }
 
 #' @export
-extract_vertex_attribute.igraph <- function(x, name) {
+extract_vertex_attribute.igraph <- function(x, name, active = FALSE, onset = NULL,
+                                            terminus = NULL, length = NULL,
+                                            at = NULL, ...) {
+  if (isTRUE(active)) {
+    stop("Active attribute queries are only implemented for 'networkDynamic' objects")
+  }
   igraph::vertex_attr(x, name = name)
 }
 
 
 #' @export
-extract_vertex_attribute.network <- function(x, name) {
+extract_vertex_attribute.network <- function(x, name, active = FALSE, onset = NULL,
+                                             terminus = NULL, length = NULL,
+                                             at = NULL, ...) {
+  if (isTRUE(active) && networkDynamic::is.networkDynamic(x)) {
+    return(
+      networkDynamic::get.vertex.attribute.active(
+        x = x,
+        prefix = name,
+        onset = onset,
+        terminus = terminus,
+        length = length,
+        at = at,
+        ...
+      )
+    )
+  }
+  if (isTRUE(active)) {
+    stop("Active attribute queries are only implemented for 'networkDynamic' objects")
+  }
   network::get.vertex.attribute(x, attrname = name)
+}
+
+
+#' @export
+extract_vertex_attribute.networkDynamic <- function(x, name, active = FALSE,
+                                                    onset = NULL,
+                                                    terminus = NULL,
+                                                    length = NULL,
+                                                    at = NULL, ...) {
+  if (!isTRUE(active)) {
+    return(network::get.vertex.attribute(x, attrname = name))
+  }
+  networkDynamic::get.vertex.attribute.active(
+    x = x,
+    prefix = name,
+    onset = onset,
+    terminus = terminus,
+    length = length,
+    at = at,
+    ...
+  )
 }
 
 
@@ -255,25 +334,73 @@ extract_vertex_names.network <- function(x) {
 
 #' @export
 #' @rdname extract
-extract_edge_attribute <- function(x, name) {
+extract_edge_attribute <- function(x, name, active = FALSE, onset = NULL,
+                                   terminus = NULL, length = NULL, at = NULL,
+                                   ...) {
   UseMethod("extract_edge_attribute")
 }
 
 #' @export
-extract_edge_attribute.default <- function(x, name) {
+extract_edge_attribute.default <- function(x, name, active = FALSE, onset = NULL,
+                                           terminus = NULL, length = NULL,
+                                           at = NULL, ...) {
   txt <- methods_error_message("x", "extract_edge_attribute")
   stop(txt)
 }
 
 #' @export
-extract_edge_attribute.igraph <- function(x, name) {
+extract_edge_attribute.igraph <- function(x, name, active = FALSE, onset = NULL,
+                                          terminus = NULL, length = NULL,
+                                          at = NULL, ...) {
+  if (isTRUE(active)) {
+    stop("Active attribute queries are only implemented for 'networkDynamic' objects")
+  }
   igraph::edge_attr(x, name = name)
 }
 
 
 #' @export
-extract_edge_attribute.network <- function(x, name) {
+extract_edge_attribute.network <- function(x, name, active = FALSE, onset = NULL,
+                                           terminus = NULL, length = NULL,
+                                           at = NULL, ...) {
+  if (isTRUE(active) && networkDynamic::is.networkDynamic(x)) {
+    return(
+      networkDynamic::get.edge.attribute.active(
+        x = x,
+        prefix = name,
+        onset = onset,
+        terminus = terminus,
+        length = length,
+        at = at,
+        ...
+      )
+    )
+  }
+  if (isTRUE(active)) {
+    stop("Active attribute queries are only implemented for 'networkDynamic' objects")
+  }
   network::get.edge.attribute(x, attrname = name)
+}
+
+
+#' @export
+extract_edge_attribute.networkDynamic <- function(x, name, active = FALSE,
+                                                  onset = NULL,
+                                                  terminus = NULL,
+                                                  length = NULL,
+                                                  at = NULL, ...) {
+  if (!isTRUE(active)) {
+    return(network::get.edge.attribute(x, attrname = name))
+  }
+  networkDynamic::get.edge.attribute.active(
+    x = x,
+    prefix = name,
+    onset = onset,
+    terminus = terminus,
+    length = length,
+    at = at,
+    ...
+  )
 }
 
 
@@ -459,13 +586,20 @@ extract_neighbors.igraph <- function(x, vertex, type = c("out", "in", "all")) {
   if (length(vertex) != 1) stop("You need to specify exactly 1 vertex")
   
   nb <- tryCatch(igraph::neighbors(graph = x, v = vertex, mode = type), error = function(e) e)
-  if (inherits(nb, "simpleError")) {
-    if (nb$message == "Invalid vertex names") {
+  if (inherits(nb, "error")) {
+    nb_message <- conditionMessage(nb)
+    
+    # igraph error classes and messages have changed across versions.
+    # We normalize the common "vertex not found" variants here so users
+    # continue to see the stable snafun-facing error message.
+    if (identical(nb_message, "Invalid vertex names")) {
       stop("This vertex is in not the graph")
-    } else if (grepl("Given vertex is not in the graph", nb$message)) {
+    } else if (grepl("Given vertex is not in the graph", nb_message, fixed = TRUE)) {
+      stop("This vertex is in not the graph")
+    } else if (grepl("Vertex .* is not in the graph", nb_message)) {
       stop("This vertex is in not the graph")
     } else {
-      stop(nb$message)
+      stop(nb_message)
     }
   } else {
     nb <- as.vector(nb)
@@ -597,7 +731,10 @@ extract_egonet.network <- function(x, vertices = NULL, order = 1, type = c("all"
   if (is.character(vertices)) {  # turn name into vertex id
     vertices <- which(network::network.vertex.names(x) %in% vertices)
   }
-  if (is.null(vertices)) vertices <- network::valid.eids(x)
+  # The default should be "all vertices". The previous code used valid edge
+  # ids, which can exceed the vertex count and therefore produce incorrect or
+  # failing ego-network extraction on graphs with more edges than vertices.
+  if (is.null(vertices)) vertices <- seq_len(network::network.size(x))
   
   lijst <- lapply(vertices, function(z) {
     alters <- get_neigbors_network(x = x, vertices = z, type = type, steps = order)
@@ -670,6 +807,42 @@ get_neigbors_network <- function(x, vertices, type, steps = 1) {
 NULL
 
 
+#' Extract multiple edges
+#'
+#' Identify which edge ids are extra copies of an already existing dyad.
+#'
+#' This function mirrors the practical use of \code{igraph::which_multiple()}
+#' followed by \code{which()}: it returns the ids of the edges that would need
+#' to be removed to leave at most one edge per dyad.
+#'
+#' In directed graphs the ordered pair \eqn{(i, j)} is treated as different from
+#' \eqn{(j, i)}. In undirected graphs those are considered the same dyad.
+#' Repeated self-loops are handled as repeated edges on the same dyad as well.
+#'
+#' The function is implemented for graph objects that actually store separate
+#' edge instances. Matrix inputs are deliberately not supported here, because a
+#' matrix does not retain stable edge ids; use \code{\link{has_multiple_edges}}
+#' on matrices if you only need to know whether collapsed multiplicities are
+#' present.
+#'
+#' @param x input graph of class \code{igraph} or \code{network}
+#'
+#' @return Integer vector with edge ids of the redundant multiple edges, or
+#' \code{NULL} when no multiple edges are present.
+#' @export
+#' @name extract_multiple_edges
+#'
+#' @examples
+#' g <- igraph::make_empty_graph(n = 3, directed = TRUE)
+#' g <- igraph::add_edges(g, c(1, 2, 1, 2, 2, 3))
+#' extract_multiple_edges(g)   # second edge on 1 -> 2
+#'
+#' nw <- network::network.initialize(3, directed = TRUE, loops = TRUE, multiple = TRUE)
+#' nw <- network::add.edges(nw, tail = c(1, 1, 2), head = c(2, 2, 3))
+#' extract_multiple_edges(nw)
+NULL
+
+
 #' @export
 #' @rdname extract_loops
 extract_loops <- function(x) {
@@ -703,6 +876,60 @@ extract_loops.network <- function(x) {
   } else {
     NULL
   }
+}
+
+
+
+#' @export
+#' @rdname extract_multiple_edges
+extract_multiple_edges <- function(x) {
+  UseMethod("extract_multiple_edges")
+}
+
+
+#' @export
+extract_multiple_edges.default <- function(x) {
+  txt <- methods_error_message("x", "extract_multiple_edges")
+  stop(txt)
+}
+
+
+#' @export
+extract_multiple_edges.igraph <- function(x) {
+  # We call the igraph backend directly here because it already implements the
+  # exact semantics we want: return every repeated edge except the first copy in
+  # each dyad. That keeps snafun aligned with igraph on igraph inputs.
+  multiple_edges <- which(igraph::which_multiple(x))
+  if (length(multiple_edges) > 0) {
+    return(multiple_edges)
+  }
+  NULL
+}
+
+
+#' @export
+extract_multiple_edges.network <- function(x) {
+  valid_edge_ids <- network::valid.eids(x)
+  if (length(valid_edge_ids) == 0) {
+    return(NULL)
+  }
+  
+  # network::delete.edges() can leave NULL placeholders inside x$mel, so we
+  # only inspect currently valid edge ids. This preserves the public edge ids
+  # while avoiding assumptions about dense internal storage.
+  edge_from <- vapply(valid_edge_ids, function(one_edge_id) x$mel[[one_edge_id]]$outl, integer(1))
+  edge_to <- vapply(valid_edge_ids, function(one_edge_id) x$mel[[one_edge_id]]$inl, integer(1))
+  edge_keys <- multiple_edge_keys(
+    from = edge_from,
+    to = edge_to,
+    directed = snafun::is_directed(x)
+  )
+  multiple_edges <- valid_edge_ids[duplicated(edge_keys)]
+  
+  if (length(multiple_edges) > 0) {
+    return(multiple_edges)
+  }
+  NULL
 }
 
 

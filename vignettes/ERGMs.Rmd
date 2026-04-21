@@ -2,7 +2,7 @@
 title: "Exponential Random Graph Models"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Terms-classification-for-every-Exponential-Random-Graph-Model}
+  %\VignetteIndexEntry{Exponential Random Graph Models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

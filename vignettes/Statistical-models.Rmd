@@ -2,7 +2,7 @@
 title: "Statistical Models"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Statistical-models}
+  %\VignetteIndexEntry{Statistical Models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -113,6 +113,22 @@ The weigh matrix (matrices) is (are) row-normalized by this function. If
 you want to run the model using non-standardized weight matrices, use
 the `sna::lnam` function instead.
 
+The preprocessing of the weight matrix deserves a bit of extra attention:
+
+- `W` and `W2` may be supplied as matrices, `igraph` objects, `network`
+  objects, or edgelists/data frames, but after conversion they must
+  represent square one-mode weight matrices.
+- Non-zero rows are row-standardized internally. If a row already sums to
+  one, it is left alone; if not, `snafun::stat_nam()` standardizes it for
+  you and reports that via a message.
+- Zero rows are allowed when `zero.policy = TRUE`. That is the natural way
+  to represent isolates or actors without outgoing influence ties.
+- Diagonal values are kept. So if you include self-weights, they are part
+  of the fitted NAM instead of being dropped silently.
+- Edge weights are also kept during conversion. For edgelists, columns 1
+  and 2 are interpreted as sender and receiver, and column 3 (if present)
+  is used as the numeric weight.
+
 The `snafun` package provides a useful `stat_nam_summary` method (that
 shows you an overview of the results) and a `plot_nam` method (that you
 use to check model assumptions).
@@ -125,117 +141,111 @@ There are two methods to perform a conditional Uniform graph test.
 
 The first is to generate the graphs manually and calculate the measures
 on each graph. Generation of these graphs can be done using
-`snafun::create_random_graph` (which conditions on size and density).
-The equivalent functions in `sna` are `sna::rgraph` and `sna::rgnm`
-(note that these generate a matrix, rather than an `igraph` or `network`
-graph). See [the data generation table](#generate) for these functions.
+`snafun::create_random_graph` (which conditions on size and density) or
+`snafun::create_census_graph` (which conditions on the dyad census). The
+equivalent functions in `sna` are `sna::rgraph`, `sna::rgnm`, and
+`sna::rguman` (note that these generate matrices rather than `igraph` or
+`network` objects). See [the data generation table](#generate) for these
+functions.
 
-The second approach is to use a function that does the graph generation
-and computes the network measure for you. The preferred is
-`sna::cugtest`, which is specified as follows:
+The second, and usually more convenient, approach is to use
+`snafun::stat_cug()`. This function generalizes `sna::cug.test()` to the
+graph classes supported in `snafun` and lets you use `sna`, `igraph`,
+`snafun`, or custom statistics directly.
 
 ```{r}
-sna::cug.test(g, FUN, mode = c("digraph", "graph"), cmode = c("size",
-    "edges", "dyad.census"), reps = 1000,
-    ignore.eval = TRUE, FUN.args = list())
+snafun::stat_cug(
+  x,
+  FUN,
+  mode = c("auto", "digraph", "graph"),
+  cmode = c("size", "edges", "dyad.census"),
+  diag = FALSE,
+  reps = 1000,
+  graph = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
+  ignore.eval = TRUE,
+  FUN.args = list()
+)
 ```
-
-See the `sna` help function for details.
 
 Here
 
 -   `FUN` is the function that needs to be calculated on each graph
 
--   `FUN.args` contains any arguments that are required for the function
-    you specified in `FUN`
+-   `FUN.args` contains any additional arguments for the function you
+    specified in `FUN`
 
--   `cmode` determines the type of graphs that are drawn (ie. what you
-    condition on). The options are
+-   `cmode` determines the type of graphs that are drawn, i.e. what you
+    condition on. The options are
 
-    -   "size": this generates graphs with a particular size and density
-        0.5. You rarely want this.
+    -   `"size"`: this generates graphs with the same size and tie
+        probability 0.5. You rarely want this.
 
-    -   "edges": this conditions on a specific edge count (or an exact
-        edge value distribution)
+    -   `"edges"`: this conditions on a specific edge count
 
-    -   "dyad.census": this conditions on a dyad census (or dyad value
-        distribution)
+    -   `"dyad.census"`: this conditions on a dyad census
+
+-   `graph` determines in which graph class `FUN` is evaluated. If you
+    leave it at `"auto"`, `snafun` first tries the original graph class
+    and then tries the other supported classes until `FUN` works.
+
+-   `ignore.eval = TRUE` means that current CUG tests in `snafun` are
+    structural and binary: weights are ignored and every non-zero tie is
+    treated as present.
 
 For example, in order to test whether the transitivity in your graph `g`
-is exceptional for a network of the same size and density as in `g`, you
-would run
+is exceptional for a network of the same size and edge count as in `g`,
+you would run:
 
 ```{r}
-sna::cug.test(g, sna::gtrans, cmode = "edges")
+snafun::stat_cug(g, FUN = snafun::g_transitivity, cmode = "edges")
 ```
 
-It is wise to always explicitly tell the function whether your graph is
-directed or not, so a better way to specify the previous function is
+If your graph is undirected, it is still wise to say so explicitly:
 
 ```{r}
-sna::cug.test(g, mode = "graph", FUN = sna::gtrans,
-              cmode = "edges", reps = 1000,
-              FUN.args = list(mode = "graph"))
+snafun::stat_cug(
+  g,
+  FUN = snafun::g_transitivity,
+  mode = "graph",
+  cmode = "edges",
+  reps = 1000
+)
 ```
 
-Testing the betweenness centralization of you network `g` could be
-performed as follows, again conditioning on size and density:
+You can also use `igraph` functions directly, even when the observed
+network is not stored as an `igraph` object. For example:
 
 ```{r}
-sna::cug.test(g,
-              sna::centralization,
-              FUN.arg=list(FUN = sna::betweenness),
-              mode="graph",
-              cmode="edges")
+snafun::stat_cug(
+  graph_object,
+  FUN = igraph::transitivity,
+  mode = "graph",
+  cmode = "edges",
+  reps = 200,
+  graph = "igraph"
+)
 ```
 
-There is also a useful `plot` method for the result of the CUG test.
-
-<br>
-
-The huuuuuge downside of the `cug.test` function is that it only takes
-specific input graps (perferably in matrix-format) and only allows one
-to test with functions implemented within the `sna` package. However,
-`snafun` can fix that. You only need to construct a simple function with
-the following structure <small>(yes, always start the function with
-`x <- snafun::fix_cug_input(x, directed = directed)`, this fixes some
-peculiarities related to the `sna::cug.test` function)</small>:
+Or a more involved custom measure that does not exist in `sna` at all,
+such as the number of walktrap communities:
 
 ```{r}
-trans_f <- function(x, directed = FALSE) {
-  x <- snafun::fix_cug_input(x, directed = directed)
-  snafun::g_transitivity(x)
-}
-```
-
-and you can now test for transitivity with ANY graph that works with
-`snafun::g_transitivity(x)` (which includes most formats you'll work
-with). Then, perform the CUG test as follows:
-
-```{r}
-sna::cug.test(graph_object, 
-              mode = "graph", 
-              FUN = trans_f, 
-              cmode = "edges", 
-              reps = 200)
-```
-
-Et voila. It simply works.
-
-Wanna use a more involved measure that doesn't exist in the `sna`
-package anyway? Sure, this is how you run a CUG test on the number of
-walktrap communities in the graph:
-
-```{r}
-walk_num <- function(x, directed = FALSE) {
-  x <- snafun::fix_cug_input(x, directed = directed)
-  snafun::extract_comm_walktrap(x) |> length()
+walk_num <- function(x) {
+  length(snafun::extract_comm_walktrap(x))
 }
 
-sna::cug.test(graph_object, mode = "graph", FUN = walk_num, cmode = "edges", reps = 200)
+snafun::stat_cug(
+  graph_object,
+  FUN = walk_num,
+  mode = "graph",
+  cmode = "edges",
+  reps = 200,
+  graph = "igraph"
+)
 ```
 
-As said, `snafun` puts the *FUN* straight into SNA.
+The output can be printed directly and there is also a `plot()` method
+for the result.
 
 <br>
 

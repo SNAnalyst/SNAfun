@@ -24,6 +24,14 @@ do. The usefulness of this function is its consistent API.
 }
 \details{
 Currently, input can be a matrix, \code{igraph} object or \code{network} object.
+
+When the input is a graph object, the returned data.frame silently stores
+vertex metadata as attributes. This allows \code{snafun::to_igraph()},
+\code{snafun::to_network()}, and \code{snafun::to_matrix()} to reconstruct
+isolates during a roundtrip through an edgelist. These hidden attributes are
+intentionally lightweight and will often disappear when the edgelist is
+heavily edited, subsetted, or written to disk, in which case the conversion
+falls back to the information visible in the edgelist itself.
 }
 \examples{
 ## from an igraph object
