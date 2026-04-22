@@ -116,58 +116,25 @@ The function takes an object of class `igraph` or `network` and plots
 the centrality scores you select, so you can visually compare them. Make
 sure to pick the required value for `mode` (the default is "all").
 
-## Basic plotting in `igraph`
+## Plotting with the unified `snafun` interface
 
-The `plot` function alone already plots nodes and edges with default
-options. More sophisticated specifications need to be manually set. It
-works with networks of class `igraph`.
+In most teaching situations, it is simpler to use the same `plot()`
+call regardless of whether the object is `igraph` or `network`. The
+appropriate S3 method is selected automatically.
 
 ```{r, echo = TRUE}
-igraph::plot.igraph(net,
+plot(net,
      edge.arrow.size = .2,                # edge and arrow size
      edge.color = "red",                  # edge color
      vertex.color = "blue",               # vertex filling color
      vertex.frame.color = "green",        # vertex perimeter color
-     vertex.label = igraph::V(net)$label, # vertex labels
+     vertex.label = snafun::extract_vertex_names(net), # vertex labels
      vertex.label.cex = 0.6,              # vertex label size
      vertex.label.color = "black")        # vertex label color
 ```
 
-## Basic plotting in `network`
-
-The `gplot` function alone already plots nodes and edges with default
-options. More sophisticated specifications need to be manually set. It
-works with networks of class `network`.
-
-```{r, echo = TRUE}
-network::plot.network(net,
-      arrowhead.cex = 0.2,     # edge and arrow size
-      edge.col = 'red',        # edge color
-      vertex.col = 'blue',     # vertex filling color
-      vertex.border = 'green', # vertex perimeter color
-      displaylabels = TRUE,    # vertex labels
-      label.cex = 0.6,         # vertex label size
-      label.col = 'black')     # vertex label color
-```
-
-## Basic plotting in `sna`
-
-The `gplot` function alone already plots nodes and edges with default
-options. More sophisticated specifications need to be manually set. It
-works with networks of class `network`.
-
-```{r, echo = TRUE}
-sna::gplot(net,
-      arrowhead.cex = 0.2,     # edge and arrow size
-      edge.col = 'red',        # edge color
-      vertex.col = 'blue',     # vertex filling color
-      vertex.border = 'green', # vertex perimeter color
-      displaylabels = TRUE,    # vertex labels
-      label.cex = 0.6,         # vertex label size
-      label.col = 'black')     # vertex label color
-```
-
-The `gplot` function has a few additional arguments compared to
-`network::plot.network` and is therefore slightly more flexible.
+If you want to use the underlying backend functions directly, you still
+can, but for most purposes `plot(net, ...)` is the easier and more
+consistent choice in `snafun`.
 
 <br><br><br>

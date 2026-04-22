@@ -75,6 +75,41 @@ edges.
 The function returns an edgelist that can be read into `igraph` or
 `network`.
 
+## Importing UCINET files
+
+If your data come from UCINET, you can import them directly with
+`snafun::read_ucinet()`. The function reads common UCINET `DL` text
+files and recent `##h`/`##d` UCINET system files and returns an
+`igraph` object by default.
+
+```{r ucinet_example}
+tmp <- tempfile(fileext = ".dl")
+
+writeLines(
+  c(
+    "dl n = 4 format = fullmatrix",
+    "labels:",
+    "Alice, Bob, Carol, Dave",
+    "data:",
+    "0 1 0 0",
+    "1 0 1 0",
+    "0 1 0 0",
+    "0 0 0 0"
+  ),
+  con = tmp
+)
+
+g_ucinet <- snafun::read_ucinet(tmp)
+g_ucinet
+snafun::count_vertices(g_ucinet)
+snafun::has_vertexnames(g_ucinet)
+
+unlink(tmp)
+```
+
+If you want a different output format, set `graph = "network"`,
+`graph = "matrix"`, or `graph = "edgelist"`.
+
 
 
 

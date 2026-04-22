@@ -59,3 +59,54 @@ want to use in this course.
 ```{r table_dyad, echo = FALSE, eval = TRUE}
 table_dyads
 ```
+
+## Equivalence as a dyadic idea
+
+Equivalence measures compare vertices in pairs. So even though they are
+often used to say something about *roles* or *positions*, the output is
+still dyadic: for each pair of vertices, you get a score saying how
+similar they are.
+
+In `snafun`, the two main options are:
+
+- `snafun::d_structural_equivalence()`: do two vertices have the same
+  ties to the same alters?
+- `snafun::d_regular_equivalence()`: do two vertices occupy the same
+  kind of position in the network, even if they are not tied to exactly
+  the same alters?
+
+Here is a simple comparison.
+
+```{r equivalence_dyad_example, eval = TRUE}
+g <- snafun::create_manual_graph(
+  A -+ B,
+  A -+ C,
+  D -+ E,
+  D -+ F,
+  B -+ G,
+  C -+ G,
+  E -+ H,
+  F -+ H
+)
+
+s_eq <- snafun::d_structural_equivalence(g)
+r_eq <- snafun::d_regular_equivalence(g)
+
+s_eq
+r_eq
+```
+
+In this graph:
+
+- `B` and `C` are structurally equivalent, because they have the same
+  pattern of ties.
+- `E` and `F` are structurally equivalent for the same reason.
+- `A` and `D` are not structurally equivalent, because they are tied to
+  different alters.
+- But `A` and `D` are regularly equivalent, because they occupy the
+  same kind of source-like role in the graph.
+
+That is the main teaching distinction:
+
+- structural equivalence is about *same neighbors*;
+- regular equivalence is about *same role*.

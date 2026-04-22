@@ -206,15 +206,19 @@ remove_loops.matrix <- function(x) {
 #' @export
 #'
 #' @examples
-#' g <- igraph::make_empty_graph(n = 3, directed = TRUE)
-#' g <- igraph::add_edges(g, c(1, 2, 1, 2, 2, 3))
-#' g <- igraph::set_edge_attr(g, "weight", value = c(2, 5, 7))
-#' g <- igraph::set_edge_attr(g, "label", value = c("a", "b", "c"))
+#' g <- snafun::to_igraph(
+#'   data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+#'   directed = TRUE
+#' )
+#' g <- snafun::add_edge_attributes(g, "weight", value = c(2, 5, 7))
+#' g <- snafun::add_edge_attributes(g, "label", value = c("a", "b", "c"))
 #' remove_multiple_edges(g)
 #'
-#' nw <- network::network.initialize(3, directed = TRUE, loops = TRUE, multiple = TRUE)
-#' nw <- network::add.edges(nw, tail = c(1, 1, 2), head = c(2, 2, 3))
-#' network::set.edge.attribute(nw, "weight", value = c(2, 5, 7))
+#' nw <- snafun::to_network(
+#'   data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+#'   directed = TRUE
+#' )
+#' nw <- snafun::add_edge_attributes(nw, "weight", value = c(2, 5, 7))
 #' remove_multiple_edges(nw)
 #'
 #' el <- data.frame(

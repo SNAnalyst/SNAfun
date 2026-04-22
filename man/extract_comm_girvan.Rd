@@ -16,7 +16,7 @@ extract_comm_girvan(
 )
 }
 \arguments{
-\item{x}{The input graph, edge directions are ignored in directed graphs.}
+\item{x}{The input graph.}
 
 \item{weights}{The weights of the edges. It must be a positive numeric vector, 
 \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 
@@ -66,6 +66,6 @@ The result of this function can be queried using the utility functions
 documented here: \code{\link[igraph]{membership}},
 }
 \references{
-this function just wraps the \code{\link[igraph]{edge_betweenness}}
+this function just wraps the \code{\link[igraph]{cluster_edge_betweenness}}
 function and documentation.
 }

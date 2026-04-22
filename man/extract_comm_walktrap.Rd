@@ -14,7 +14,8 @@ extract_comm_walktrap(
 )
 }
 \arguments{
-\item{x}{The input graph, edge directions are ignored in directed graphs.}
+\item{x}{The input graph. For directed graphs, edge directions are ignored by
+the walktrap algorithm.}
 
 \item{weights}{The weights of the edges. It must be a positive numeric vector, 
 \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 

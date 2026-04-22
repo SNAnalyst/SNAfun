@@ -58,7 +58,7 @@
 #'   con = tmp
 #' )
 #' g <- read_ucinet(tmp)
-#' igraph::vcount(g)
+#' snafun::count_vertices(g)
 #' unlink(tmp)
 read_ucinet <- function(file,
                         graph = c("igraph", "network", "matrix", "edgelist"),

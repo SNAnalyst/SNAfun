@@ -42,14 +42,14 @@ is symmetric, the rule has no effect. An undirected graph ought not get the
 label of "strongly" or "weakly" connected, but it is connected or not.
 }
 \examples{
-strong_i <- igraph::graph_from_literal(a --+ b --+ c --+ a)
+strong_i <- snafun::create_manual_graph(a --+ b --+ c --+ a)
 is_connected(strong_i, "weak")  # TRUE
 is_connected(strong_i, "strong")  # TRUE
 strong_n <- snafun::to_network(strong_i)
 is_connected(strong_n, "weak")  # TRUE
 is_connected(strong_n, "strong")  # TRUE
 
-weak_i <- igraph::graph_from_literal(a --+ b +-- c)
+weak_i <- snafun::create_manual_graph(a --+ b +-- c)
 is_connected(weak_i, "weak")  # TRUE
 is_connected(weak_i, "strong")  # FALSE
 weak_n <- snafun::to_network(weak_i)

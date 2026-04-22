@@ -38,7 +38,9 @@ an undirected graph.)
 The output is a list of egonetworks, one for each ego vertex.
 }
 \examples{
-g <- igraph::graph_from_literal(One --+ Two +-+ Three +-- Four --+ Five +-- Six +-- Seven +-+ Eight +-+ One +-+ Five)
+g <- snafun::create_manual_graph(
+  One --+ Two +-+ Three +-- Four --+ Five +-- Six +-- Seven +-+ Eight +-+ One +-+ Five
+)
 snafun::to_matrix(g)
 extract_egonet(g, vertices = 1, order = 1, type = "in")[[1]] |> snafun::to_matrix()
 extract_egonet(g, vertices = 1, order = 1, type = "out")[[1]] |> snafun::to_matrix()

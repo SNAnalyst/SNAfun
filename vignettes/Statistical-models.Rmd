@@ -218,11 +218,11 @@ network is not stored as an `igraph` object. For example:
 ```{r}
 snafun::stat_cug(
   graph_object,
-  FUN = igraph::transitivity,
+  FUN = snafun::g_transitivity,
   mode = "graph",
   cmode = "edges",
   reps = 200,
-  graph = "igraph"
+  graph = "same"
 )
 ```
 
@@ -254,49 +254,98 @@ for the result.
 There are two methods to perform a QAP test.
 
 The first is to manually permute the graph. Generation of these graphs
-can be done using `igraph::permute` or `sna::rmperm`. See [the data
-generation table](#generate) for these functions.
+can be done using backend package functions such as `igraph::permute` or
+`sna::rmperm`. `snafun` does not yet have a dedicated permutation helper
+for this, so those backend functions are still useful when you want to
+build a custom QAP procedure by hand.
 
-The second approach is to use a function that does the graph permutation
-and computes the required measure (typically a correlation) for you. The
-preferred is `sna::qaptest`, which is specified as follows:
+The second approach, and usually the better one in `snafun`, is to use
+`snafun::stat_qap_cor()`. This function aligns graph objects by vertex
+names, converts `igraph`, `network`, `matrix`, and `data.frame`
+edgelists automatically, and then performs a QAP correlation test.
 
 ```{r}
-sna::qaptest(g, FUN, reps = 1000, ...)
+snafun::stat_qap_cor(
+  x,
+  y,
+  controls = NULL,
+  method = c("pearson", "spearman"),
+  reps = 1000,
+  diagonal = FALSE,
+  directed = c("auto", "directed", "undirected"),
+  alternative = c("two.sided", "greater", "less"),
+  seed = NULL
+)
 ```
-
-See the `sna` help function for details.
 
 Here
 
--   `FUN` is the function that needs to be calculated after each
-    permutation
+-   `x` and `y` are the two networks whose association you want to test.
 
--   `...` contains any arguments that are required for the function you
-    specified in `FUN`
+-   `controls` optionally contains one or more control graphs, so the
+    function computes a partial QAP correlation.
+
+-   `method` chooses between Pearson and Spearman correlation.
+
+-   `directed` and `diagonal` determine which cells of the adjacency
+    matrix are included.
 
 Typically, you want to test the correlation between two graphs, as
 follows:
 
 ```{r}
-sna::qaptest(list(firstNetwork, secondNetwork),
-             FUN = sna::gcor, reps = 1000,
-             g1 = 1, g2 = 2)
+snafun::stat_qap_cor(firstNetwork, secondNetwork, reps = 1000)
+```
+
+If you want to control for a third network, you can do so directly:
+
+```{r}
+snafun::stat_qap_cor(
+  firstNetwork,
+  secondNetwork,
+  controls = controlNetwork,
+  reps = 1000
+)
 ```
 
 There is a useful `summary` method and a `plot` method for the output of
 the function.
 
+When you read the output, the most important pieces are:
+
+- the observed correlation;
+- the permutation probabilities `Pr(X>Obs)`, `Pr(X<Obs)`, and
+  `Pr(X=Obs)`;
+- whether the association remains after any control networks are added.
+
+If the observed correlation is clearly positive and `Pr(X>Obs)` is very
+small, that means the observed association is stronger than what you
+would usually see under random relabelings of the network. If
+`controls` are used, the test concerns the *partial* association between
+`x` and `y`, after removing the part explained by the control networks.
+
 <br>
 
 ## QAP linear regression
 
-QAP linear regression is performed through the `sna::netlm` function.
-The function looks as follows:
+QAP linear regression is performed in `snafun` through
+`snafun::stat_qap_lm()`. Internally, this function follows the logic of
+`sna::netlm()`, but it accepts all common graph representations used in
+this course and keeps the predictor names in the output whenever
+possible.
 
 ```{r}
-sna::netlm(y, x, intercept = TRUE, mode = "digraph",
-    nullhyp = "qapspp", reps = 1000)
+snafun::stat_qap_lm(
+  y,
+  x,
+  intercept = TRUE,
+  diagonal = FALSE,
+  directed = c("auto", "directed", "undirected"),
+  nullhyp = c("qapspp", "qapy"),
+  reps = 1000,
+  test.statistic = c("t-value", "beta"),
+  seed = NULL
+)
 ```
 
 Make sure to always set `intercept = TRUE` and `nullhyp = "qapspp"`. For
@@ -307,26 +356,53 @@ As an example, this is how you specify a model where graph `g` is
 modeled as a linear function of graphs `g1`, `g2`, and `g3`.
 
 ```{r}
-mod <- sna::netlm(y = g, x = list(g1, g2, g3), intercept = TRUE,
-                              nullhyp = 'qapspp', reps = 1001)
-mod$names <- c("Intcpt", "Net1", "Net2", "Net3")
+mod <- snafun::stat_qap_lm(
+  y = g,
+  x = list(g1, g2, g3),
+  intercept = TRUE,
+  nullhyp = "qapspp",
+  reps = 1001
+)
 summary(mod)
 ```
 
-It is wise to add the names of the networks to the output object, like
-you see above. That is not strictly necessary, but it makes the output
-of the function easier to read.
+If you supply a named list or a literal list such as `list(g1, g2, g3)`,
+`snafun::stat_qap_lm()` keeps those names in the output. That makes the
+results easier to read than the default `x1`, `x2`, `x3` style output.
+
+When reading the regression output, focus on these parts:
+
+- `beta`: the estimated regression coefficient;
+- `t.value`: the coefficient relative to its standard error;
+- the permutation probabilities for the chosen `test.statistic`.
+
+If you use `test.statistic = "beta"`, you are asking whether the raw
+coefficient is unusual under the QAP null model. If you use
+`test.statistic = "t-value"`, you are asking whether the coefficient is
+unusual *relative to its uncertainty*. For teaching, `beta` is often
+the easier quantity to interpret as an effect size, while `t-value`
+connects more directly to standard regression logic.
 
 <br>
 
 ## QAP logistic regression
 
-QAP logistic regression is performed through the `sna::netlogit`
-function. The function looks as follows:
+QAP logistic regression is performed through
+`snafun::stat_qap_logit()`. This is the logistic counterpart of
+`snafun::stat_qap_lm()` and accepts the same graph classes.
 
 ```{r}
-sna::netlogit(y, x, intercept = TRUE, mode = "digraph",
-    nullhyp = "qapspp", reps = 1000)
+snafun::stat_qap_logit(
+  y,
+  x,
+  intercept = TRUE,
+  diagonal = FALSE,
+  directed = c("auto", "directed", "undirected"),
+  nullhyp = c("qapspp", "qapy"),
+  reps = 1000,
+  test.statistic = c("z-value", "beta"),
+  seed = NULL
+)
 ```
 
 Make sure to always set `intercept = TRUE` and `nullhyp = "qapspp"`. For
@@ -337,9 +413,29 @@ As an example, this is how you specify a model where binary graph `g` is
 modeled as a function of graphs `g1`, `g2`, and `g3`.
 
 ```{r netlogit1, exercise = TRUE}
-mod <- sna::netlogit(g, list(g1, g2, g3),
-                     intercept = TRUE,
-                     nullhyp = "qapspp", reps = 1001)
-mod$names <- c("Intcpt", "Net1", "Net2", "Net3")
+mod <- snafun::stat_qap_logit(
+  y = g,
+  x = list(g1, g2, g3),
+  intercept = TRUE,
+  nullhyp = "qapspp",
+  reps = 1001
+)
 summary(mod)
 ```
+
+The logistic output adds a few extra pieces that are especially useful:
+
+- `exp.beta`: the multiplicative change in the odds for a one-unit
+  increase in the predictor;
+- the goodness-of-fit block, including null and residual deviance;
+- the classification block with `accuracy`, `sensitivity`,
+  `specificity`, and `precision`.
+
+As a quick reminder:
+
+- `accuracy` is the overall fraction of correctly classified dyads;
+- `sensitivity` is the fraction of true ties that the model predicts as
+  ties;
+- `specificity` is the fraction of true non-ties that the model predicts
+  as non-ties;
+- `precision` is the fraction of predicted ties that are actually ties.

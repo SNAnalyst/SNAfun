@@ -37,7 +37,13 @@ x <- florentine$flobusiness
 has_loops(x)             # FALSE
 extract_loops(x)         # NULL
 extract_loops_vertex(x)  # NULL
-x <- igraph::add_edges(x, c("Barbadori", "Barbadori", "Medici", "Medici"))
+x <- snafun::add_edges(
+  x,
+  data.frame(
+    from = c("Barbadori", "Medici"),
+    to = c("Barbadori", "Medici")
+  )
+)
 has_loops(x)             # FALSE
 extract_loops(x)         # loops detected
 extract_loops_vertex(x)

@@ -49,7 +49,7 @@
 #' The code for the Shapley centrality is adapted from \code{CINNA::group_centrality} 
 #' and gives the same result (but our version is slightly more robust).
 #' @examples 
-#' g <- igraph::make_star(10, mode = "undirected")
+#' g <- snafun::create_manual_graph(1 -- 2:3:4:5:6:7:8:9:10)
 #' v_eccentricity(g)
 #' v_eccentricity(g, vids = c(1,3,5))
 #' g_n <- snafun::to_network(g)
@@ -261,7 +261,7 @@ v_eccentricity.network <- function(x, vids = NULL, mode = c("all", "out", "in"),
 #' v_betweenness(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' plot(g)
 #' v_betweenness(g) # there are no shortest paths with length >= 3
 #' v_betweenness(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
@@ -353,7 +353,7 @@ v_betweenness.network <- function(x, vids = NULL,
 #' v_stress(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' plot(g)
 #' v_stress(g) # there are no shortest paths with length >= 3
 #' v_stress(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
@@ -432,7 +432,7 @@ v_stress.network <- function(x, vids = NULL,
 #' v_eigenvector(g_n, directed = FALSE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' \dontrun{
 #' v_eigenvector(g) # all 0 + a warning is issued
 #' }
@@ -509,7 +509,7 @@ v_eigenvector.network <- function(x,
 #'                                   directed = TRUE, graph = "igraph")
 #' g2_i <- snafun::add_edge_attributes(g_i, attr_name = "weight", value = 1:12)
 #' v_closeness(g_i)
-#' 1/rowSums(igraph::distances(g_i))  # same thing
+#' 1 / rowSums(snafun::d_distance(g_i))  # same thing
 #' v_closeness(g_i, rescaled = TRUE)
 #' v_closeness(g_i, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' v_closeness(g2_i)   # attribute "weight" is not used
@@ -520,7 +520,7 @@ v_eigenvector.network <- function(x,
 #' v_closeness(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' v_closeness(g)  # "1" has the highest closeness, the rest has the same value
 #' v_closeness(g, mode= "in")  # only "1"
 #' v_closeness(g, mode= "out") # all except "1"
@@ -606,7 +606,7 @@ v_closeness.network <- function(x, vids = NULL,
 #' v_harmonic(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' v_harmonic(g)  # "1" has the highest harmonic, the rest has the same value
 #' v_harmonic(g, mode= "in")  # only "1"
 #' v_harmonic(g, mode= "out") # all except "1"
@@ -665,6 +665,121 @@ v_harmonic.network <- function(x, vids = NULL,
 
 
 
+
+
+
+####----------------------------------------------------------------------------
+#' @describeIn vli Local transitivity of a vertex.
+#'
+#' The local transitivity, also called the local clustering coefficient,
+#' captures how densely the neighbors of a vertex are tied to one another.
+#'
+#' This implementation follows the standard undirected local clustering
+#' coefficient. If the input graph is directed, it is first weakly symmetrized:
+#' any edge in either direction is treated as an undirected tie. Edge weights
+#' are discarded, because the aim here is a simple student-oriented local
+#' clustering measure.
+#'
+#' Vertices with fewer than two neighbors have undefined local transitivity.
+#' The \code{isolates} argument controls whether these undefined values are
+#' returned as \code{NaN} or coerced to zero.
+#'
+#' Local transitivity is defined for one-mode graphs only. Bipartite inputs are
+#' rejected.
+#'
+#' @param isolates character scalar. Either \code{"nan"} to keep undefined
+#' values as \code{NaN}, or \code{"zero"} to replace them by zero.
+#' @examples
+#' #
+#' # v_transitivity
+#' g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 1, 3 -- 4)
+#' v_transitivity(g)
+#' v_transitivity(g, isolates = "zero")
+#' @export
+v_transitivity <- function(x, vids = NULL,
+                           isolates = c("nan", "zero")) {
+  UseMethod("v_transitivity")
+}
+
+
+#' @export
+v_transitivity.default <- function(x, vids = NULL,
+                                   isolates = c("nan", "zero")) {
+  txt <- methods_error_message("x", "v_transitivity")
+  stop(txt)
+}
+
+
+#' @export
+v_transitivity.igraph <- function(x, vids = NULL,
+                                  isolates = c("nan", "zero")) {
+  isolates <- snafun.match.arg(isolates)
+  graph <- v_transitivity_prepare_graph(x)
+  if (is.null(vids)) {
+    vids <- igraph::V(graph)
+  }
+  igraph::transitivity(
+    graph = graph,
+    type = "localundirected",
+    vids = vids,
+    isolates = if (identical(isolates, "zero")) "zero" else "NaN"
+  )
+}
+
+
+#' @export
+v_transitivity.network <- function(x, vids = NULL,
+                                   isolates = c("nan", "zero")) {
+  isolates <- snafun.match.arg(isolates)
+  graph <- v_transitivity_prepare_graph(x)
+  v_transitivity.igraph(graph, vids = vids, isolates = isolates)
+}
+
+
+#' @export
+v_transitivity.matrix <- function(x, vids = NULL,
+                                  isolates = c("nan", "zero")) {
+  isolates <- snafun.match.arg(isolates)
+  graph <- v_transitivity_prepare_graph(x)
+  v_transitivity.igraph(graph, vids = vids, isolates = isolates)
+}
+
+
+#' @export
+v_transitivity.data.frame <- function(x, vids = NULL,
+                                      isolates = c("nan", "zero")) {
+  isolates <- snafun.match.arg(isolates)
+  graph <- v_transitivity_prepare_graph(x)
+  v_transitivity.igraph(graph, vids = vids, isolates = isolates)
+}
+
+
+v_transitivity_prepare_graph <- function(x) {
+  if (inherits(x, "igraph")) {
+    graph <- x
+  } else if (is.matrix(x)) {
+    graph <- snafun::to_igraph(x, bipartite = nrow(x) != ncol(x))
+  } else {
+    graph <- snafun::to_igraph(x)
+  }
+  
+  if (snafun::is_bipartite(graph)) {
+    stop(
+      "Local transitivity is only defined for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  
+  adjacency <- snafun::to_matrix(graph)
+  adjacency[adjacency != 0] <- 1
+  diag(adjacency) <- 0
+  
+  if (!isSymmetric(adjacency)) {
+    adjacency <- snafun::to_symmetric_matrix(adjacency, rule = "weak")
+  }
+  
+  snafun::to_igraph(adjacency)
+}
 
 
 
@@ -1198,7 +1313,7 @@ v_fragment_resolve_vids <- function(vids, x) {
 #' v_pagerank(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #' 
 #' # star network
-#' g <- igraph::make_star(10, "in")
+#' g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 #' v_pagerank(g)  # "1" has the highest pagerank, the rest has the same value
 #' @export
 v_pagerank <- function(x, vids = NULL, 
@@ -1408,9 +1523,14 @@ v_geokpath.igraph <- function(x, vids = NULL,
 #' #
 #' # Shapley centrality
 #' # Figure 1 network from Michalak et al.
-#' g1 <- igraph::graph(c(4,1,5,1,1,6,1,7,1,8,8,11,11,12,11,13,6,2,7,2,8,2,
-#' 2,9,2,10,9,3,10,3), directed = FALSE)
-#' igraph::V(g1)$name <- LETTERS[1:13]
+#' g1 <- snafun::to_igraph(
+#'   data.frame(
+#'     from = c(4, 5, 1, 1, 1, 8, 11, 11, 6, 7, 8, 2, 2, 9, 10),
+#'     to = c(1, 1, 6, 7, 8, 11, 12, 13, 2, 2, 2, 9, 10, 3, 3)
+#'   ),
+#'   directed = FALSE
+#' )
+#' g1 <- snafun::add_vertex_names(g1, LETTERS[1:13])
 #' v_shapley(g1)
 #' v_shapley(g1, add.vertex.names = TRUE)
 #' @export

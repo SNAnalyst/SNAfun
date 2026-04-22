@@ -82,3 +82,86 @@ you.
 
 :-)
 
+
+# Structural versus regular equivalence {#equivalence}
+
+Two vertices can be similar in more than one way. `snafun` contains
+functions for both *structural equivalence* and *regular equivalence*.
+
+- Structural equivalence asks whether two vertices are tied to the same
+  alters in the same way.
+- Regular equivalence asks whether two vertices occupy the same kind of
+  position, even if they are not tied to exactly the same alters.
+
+For students, a useful rule of thumb is this:
+
+- use `snafun::d_structural_equivalence()` when you care about matching
+  neighborhoods;
+- use `snafun::d_regular_equivalence()` when you care about matching
+  roles or positions in the graph.
+
+The regular-equivalence function in `snafun` is based on the iterative
+logic of `sna::redist()`, but it returns an *equivalence* matrix between
+0 and 1 rather than a distance matrix.
+
+```{r equivalence_examples}
+g <- snafun::create_manual_graph(
+  A -+ B,
+  A -+ C,
+  D -+ E,
+  D -+ F,
+  B -+ G,
+  C -+ G,
+  E -+ H,
+  F -+ H
+)
+
+# Same exact ties -> structural equivalence
+snafun::d_structural_equivalence(g)
+
+# Same role pattern -> regular equivalence
+snafun::d_regular_equivalence(g)
+
+# If weights matter, let them contribute explicitly
+g_w <- snafun::add_edge_attributes(
+  g,
+  attr_name = "weight",
+  value = c(2, 1, 2, 1, 3, 3, 3, 3)
+)
+snafun::d_regular_equivalence(g_w, weights = "weight")
+```
+
+## How to read an equivalence matrix
+
+An equivalence matrix is easiest to read as a table of pairwise
+similarities.
+
+- Values close to `1` indicate that two vertices are very similar under
+  the chosen equivalence concept.
+- Values close to `0` indicate that two vertices are very different.
+- The diagonal is always `1`, because every vertex is perfectly
+  equivalent to itself.
+
+In the example above, the structural-equivalence matrix mainly picks up
+vertices with the *same exact outgoing pattern*, such as `B` and `C`,
+or `E` and `F`. The regular-equivalence matrix is more forgiving: it
+should also reveal that `A` and `D` occupy the same *role* in the
+network, even though they are tied to different alters.
+
+So for this graph, you would typically expect the regular-equivalence
+matrix to suggest role sets like:
+
+- `A` and `D`: source-like vertices
+- `B`, `C`, `E`, and `F`: middle-layer vertices
+- `G` and `H`: sink-like vertices
+
+This is one of the main reasons to look at regular equivalence in
+teaching settings. It helps students distinguish between:
+
+- *same neighbors*; and
+- *same position in the wider graph structure*.
+
+If you want edge strengths to affect those role similarities, use the
+`weights` argument explicitly. If you do not specify weights, the
+regular-equivalence calculation treats the graph as unweighted.
+

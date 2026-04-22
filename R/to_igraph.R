@@ -67,20 +67,20 @@
 #' and do not deal with \code{tidygraph}.
 #' @examples
 #' # from a matrix
-#' g <- igraph::sample_gnp(10, 2/10)
-#' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
+#' g <- snafun::create_random_graph(10, "gnp", p = 2/10, graph = "igraph")
+#' mat <- snafun::to_matrix(g)
 #' to_igraph(mat)
 #' 
-#' g <- igraph::make_ring(10)
-#' igraph::E(g)$weight <- seq_len(igraph::ecount(g))
-#' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE, attr = "weight")
+#' g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
+#' g <- snafun::add_edge_attributes(g, "weight", value = seq_len(snafun::count_edges(g)))
+#' mat <- snafun::to_matrix(g)
 #' to_igraph(mat)
 #' 
 #' # bipartite network, even nodes are one type, odd vertices another type
-#' g <- igraph::make_bipartite_graph( rep(0:1,length=10), c(1:10))
-#' mat <- igraph::as_adjacency_matrix(g, sparse = FALSE)
+#' g <- snafun::create_bipartite(5, 5, strategy = "gnm", m = 5)
+#' mat <- snafun::to_matrix(snafun::to_igraph(g))
 #' to_igraph(mat)  # same network, but not officially bipartite
-#' mat <- igraph::as_biadjacency_matrix(g, sparse = FALSE)
+#' mat <- snafun::to_matrix(g)
 #' to_igraph(mat, bipartite = TRUE)
 #' 
 #' relations <- data.frame(from = c("Bob", "Cecil", "Cecil", "David", 

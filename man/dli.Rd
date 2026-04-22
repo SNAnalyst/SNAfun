@@ -34,12 +34,10 @@ weights are to be used or specific options are needed.
 \examples{
 # 
 # distance
-g <- igraph::make_ring(10)
-igraph::distances(g)
+g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
 d_distance(g)
 d_distance(snafun::to_network(g))
-igraph::V(g)$name <- LETTERS[1:10]
-igraph::distances(g)
+g <- snafun::add_vertex_names(g, LETTERS[1:10])
 d_distance(g)
 d_distance(snafun::to_network(g))
 }

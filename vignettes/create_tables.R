@@ -273,7 +273,7 @@ df_create <- rbind(
     "Create a graph with given components"
     , "snafun"
     , "
-    create_components_graph(
+    snafun::create_components_graph(
       n_vertices,
       directed = FALSE,
       membership = NULL,
@@ -1051,7 +1051,10 @@ df_manipulate <- rbind(
   c(
     "Add vertices or edges",
     "snafun",
-    NA,
+    '
+    snafun::add_vertices(x, vertices)
+    snafun::add_edges(x, edges)
+    ',
     NA
   ),
   c(
@@ -1189,6 +1192,9 @@ df_manipulate <- rbind(
     snafun::find_isolates(x, names = TRUE, loops = FALSE)
     snafun::remove_isolates(x, loops = FALSE)
     snafun::remove_loops(x)
+    snafun::has_multiple_edges(x)
+    snafun::extract_multiple_edges(x)
+    snafun::remove_multiple_edges(x)
     ",
     NA
   ),
@@ -1851,6 +1857,179 @@ df_graph <- rbind(
     "network",
     NA,
     NA
+  ),
+  ###### Community helpers ----
+  c(
+    "Community membership",
+    "snafun",
+    '
+    snafun::extract_comm_membership(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community membership",
+    "igraph",
+    '
+    igraph::membership(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community membership",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Number of communities",
+    "snafun",
+    '
+    snafun::count_communities(coms)
+    ',
+    NA
+  ),
+  c(
+    "Number of communities",
+    "igraph",
+    '
+    length(coms)
+    ',
+    NA
+  ),
+  c(
+    "Number of communities",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Community sizes",
+    "snafun",
+    '
+    snafun::extract_comm_sizes(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community sizes",
+    "igraph",
+    '
+    igraph::sizes(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community sizes",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Community modularity",
+    "snafun",
+    '
+    snafun::extract_comm_modularity(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community modularity",
+    "igraph",
+    '
+    igraph::modularity(coms)
+    ',
+    NA
+  ),
+  c(
+    "Community modularity",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Community crossing ties",
+    "snafun",
+    '
+    snafun::extract_comm_crossing(coms, graph)
+    ',
+    NA
+  ),
+  c(
+    "Community crossing ties",
+    "igraph",
+    '
+    igraph::crossing(coms, graph)
+    ',
+    NA
+  ),
+  c(
+    "Community crossing ties",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Plot communities",
+    "snafun",
+    '
+    snafun::plot_communities(coms, graph)
+    ',
+    NA
+  ),
+  c(
+    "Plot communities",
+    "igraph",
+    '
+    plot(coms, graph)
+    ',
+    NA
+  ),
+  c(
+    "Plot communities",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Add community membership to graph",
+    "snafun",
+    '
+    snafun::add_comm_membership(graph, coms, attr = "community")
+    ',
+    NA
+  ),
+  c(
+    "Add community membership to graph",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Add community membership to graph",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Add community crossing to graph",
+    "snafun",
+    '
+    snafun::add_comm_crossing(graph, coms, attr = "crossing")
+    ',
+    NA
+  ),
+  c(
+    "Add community crossing to graph",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Add community crossing to graph",
+    "network",
+    NA,
+    NA
   )
 ) |> 
   as.data.frame() |> 
@@ -2337,6 +2516,29 @@ df_dyads <- rbind(
     ',
     NA
   ),
+  ###### regular equivalence ----
+  c(
+    "Regular equivalence",
+    "snafun",
+    '
+    snafun::d_regular_equivalence(x, weights = NA, digits = 3)
+    ',
+    NA
+  ),
+  c(
+    "Regular equivalence",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Regular equivalence",
+    "network",
+    '
+    1 - sna::redist(g, method = "catrege", mode = "digraph", diag = FALSE)
+    ',
+    NA
+  ),
   ###### edge betweenness ----
   c(
     "Edge betweenness",
@@ -2442,18 +2644,18 @@ df_models <- rbind(
   c("Association between two networks",
     "QAP",
     "
-    sna::qaptest
+    snafun::stat_qap_cor
     "),
   c("A valued dependent network explained by one or more explanatory networks",
     "QAP linear model",
     "
-    sna::netlm
+    snafun::stat_qap_lm
     "),
   c("A binary dependent network explained by one or more explanatory networks",
     
     "QAP logistic model",
     "
-    sna::netlogit
+    snafun::stat_qap_logit
     "),
   c("A binary or valued dependent network explained by a set of endogenous and exogenous variables",
     "Exponential random graph models",

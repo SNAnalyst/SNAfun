@@ -25,30 +25,41 @@
 #' @rdname to_edgelist
 #' @examples
 #' ## from an igraph object
-#' g_i <- igraph::sample_gnp(10, 2/10)
+#' g_i <- snafun::create_random_graph(10, "gnp", p = 2/10, graph = "igraph")
 #' to_edgelist(g_i)
 #' 
 #' # add vertex names
 #' g1_i <- g_i
-#' igraph::V(g1_i)$name <- LETTERS[seq_len(igraph::gorder(g1_i))]
+#' g1_i <- snafun::add_vertex_names(
+#'   g1_i,
+#'   LETTERS[seq_len(snafun::count_vertices(g1_i))]
+#' )
 #' to_edgelist(g1_i)
 #' # add weights
-#' igraph::E(g1_i)$weight <- seq_len(igraph::ecount(g1_i))
+#' g1_i <- snafun::add_edge_attributes(
+#'   g1_i,
+#'   "weight",
+#'   value = seq_len(snafun::count_edges(g1_i))
+#' )
 #' to_edgelist(g1_i)
 #' # add further edge attribute
-#' g2_i <- g1_i |> 
-#'     igraph::set_edge_attr("color", value = "red")
+#' g2_i <- snafun::add_edge_attributes(
+#'   g1_i,
+#'   "color",
+#'   value = rep("red", snafun::count_edges(g1_i))
+#' )
 #' to_edgelist(g2_i)
 #' 
 #' ## from a matrix
-#' g_n <- sapply(runif(10, 0, 1), rep, 10)
-#' g_n <- sna::rgraph(10, tprob = g_n)
+#' g_n <- snafun::to_matrix(
+#'   snafun::create_random_graph(10, "gnp", p = .2, graph = "igraph")
+#' )
 #' to_edgelist(g_n)
-#' g_b <- igraph::make_bipartite_graph(c(rep(0, 5), rep(1, 3)), c(1,6,2,7,3,6,3,7,4,8,5,8))
+#' g_b <- snafun::create_bipartite(5, 3, strategy = "gnm", m = 6)
 #' to_edgelist(g_b)
 #' 
 #' ## from a network object
-#' g2_n <- network::as.network.matrix(g_n)
+#' g2_n <- snafun::to_network(g_n)
 #' to_edgelist(g2_n)
 to_edgelist <- function(x, named = TRUE, sort = "from") {
   UseMethod("to_edgelist")

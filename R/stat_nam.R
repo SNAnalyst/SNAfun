@@ -164,19 +164,8 @@
 #' plot_nam(mod)
 #' 
 #' \dontrun{
-#' # Model from Doreian (1980)
+#' # Model from Doreian (1980), fitted with the snafun wrapper
 #' data(huk, package = "SNA4DSData")
-#' x <- as.matrix(cbind(Intcpt = 1, hukYX[, -1]))
-#' lnam1 <- sna::lnam(y = hukYX$y, x = x, W1 = hukW)
-#' lnam2 <- sna::lnam(y = hukYX$y, x = x, W2 = hukW)
-#' lnam3 <- sna::lnam(y = hukYX$y, x = x, W = hukW, W2 = hukW)
-#' 
-#' # For comparison, the models with a row standardized W 
-#' lnam1 <- sna::lnam(y = hukYX$y, x = x, W1 = hukWstd)
-#' lnam2 <- sna::lnam(y = hukYX$y, x = x, W2 = hukWstd)
-#' lnam3 <- sna::lnam(y = hukYX$y, x = x, W = hukWstd, W2 = hukWstd)
-#' 
-#' # Same model with our function
 #' nam1 <- snafun::stat_nam(y ~ ., data = hukYX, W = hukWstd, model = "lag")
 #' nam2 <- snafun::stat_nam(y ~ ., data = hukYX, W = hukWstd, model = "error")
 #' nam3 <- snafun::stat_nam(y ~ ., data = hukYX, W = hukWstd, W2 = hukWstd, model = "combined")

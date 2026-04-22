@@ -43,17 +43,17 @@ argument to \code{TRUE}.
 mat <- matrix(0, nrow = 4, ncol = 4)
 # edges, incl one self-loop
 mat[1, 3] <- mat[4,4] <- 1
-ig <- igraph::graph_from_adjacency_matrix(mat)
+ig <- snafun::to_igraph(mat)
 extract_isolates(ig)  # 2 4
 # 4 has a loop to itself, including this removes its isolate-ship
 extract_isolates(ig, loops = TRUE)  # 2
-igraph::V(ig)$name <-  LETTERS[1:4]
+ig <- snafun::add_vertex_names(ig, LETTERS[1:4])
 extract_isolates(ig)  # B D
 extract_isolates(ig, names = FALSE)  # 2 4
 
-nw <- network::as.network(mat, loops = TRUE)
+nw <- snafun::to_network(mat)
 extract_isolates(nw)  # 2 4
-network::set.vertex.attribute(nw, "vertex.names", LETTERS[1:4])
+nw <- snafun::add_vertex_names(nw, LETTERS[1:4])
 extract_isolates(nw)  # B D
 extract_isolates(nw, names = FALSE)  # 2 4
 }

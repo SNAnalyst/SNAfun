@@ -17,14 +17,13 @@
 #' @export
 #'
 #' @examples
-#' net <- igraph::sample_bipartite(10, 5, p =.1)
+#' net <- snafun::create_bipartite(10, 5, strategy = "gnp", p = .1)
 #' is_bipartite(net)  # TRUE
 #' 
-#' net <- igraph::erdos.renyi.game(10, p.or.m = .1, type = "gnp")
+#' net <- snafun::create_random_graph(10, "gnp", p = .1, graph = "igraph")
 #' is_bipartite(net)  # FALSE
 #' 
-#' mat <- sna::rgraph(10, m = 1, tprob = .1)
-#' net <- network::as.network.matrix(mat)
+#' net <- snafun::create_random_graph(10, "gnp", p = .1, graph = "network")
 #' is_bipartite(net)  # FALSE
 is_bipartite <- function(x) {
   UseMethod("is_bipartite")
@@ -309,14 +308,14 @@ is_signed.network <- function(x) {
 #' @export
 #'
 #' @examples
-#' strong_i <- igraph::graph_from_literal(a --+ b --+ c --+ a)
+#' strong_i <- snafun::create_manual_graph(a --+ b --+ c --+ a)
 #' is_connected(strong_i, "weak")  # TRUE
 #' is_connected(strong_i, "strong")  # TRUE
 #' strong_n <- snafun::to_network(strong_i)
 #' is_connected(strong_n, "weak")  # TRUE
 #' is_connected(strong_n, "strong")  # TRUE
 #' 
-#' weak_i <- igraph::graph_from_literal(a --+ b +-- c)
+#' weak_i <- snafun::create_manual_graph(a --+ b +-- c)
 #' is_connected(weak_i, "weak")  # TRUE
 #' is_connected(weak_i, "strong")  # FALSE
 #' weak_n <- snafun::to_network(weak_i)
@@ -441,7 +440,6 @@ is_igraph.igraph <- function(x) {
 is_igraph.matrix <- function(x) {
   FALSE
 }
-
 
 
 

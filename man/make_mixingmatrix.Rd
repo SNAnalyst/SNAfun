@@ -60,7 +60,6 @@ objects, but has specific functionality for bipartite networks.
 \examples{
 data(emon, package = "network")
 is_directed(emon$LakePomona)   # TRUE
-network::mixingmatrix(emon$LakePomona, "Sponsorship")
 g <- emon$LakePomona
 make_mixingmatrix(g, attrname = "Sponsorship")
 make_mixingmatrix(g, attrname = "Sponsorship", by_edge = TRUE)

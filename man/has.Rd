@@ -90,14 +90,16 @@ has_edge_attributes(florentine$flobusiness)  # FALSE
 has_edge_attributes(florentine$flomarriage)  # TRUE
 
 has_loops(florentine$flobusiness)
-g <- igraph::graph( c(1,1,2,2,3,3,4,5))
+g <- snafun::to_igraph(data.frame(from = c(1, 2, 3, 4), to = c(1, 2, 3, 5)))
 has_loops(g)
 m <- matrix(c(1, 0, 0, 0, 0, 1, 0, 1, 1), byrow = TRUE, ncol = 3)
 has_loops(m)                                 # TRUE
 diag(m) <- 0
 has_loops(m)                                 # FALSE
 
-g_multi <- igraph::make_empty_graph(n = 3, directed = TRUE)
-g_multi <- igraph::add_edges(g_multi, c(1, 2, 1, 2, 2, 3))
+g_multi <- snafun::to_igraph(
+  data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+  directed = TRUE
+)
 has_multiple_edges(g_multi)                  # TRUE
 }

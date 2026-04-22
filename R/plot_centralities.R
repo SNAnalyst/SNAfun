@@ -37,7 +37,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' g <- igraph::erdos.renyi.game(20, 1/20)
+#' g <- snafun::create_random_graph(20, "gnp", p = 1/20, graph = "igraph")
 #' plot_centralities(g, measures = c("degree", "betweenness"))
 #' # note that closeness is not well-defined for disconnected graphs
 #' plot_centralities(g)

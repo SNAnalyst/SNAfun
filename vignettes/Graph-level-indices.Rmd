@@ -78,25 +78,22 @@ walk <- snafun::extract_comm_walktrap(g)
 print(walk)
 
 # get the modularity score
-igraph::modularity(walk)
+snafun::extract_comm_modularity(walk)
 
-# who is member of which community
-igraph::communities(walk)
-
-# which community is a vertex member of
-igraph::membership(walk)
+# membership of each vertex
+snafun::extract_comm_membership(walk)
 
 # number of communities
-length(walk)
+snafun::count_communities(walk)
 
 # size of each community
-igraph::sizes(walk)
+snafun::extract_comm_sizes(walk)
 
 # which edge connects multiple communities
-igraph::crossing(walk, g)
+snafun::extract_comm_crossing(walk, g)
 
 # plot the network, highlighting the communities
-plot(walk, g)
+snafun::plot_communities(walk, g)
 ```
 
 If you are so inclined, you can plot the community division as a
@@ -105,6 +102,33 @@ dendrogram, as follows:
 ```{r dendro, echo = TRUE, eval = TRUE}
 snafun::plot_comm_dendrogram(walk)
 ```
+
+## Writing community results back to the graph
+
+Community detection is often only the first step. In practice, you
+usually want to attach the results back to the network so you can use
+them in plots, tables, and follow-up analyses.
+
+`snafun` makes this easy:
+
+- `snafun::add_comm_membership()` writes the community membership of
+  each vertex back as a vertex attribute.
+- `snafun::add_comm_crossing()` writes whether an edge runs between two
+  different communities back as an edge attribute.
+
+```{r community_workflow, echo = TRUE, eval = TRUE}
+g_comm <- snafun::add_comm_membership(g, walk, attr = "community")
+g_comm <- snafun::add_comm_crossing(g_comm, walk, attr = "crossing")
+
+snafun::extract_vertex_attribute(g_comm, "community")
+snafun::extract_edge_attribute(g_comm, "crossing")
+```
+
+This workflow is especially useful when you want to:
+
+- color vertices by community in a later plot;
+- identify bridging edges between communities; or
+- compare community structure to other vertex attributes.
 
 # Vertex-level indices
 

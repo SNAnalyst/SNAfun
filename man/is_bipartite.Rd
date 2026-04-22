@@ -25,13 +25,12 @@ this information in the graph x, the result of this functions will be
 the bipartite attribute in the x is bad practice.
 }
 \examples{
-net <- igraph::sample_bipartite(10, 5, p =.1)
+net <- snafun::create_bipartite(10, 5, strategy = "gnp", p = .1)
 is_bipartite(net)  # TRUE
 
-net <- igraph::erdos.renyi.game(10, p.or.m = .1, type = "gnp")
+net <- snafun::create_random_graph(10, "gnp", p = .1, graph = "igraph")
 is_bipartite(net)  # FALSE
 
-mat <- sna::rgraph(10, m = 1, tprob = .1)
-net <- network::as.network.matrix(mat)
+net <- snafun::create_random_graph(10, "gnp", p = .1, graph = "network")
 is_bipartite(net)  # FALSE
 }

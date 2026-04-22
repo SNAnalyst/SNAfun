@@ -108,14 +108,13 @@ g <- snafun::create_random_graph(
 # A snafun statistic
 stat_cug(g, FUN = snafun::g_transitivity, cmode = "edges", reps = 99)
 
-# An igraph statistic on network input
+# The same statistic on network input
 g_n <- snafun::to_network(g)
 stat_cug(
   g_n,
-  FUN = igraph::transitivity,
+  FUN = snafun::g_transitivity,
   cmode = "edges",
-  reps = 99,
-  graph = "igraph"
+  reps = 99
 )
 
 # A custom function on edgelists
@@ -132,6 +131,9 @@ stat_cug(
 Other statistics functions: 
 \code{\link{stat_ef_int}()},
 \code{\link{stat_plot_gof}()},
-\code{\link{stat_plot_gof_as_btergm}()}
+\code{\link{stat_plot_gof_as_btergm}()},
+\code{\link{stat_qap_cor}()},
+\code{\link{stat_qap_lm}()},
+\code{\link{stat_qap_logit}()}
 }
 \concept{statistics functions}

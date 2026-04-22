@@ -347,7 +347,13 @@ simfit <- simulate(fit, burnin = 1e+6, verbose = TRUE, seed = 9)
 
 ```{r}
 
-RandomNet <- network::network(16,density=0.1,directed=FALSE)
+RandomNet <- snafun::create_random_graph(
+  16,
+  type = "gnp",
+  p = 0.1,
+  directed = FALSE,
+  graph = "network"
+)
 
 sim <- simulate(~ edges + kstar(2), nsim = 2, coef = c(-1.8, 0.03),
                   basis = RandomNet,
@@ -417,7 +423,7 @@ You can import the network as bipartite using these specifications.
 
 ```{r}
 
-BipNet <- network::network(BipData, directed = FALSE, bipartite = TRUE)
+BipNet <- snafun::to_network(BipData, directed = FALSE, bipartite = TRUE)
 
 ```
 

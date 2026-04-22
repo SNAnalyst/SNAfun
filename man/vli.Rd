@@ -9,6 +9,7 @@
 \alias{v_eigenvector}
 \alias{v_closeness}
 \alias{v_harmonic}
+\alias{v_transitivity}
 \alias{v_diffusion}
 \alias{v_fragment}
 \alias{v_pagerank}
@@ -35,6 +36,8 @@ v_eigenvector(x, directed = TRUE, rescaled = FALSE)
 v_closeness(x, vids = NULL, mode = c("all", "out", "in"), rescaled = FALSE)
 
 v_harmonic(x, vids = NULL, mode = c("all", "out", "in"), rescaled = FALSE)
+
+v_transitivity(x, vids = NULL, isolates = c("nan", "zero"))
 
 v_diffusion(x, vids = NULL, T = NULL, rescaled = FALSE)
 
@@ -80,6 +83,9 @@ This rarely makes sense. Default is \code{FALSE}.}
 
 \item{directed}{Logical, whether the graph should be considered directed (if 
 it is directed to begin with)}
+
+\item{isolates}{character scalar. Either \code{"nan"} to keep undefined
+values as \code{NaN}, or \code{"zero"} to replace them by zero.}
 
 \item{T}{Integer indicating the maximum number of diffusion steps. In the
 first step the adjacency or probability matrix itself is used, in the second
@@ -226,6 +232,24 @@ centrality is meaningful only for connected graphs, harmonic centrality can
 be calculated also for disconnected graphs and provides a useful alternative 
 in those cases.
 
+\item \code{v_transitivity()}: Local transitivity of a vertex.
+
+The local transitivity, also called the local clustering coefficient,
+captures how densely the neighbors of a vertex are tied to one another.
+
+This implementation follows the standard undirected local clustering
+coefficient. If the input graph is directed, it is first weakly symmetrized:
+any edge in either direction is treated as an undirected tie. Edge weights
+are discarded, because the aim here is a simple student-oriented local
+clustering measure.
+
+Vertices with fewer than two neighbors have undefined local transitivity.
+The \code{isolates} argument controls whether these undefined values are
+returned as \code{NaN} or coerced to zero.
+
+Local transitivity is defined for one-mode graphs only. Bipartite inputs are
+rejected.
+
 \item \code{v_diffusion()}: Diffusion centrality of a vertex.
 
 Diffusion centrality measures the expected number of information receivers
@@ -307,7 +331,7 @@ Michalak et al. (2013) paper.
 
 }}
 \examples{
-g <- igraph::make_star(10, mode = "undirected")
+g <- snafun::create_manual_graph(1 -- 2:3:4:5:6:7:8:9:10)
 v_eccentricity(g)
 v_eccentricity(g, vids = c(1,3,5))
 g_n <- snafun::to_network(g)
@@ -358,7 +382,7 @@ v_betweenness(g_n, rescaled = TRUE)
 v_betweenness(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 plot(g)
 v_betweenness(g) # there are no shortest paths with length >= 3
 v_betweenness(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
@@ -376,7 +400,7 @@ v_stress(g_n, rescaled = TRUE)
 v_stress(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 plot(g)
 v_stress(g) # there are no shortest paths with length >= 3
 v_stress(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
@@ -394,7 +418,7 @@ v_eigenvector(g_n, rescaled = TRUE)
 v_eigenvector(g_n, directed = FALSE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 \dontrun{
 v_eigenvector(g) # all 0 + a warning is issued
 }
@@ -405,7 +429,7 @@ g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12,
                                   directed = TRUE, graph = "igraph")
 g2_i <- snafun::add_edge_attributes(g_i, attr_name = "weight", value = 1:12)
 v_closeness(g_i)
-1/rowSums(igraph::distances(g_i))  # same thing
+1 / rowSums(snafun::d_distance(g_i))  # same thing
 v_closeness(g_i, rescaled = TRUE)
 v_closeness(g_i, vids = c(1, 2, 3, 5), rescaled = TRUE)
 v_closeness(g2_i)   # attribute "weight" is not used
@@ -416,7 +440,7 @@ v_closeness(g_n, rescaled = TRUE)
 v_closeness(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 v_closeness(g)  # "1" has the highest closeness, the rest has the same value
 v_closeness(g, mode= "in")  # only "1"
 v_closeness(g, mode= "out") # all except "1"
@@ -436,10 +460,15 @@ v_harmonic(g_n, rescaled = TRUE)
 v_harmonic(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 v_harmonic(g)  # "1" has the highest harmonic, the rest has the same value
 v_harmonic(g, mode= "in")  # only "1"
 v_harmonic(g, mode= "out") # all except "1"
+#
+# v_transitivity
+g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 1, 3 -- 4)
+v_transitivity(g)
+v_transitivity(g, isolates = "zero")
 #
 # v_diffusion
 P <- matrix(
@@ -501,7 +530,7 @@ v_pagerank(g_n, rescaled = TRUE)
 v_pagerank(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 
 # star network
-g <- igraph::make_star(10, "in")
+g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 v_pagerank(g)  # "1" has the highest pagerank, the rest has the same value
 # 
 # v_geokpath
@@ -522,9 +551,14 @@ v_geokpath(g_n, vids = c(1, 2, 3, 5), rescaled = TRUE)
 #
 # Shapley centrality
 # Figure 1 network from Michalak et al.
-g1 <- igraph::graph(c(4,1,5,1,1,6,1,7,1,8,8,11,11,12,11,13,6,2,7,2,8,2,
-2,9,2,10,9,3,10,3), directed = FALSE)
-igraph::V(g1)$name <- LETTERS[1:13]
+g1 <- snafun::to_igraph(
+  data.frame(
+    from = c(4, 5, 1, 1, 1, 8, 11, 11, 6, 7, 8, 2, 2, 9, 10),
+    to = c(1, 1, 6, 7, 8, 11, 12, 13, 2, 2, 2, 9, 10, 3, 3)
+  ),
+  directed = FALSE
+)
+g1 <- snafun::add_vertex_names(g1, LETTERS[1:13])
 v_shapley(g1)
 v_shapley(g1, add.vertex.names = TRUE)
 }

@@ -81,15 +81,15 @@ although this may not be realistic.
 An alteration of this measure to discard geodesics to \eqn{v} might be advisable.
 }
 \examples{
-g <- igraph::graph(c(1,2,2,3,3,4,4,2))
+g <- snafun::to_igraph(data.frame(from = c(1, 2, 3, 4), to = c(2, 3, 4, 2)))
 v_bottleneck(g)
 v_bottleneck(g, vids = c(1, 2, 4))
 v_bottleneck(g, mode = "out")
 v_bottleneck(g, mode = "in")
 
-g <- igraph::make_star(10, mode = "undirected")
+g <- snafun::create_manual_graph(1 -- 2:3:4:5:6:7:8:9:10)
 v_bottleneck(g) 
-g <- igraph::make_ring(10)
+g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
 v_bottleneck(g) # all 0
 v_bottleneck(g, n = Inf) # all 9
 }

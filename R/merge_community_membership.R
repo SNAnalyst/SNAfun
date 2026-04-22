@@ -57,18 +57,18 @@
 #' \dontrun{
 #' data(judge_net, package = "SNA4DSData")
 #' # original plot, with 5 communities
-#' coms <- igraph::cluster_fast_greedy(judge_net)
-#' plot(coms, judge_net)
-#' igraph::sizes(coms)
+#' coms <- snafun::extract_comm_fastgreedy(judge_net)
+#' snafun::plot_communities(coms, judge_net)
+#' snafun::extract_comm_sizes(coms)
 #' # for illustration of the function, let's join node 40 with community 2
 #' # it is best to merge into a new object, so the original result is not lost
 #' com2 <- merge_membership(coms, merges = list(c(2, 5)))
-#' plot(com2, judge_net)
-#' igraph::sizes(com2)
+#' snafun::plot_communities(com2, judge_net)
+#' snafun::extract_comm_sizes(com2)
 #' 
 #' # Compute modularity for the new grouping
 #' # (Note: it is OK that the communities are not numbered consecutively)
-#' igraph::modularity(judge_net, com2$membership)
+#' snafun::extract_comm_modularity(com2, graph = judge_net)
 #' # igraph::cluster_fast_greedy uses the edge weight by default.
 #' # To include that here as well, use:
 #' igraph::modularity(judge_net, com2$membership, 
@@ -110,4 +110,3 @@ merge_membership <- function(coms, merges) {
   
   coms
 }
-

@@ -13,7 +13,7 @@ extract_comm_fastgreedy(
 )
 }
 \arguments{
-\item{x}{The undirected input graph, edge directions are ignored in directed graphs.}
+\item{x}{The undirected input graph.}
 
 \item{weights}{The weights of the edges. It must be a positive numeric vector, 
 \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 

@@ -267,6 +267,20 @@ expect_equal(weighted_result$obs.stat, binary_result$obs.stat, tolerance = 1e-12
 expect_equal(weighted_result$rep.stat, binary_result$rep.stat, tolerance = 1e-12)
 
 
+# Function labels and FUN.args should be preserved in the result and output.
+fun_args_result <- snafun::stat_cug(
+  x = snafun::to_network(undirected_mat),
+  FUN = sna::gtrans,
+  mode = "graph",
+  cmode = "edges",
+  reps = 12,
+  FUN.args = list(diag = TRUE, mode = "graph", measure = "rank")
+)
+expect_equal(fun_args_result$fun, "sna::gtrans")
+expect_true(is.list(fun_args_result$fun.args))
+expect_equal(fun_args_result$fun.args$measure, "rank")
+
+
 # Plot and print methods should be usable without errors.
 tmp_pdf <- tempfile(fileext = ".pdf")
 grDevices::pdf(tmp_pdf)
@@ -276,6 +290,10 @@ expect_inherits(plot_value, "stat_cug")
 
 print_value <- print(binary_result)
 expect_inherits(print_value, "stat_cug")
+print_capture <- capture.output(print(fun_args_result))
+expect_true(any(grepl("Statistic Function: sna::gtrans", print_capture)))
+expect_true(any(grepl("Statistic Arguments:", print_capture)))
+expect_true(any(grepl("measure = ", print_capture, fixed = TRUE)))
 
 summary_value <- summary(binary_result)
 expect_inherits(summary_value, "summary.stat_cug")
@@ -284,8 +302,14 @@ expect_equal(summary_value$graph, binary_result$graph)
 expect_equal(summary_value$valid.reps, binary_result$valid.reps)
 expect_true("Mean" %in% names(summary_value$null.summary))
 
-summary_print_value <- print(summary_value)
+summary_fun_args <- summary(fun_args_result)
+expect_equal(summary_fun_args$fun, "sna::gtrans")
+expect_true(is.list(summary_fun_args$fun.args))
+summary_print_value <- print(summary_fun_args)
 expect_inherits(summary_print_value, "summary.stat_cug")
+summary_capture <- capture.output(print(summary_fun_args))
+expect_true(any(grepl("Statistic Function: sna::gtrans", summary_capture)))
+expect_true(any(grepl("Statistic Arguments:", summary_capture)))
 
 summary_df <- as.data.frame(binary_result)
 expect_true(is.data.frame(summary_df))
@@ -293,6 +317,7 @@ expect_equal(nrow(summary_df), 1)
 expect_equal(summary_df$obs_stat, binary_result$obs.stat, tolerance = 1e-12)
 expect_equal(summary_df$p_greater_equal_obs, binary_result$pgteobs, tolerance = 1e-12)
 expect_equal(summary_df$graph, binary_result$graph)
+expect_equal(summary_df$fun, binary_result$fun)
 
 replicate_df <- as.data.frame(binary_result, replicates = TRUE)
 expect_true(is.data.frame(replicate_df))
@@ -304,6 +329,7 @@ expect_equal(
   binary_result$rep.stat,
   tolerance = 1e-12
 )
+expect_equal(replicate_df$fun[[1]], binary_result$fun)
 
 
 # Error handling

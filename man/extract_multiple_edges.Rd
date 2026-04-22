@@ -32,11 +32,15 @@ on matrices if you only need to know whether collapsed multiplicities are
 present.
 }
 \examples{
-g <- igraph::make_empty_graph(n = 3, directed = TRUE)
-g <- igraph::add_edges(g, c(1, 2, 1, 2, 2, 3))
+g <- snafun::to_igraph(
+  data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+  directed = TRUE
+)
 extract_multiple_edges(g)   # second edge on 1 -> 2
 
-nw <- network::network.initialize(3, directed = TRUE, loops = TRUE, multiple = TRUE)
-nw <- network::add.edges(nw, tail = c(1, 1, 2), head = c(2, 2, 3))
+nw <- snafun::to_network(
+  data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+  directed = TRUE
+)
 extract_multiple_edges(nw)
 }

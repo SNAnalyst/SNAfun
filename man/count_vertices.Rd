@@ -20,9 +20,9 @@ Returns the number of vertices in an object of class \code{network}
 or \code{igraph}.
 }
 \examples{
-net <- igraph::random.graph.game(10, p.or.m = .15, type = "gnp")
+net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "igraph")
 count_vertices(net)
 
-net <- sna::rgraph(n = 10, tprob = 0.15) |> network::as.network()
+net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "network")
 count_vertices(net)
 }

@@ -104,8 +104,8 @@ g_centralize(g, "closeness", method = "freeman", mode = "out") # can be NaN
 g_centralize(g, "eigenvector", method = "freeman", directed = FALSE) 
 
 # The most centralized graph according to eigenvector centrality
-g0 <- igraph::make_graph(c(2,1), n = 10, dir = FALSE)
-g1 <- igraph::make_star(10, mode = "undirected")
+g0 <- snafun::create_manual_graph(1 -- 2, 3, 4, 5, 6, 7, 8, 9, 10)
+g1 <- snafun::create_manual_graph(1 -- 2:3:4:5:6:7:8:9:10)
 g_centralize(g0, "eigenvector", method = "freeman")$centralization
 g_centralize(g1, "eigenvector", method = "freeman")$centralization
 

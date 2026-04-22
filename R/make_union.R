@@ -58,7 +58,7 @@
 #'   snafun::plot(net1)
 #'   snafun::plot(net2)
 #'   snafun::plot(net1_net2)
-#'   snafun::plot(igraph::union(net1, net2))
+#'   snafun::plot(make_union(net1, net2))
 #'   par(opar)
 #' }
 #' 
@@ -128,7 +128,6 @@ make_union <- function(..., byname = "auto") {
       snafun::to_matrix(united)
   }
 }
-
 
 
 

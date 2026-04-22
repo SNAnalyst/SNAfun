@@ -48,7 +48,7 @@ Consult these functions for more detail and, in some cases, some more
 functionality.
 }
 \examples{
-g <- igraph::make_ring(10)
+g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
 extract_subgraph(g, v_to_keep = 3:8)
 extract_subgraph(g, e_to_keep = 4:8)
 extract_subgraph(g, v_to_keep = 3:8, e_to_keep = 4:8)

@@ -40,6 +40,9 @@ stat_ef_int(m, "prob")
 Other statistics functions: 
 \code{\link{stat_cug}()},
 \code{\link{stat_plot_gof}()},
-\code{\link{stat_plot_gof_as_btergm}()}
+\code{\link{stat_plot_gof_as_btergm}()},
+\code{\link{stat_qap_cor}()},
+\code{\link{stat_qap_lm}()},
+\code{\link{stat_qap_logit}()}
 }
 \concept{statistics functions}

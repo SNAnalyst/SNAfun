@@ -65,15 +65,15 @@
 #' "Functional topology in a network of protein interactions." 
 #' Bioinformatics 20.3 (2004): 340-348.
 #' @examples
-#' g <- igraph::graph(c(1,2,2,3,3,4,4,2))
+#' g <- snafun::to_igraph(data.frame(from = c(1, 2, 3, 4), to = c(2, 3, 4, 2)))
 #' v_bottleneck(g)
 #' v_bottleneck(g, vids = c(1, 2, 4))
 #' v_bottleneck(g, mode = "out")
 #' v_bottleneck(g, mode = "in")
 #' 
-#' g <- igraph::make_star(10, mode = "undirected")
+#' g <- snafun::create_manual_graph(1 -- 2:3:4:5:6:7:8:9:10)
 #' v_bottleneck(g) 
-#' g <- igraph::make_ring(10)
+#' g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
 #' v_bottleneck(g) # all 0
 #' v_bottleneck(g, n = Inf) # all 9
 #' @export

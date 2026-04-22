@@ -14,10 +14,10 @@
 #' @export
 #'
 #' @examples
-#' net <- igraph::random.graph.game(10, p.or.m = .15, type = "gnp")
+#' net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "igraph")
 #' count_vertices(net)
-#' 
-#' net <- sna::rgraph(n = 10, tprob = 0.15) |> network::as.network()
+#'
+#' net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "network")
 #' count_vertices(net)
 count_vertices <- function(x) {
   UseMethod("count_vertices")
@@ -56,10 +56,10 @@ count_vertices.network <- function(x) {
 #' @export
 #'
 #' @examples
-#' net <- igraph::random.graph.game(10, p.or.m = .15, type = "gnp")
+#' net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "igraph")
 #' count_edges(net)
-#' 
-#' net <- sna::rgraph(n = 10, tprob = 0.15) |> network::as.network()
+#'
+#' net <- snafun::create_random_graph(10, "gnp", p = .15, graph = "network")
 #' count_edges(net)
 count_edges <- function(x) {
   UseMethod("count_edges")
@@ -80,6 +80,84 @@ count_edges.igraph <- function(x) {
 #' @export
 count_edges.network <- function(x) {
   as.integer(network::network.edgecount(x))
+}
+
+
+
+
+
+#' Count connected components
+#'
+#' Count the number of connected components in a graph.
+#'
+#' Components are exact reachability-based parts of a graph. They are therefore
+#' conceptually different from communities: community detection is heuristic,
+#' whereas component membership is fully determined by the existence of paths.
+#'
+#' For directed graphs, \code{type = "weak"} counts weakly connected
+#' components and \code{type = "strong"} counts strongly connected components.
+#' For undirected graphs this argument is ignored.
+#'
+#' The function accepts the graph representations that are most common in
+#' \code{snafun}: \code{igraph}, \code{network}, \code{matrix}, and
+#' \code{data.frame} edgelists.
+#'
+#' @param x graph data
+#' @param type character scalar, either \code{"weak"} or \code{"strong"}.
+#'
+#' @return integer scalar
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_components_graph(
+#'   n_vertices = 6,
+#'   membership = c(1, 1, 1, 2, 2, 3),
+#'   directed = FALSE,
+#'   graph = "igraph"
+#' )
+#' count_components(g)
+#'
+#' g_d <- snafun::create_manual_graph(A +-+ B -+ C)
+#' count_components(g_d, type = "weak")
+#' count_components(g_d, type = "strong")
+count_components <- function(x, type = c("weak", "strong")) {
+  UseMethod("count_components")
+}
+
+
+#' @export
+count_components.default <- function(x, type = c("weak", "strong")) {
+  txt <- methods_error_message("x", "count_components")
+  stop(txt)
+}
+
+
+#' @export
+count_components.igraph <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  as.integer(igraph::components(x, mode = type)$no)
+}
+
+
+#' @export
+count_components.network <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  count_components(snafun::to_igraph(x), type = type)
+}
+
+
+#' @export
+count_components.matrix <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  bipartite <- nrow(x) != ncol(x)
+  count_components(snafun::to_igraph(x, bipartite = bipartite), type = type)
+}
+
+
+#' @export
+count_components.data.frame <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  count_components(snafun::to_igraph(x), type = type)
 }
 
 
@@ -259,4 +337,3 @@ count_triads.matrix <- function(x, echo = TRUE) {
     invisible(out)
   }
 }
-

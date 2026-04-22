@@ -21,6 +21,16 @@
 #' @param directed Logical, whether directed or undirected paths are to be 
 #' considered. This is ignored for undirected graphs. The default is \code{TRUE} 
 #' is \code{x} is directed and \code{FALSE} otherwise
+#' @param attrname optional character scalar naming the vertex attribute for
+#' assortativity.
+#' @param values optional vector with one value per vertex. This is mainly
+#' useful for matrices and plain edge lists, but can also be used with graph
+#' objects.
+#' @param vertices optional vertex metadata table used only for
+#' \code{data.frame} edgelists. The first column should contain the vertex
+#' names that appear in the edgelist; further columns are treated as vertex
+#' attributes.
+#' @param normalized logical; should the assortativity be normalized?
 #' @param unconnected Logical, what to do if the graph is unconnected. 
 #' If \code{FALSE}, the function will return a number that is one larger the 
 #' largest possible diameter, which is always the number of vertices. 
@@ -39,21 +49,19 @@
 #' g_density(snafun::to_network(m))
 #' g_density(snafun::to_igraph(m))
 #' # when loops matter
-#' g <- igraph::graph( c(1,2, 2,2, 2,3) )
+#' g <- snafun::to_igraph(data.frame(from = c(1, 2, 2), to = c(2, 2, 3)))
 #' g_density(g, loops = FALSE)   # this is wrong, if loops matter
 #' g_density(g, loops = TRUE)   # this is correct, if loops matter
 #' 
-#' g <- sna::rgraph(10, mode = "digraph")
+#' g <- snafun::create_random_graph(10, "gnp", p = .2, directed = TRUE, graph = "igraph")
 #' g_n <- snafun::to_network(g)
 #' g_mean_distance(g_n)
-#' g_i <- snafun::to_igraph(g)
-#' g_mean_distance(g_i)
+#' g_mean_distance(g)
 #' 
-#' g <- sna::rgraph(10, mode = "graph")
+#' g <- snafun::create_random_graph(10, "gnp", p = .2, directed = FALSE, graph = "igraph")
 #' g_n <- snafun::to_network(g)
 #' g_mean_distance(g_n)
-#' g_i <- snafun::to_igraph(g)
-#' g_mean_distance(g_i)
+#' g_mean_distance(g)
 #' @name gli
 NULL
 
@@ -229,8 +237,12 @@ g_mean_distance.network <- function(x) {
 #' # correlation
 #' # matrices
 #' # 
-#' g1 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
-#' g2 <- sna::rgraph(10,1,tprob=c(0.2,0.2,0.5,0.5,0.8,0.8))
+#' g1 <- snafun::to_matrix(
+#'   snafun::create_random_graph(10, "gnp", p = .3, directed = TRUE, graph = "igraph")
+#' )
+#' g2 <- snafun::to_matrix(
+#'   snafun::create_random_graph(10, "gnp", p = .3, directed = TRUE, graph = "igraph")
+#' )
 #' g_correlation(g1, g2)
 #' g1 <- to_network(g1); g2 <- to_network(g2)
 #' g_correlation(g1, g2)
@@ -357,7 +369,7 @@ g_correlation.array <- function(g1, g2, diag = FALSE, weight = TRUE, wf = NULL) 
 #' @examples
 #' # 
 #' # reciprocity
-#' g <- igraph::erdos.renyi.game(10, .3, type = "gnp", directed = TRUE)
+#' g <- snafun::create_random_graph(10, "gnp", p = .3, directed = TRUE, graph = "igraph")
 #' g_reciprocity(g)
 #' g_reciprocity(snafun::to_network(g))
 #' 
@@ -522,6 +534,244 @@ g_transitivity_matrix_backend <- function(x) {
 
 
 
+####----------------------------------------------------------------------------
+#' @describeIn gli Assortativity by vertex attribute or supplied vertex values.
+#'
+#' Assortativity captures the tendency of connected vertices to resemble one
+#' another on a vertex-level characteristic. For numeric characteristics,
+#' assortativity is a correlation-like coefficient. For categorical
+#' characteristics, it summarizes the extent to which ties stay within versus
+#' between categories.
+#'
+#' The graph itself can be supplied as an \code{igraph}, \code{network},
+#' \code{matrix}, or \code{data.frame} edgelist. The vertex information can be
+#' supplied in two ways:
+#' \itemize{
+#' \item via \code{attrname}, when the graph object already stores the required
+#' vertex attribute;
+#' \item via \code{values}, a vector of length equal to the number of vertices.
+#' }
+#'
+#' For plain \code{data.frame} edgelists, \code{attrname} only works when
+#' either hidden vertex metadata are present (for example after
+#' \code{snafun::to_edgelist()}) or when a \code{vertices} table is supplied.
+#'
+#' This function is intended for one-mode networks. Bipartite inputs are
+#' rejected.
+#' @export
+#' @examples
+#' g <- snafun::create_manual_graph(A -- B -- C -- D -- E -- F -- A)
+#' g <- snafun::add_vertex_attributes(g, "group", c("A", "A", "A", "B", "B", "B"))
+#' g_assortativity(g, attrname = "group")
+#'
+#' m <- snafun::to_matrix(g)
+#' g_assortativity(m, values = c("A", "A", "A", "B", "B", "B"))
+#'
+#' vertices <- data.frame(
+#'   name = LETTERS[1:6],
+#'   group = c("A", "A", "A", "B", "B", "B")
+#' )
+#' el <- snafun::to_edgelist(g)
+#' g_assortativity(el, attrname = "group", vertices = vertices)
+g_assortativity <- function(x,
+                            attrname = NULL,
+                            values = NULL,
+                            vertices = NULL,
+                            directed = TRUE,
+                            normalized = TRUE) {
+  UseMethod("g_assortativity")
+}
+
+
+#' @export
+g_assortativity.default <- function(x,
+                                    attrname = NULL,
+                                    values = NULL,
+                                    vertices = NULL,
+                                    directed = TRUE,
+                                    normalized = TRUE) {
+  txt <- methods_error_message("x", "g_assortativity")
+  stop(txt)
+}
+
+
+#' @export
+g_assortativity.igraph <- function(x,
+                                   attrname = NULL,
+                                   values = NULL,
+                                   vertices = NULL,
+                                   directed = TRUE,
+                                   normalized = TRUE) {
+  assortativity_from_graph(
+    graph = x,
+    attrname = attrname,
+    values = values,
+    directed = directed,
+    normalized = normalized
+  )
+}
+
+
+#' @export
+g_assortativity.network <- function(x,
+                                    attrname = NULL,
+                                    values = NULL,
+                                    vertices = NULL,
+                                    directed = TRUE,
+                                    normalized = TRUE) {
+  assortativity_from_graph(
+    graph = snafun::to_igraph(x),
+    attrname = attrname,
+    values = values,
+    directed = directed,
+    normalized = normalized
+  )
+}
+
+
+#' @export
+g_assortativity.matrix <- function(x,
+                                   attrname = NULL,
+                                   values = NULL,
+                                   vertices = NULL,
+                                   directed = TRUE,
+                                   normalized = TRUE) {
+  if (!is.null(attrname)) {
+    stop(
+      "Matrix inputs do not store vertex attributes. Please supply 'values' instead.",
+      call. = FALSE
+    )
+  }
+  assortativity_from_graph(
+    graph = snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    attrname = attrname,
+    values = values,
+    directed = directed,
+    normalized = normalized
+  )
+}
+
+
+#' @export
+g_assortativity.data.frame <- function(x,
+                                       attrname = NULL,
+                                       values = NULL,
+                                       vertices = NULL,
+                                       directed = TRUE,
+                                       normalized = TRUE) {
+  graph <- if (is.null(vertices)) {
+    snafun::to_igraph(x)
+  } else {
+    snafun::to_igraph(x, vertices = vertices)
+  }
+  assortativity_from_graph(
+    graph = graph,
+    attrname = attrname,
+    values = values,
+    directed = directed,
+    normalized = normalized
+  )
+}
+
+
+assortativity_from_graph <- function(graph,
+                                     attrname = NULL,
+                                     values = NULL,
+                                     directed = TRUE,
+                                     normalized = TRUE) {
+  if (!xor(is.null(attrname), is.null(values))) {
+    stop(
+      "Please provide exactly one of 'attrname' or 'values'.",
+      call. = FALSE
+    )
+  }
+  
+  if (snafun::is_bipartite(graph)) {
+    stop(
+      "'g_assortativity' is only implemented for one-mode networks.",
+      call. = FALSE
+    )
+  }
+  
+  vertex_values <- resolve_assortativity_values(
+    graph = graph,
+    attrname = attrname,
+    values = values
+  )
+  
+  directed <- isTRUE(directed) && snafun::is_directed(graph)
+  
+  if (is.factor(vertex_values) || is.character(vertex_values) || is.logical(vertex_values)) {
+    vertex_codes <- as.integer(factor(vertex_values))
+    return(
+      igraph::assortativity_nominal(
+        graph = graph,
+        types = vertex_codes,
+        directed = directed,
+        normalized = normalized
+      )
+    )
+  }
+  
+  if (!is.numeric(vertex_values)) {
+    stop(
+      "Assortativity values should be numeric, logical, character, or factor.",
+      call. = FALSE
+    )
+  }
+  
+  igraph::assortativity(
+    graph = graph,
+    values = as.numeric(vertex_values),
+    directed = directed,
+    normalized = normalized
+  )
+}
+
+
+resolve_assortativity_values <- function(graph,
+                                         attrname = NULL,
+                                         values = NULL) {
+  if (!is.null(attrname)) {
+    if (!snafun::has_vertex_attribute(graph, attrname = attrname)) {
+      stop(
+        "This vertex attribute does not occur on the graph object.",
+        call. = FALSE
+      )
+    }
+    values <- snafun::extract_vertex_attribute(graph, name = attrname)
+  }
+  
+  if (length(values) != snafun::count_vertices(graph)) {
+    stop(
+      "The supplied values should have length equal to the number of vertices.",
+      call. = FALSE
+    )
+  }
+  
+  if (any(is.na(values))) {
+    stop(
+      "Assortativity can not be calculated with missing vertex values.",
+      call. = FALSE
+    )
+  }
+  
+  if (!is.null(names(values)) && snafun::has_vertexnames(graph)) {
+    vertex_names <- snafun::extract_vertex_names(graph)
+    if (setequal(names(values), vertex_names)) {
+      values <- values[vertex_names]
+    }
+  }
+  
+  if (is.character(values)) {
+    return(as.character(values))
+  }
+  
+  values
+}
+
+
+
 
 ####----------------------------------------------------------------------------
 #' @describeIn gli Diameter of a graph. Weights are discarded. The diameter is 
@@ -534,10 +784,10 @@ g_transitivity_matrix_backend <- function(x) {
 #' @examples 
 #' #
 #' # diameter
-#' g <- igraph::make_ring(10)
-#' g2 <- igraph::delete_edges(g, c(1,2,1,10))
-#' igraph::diameter(g2, unconnected=TRUE)
-#' igraph::diameter(g2, unconnected=FALSE)
+#' g2 <- snafun::create_manual_graph(
+#'   1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8,
+#'   9 -- 10
+#' )
 #' g_diameter(g2)  # 7
 #' g_diameter(g2, unconnected = FALSE)  # Inf
 #' 
@@ -594,15 +844,11 @@ g_diameter.network <- function(x,
 #' @examples 
 #' #
 #' # radius
-#' g_i <- snafun::create_random_graph(10, strategy = "gnp", p = .2, 
-#'    directed = TRUE, graph = "igraph")
-#' # add isolate
-#' g_i_iso <- igraph::add_vertices(g_i, nv = 1)
-#' igraph::radius(g_i)
+#' g_i <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
+#' g_i_iso <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1, 11)
 #' snafun::v_eccentricity(g_i)
 #' snafun::extract_isolates(g_i_iso)
 #' snafun::v_eccentricity(g_i_iso)  # the isolate has eccentricity 0
-#' igraph::radius(g_i_iso)  # also 0, should raise a flag about isolates
 #' g_radius(g_i, mode = "all")
 #' g_radius(g_i, mode = "in")
 #' g_radius(g_i, mode = "out")
@@ -662,10 +908,8 @@ g_radius.network <- function(x, mode = c("all", "out", "in")) {
 #' @examples 
 #' #
 #' # compactness
-#' g_i <- snafun::create_random_graph(10, strategy = "gnp", p = .2, 
-#'    directed = TRUE, graph = "igraph")
-#' # add isolate
-#' g_i_iso <- igraph::add_vertices(g_i, nv = 1)
+#' g_i <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
+#' g_i_iso <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1, 11)
 #' g_n <- snafun::to_network(g_i)
 #' g_n_iso <- snafun::to_network(g_i_iso)
 #' g_compactness(g_i)
@@ -674,11 +918,11 @@ g_radius.network <- function(x, mode = c("all", "out", "in")) {
 #' g_compactness(g_i_iso)
 #' g_compactness(g_n_iso)
 #' 
-#' g1 <- igraph::graph_from_literal(A-B-C-D-E-F)
-#' g2 <- igraph::delete_edges(g1, 5)
-#' g3 <- igraph::delete.edges(g1, 3)
-#' g4 <- igraph::delete_edges(g1, c(4, 5))
-#' g5 <- igraph::delete_edges(g1, c(2, 4))
+#' g1 <- snafun::create_manual_graph(A -- B -- C -- D -- E -- F)
+#' g2 <- snafun::create_manual_graph(A -- B -- C -- D -- E, F)
+#' g3 <- snafun::create_manual_graph(A -- B, C -- D -- E -- F)
+#' g4 <- snafun::create_manual_graph(A -- B -- C -- D, E -- F)
+#' g5 <- snafun::create_manual_graph(A -- B, C -- D, E -- F)
 #' g_compactness(g1)
 #' g_compactness(g2)
 #' g_compactness(g3)

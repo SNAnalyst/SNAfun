@@ -104,6 +104,9 @@ stat_plot_gof(gof_btergm, mean_include = FALSE, median_include = FALSE)
 Other statistics functions: 
 \code{\link{stat_cug}()},
 \code{\link{stat_ef_int}()},
-\code{\link{stat_plot_gof_as_btergm}()}
+\code{\link{stat_plot_gof_as_btergm}()},
+\code{\link{stat_qap_cor}()},
+\code{\link{stat_qap_lm}()},
+\code{\link{stat_qap_logit}()}
 }
 \concept{statistics functions}

@@ -472,7 +472,7 @@ extract_graph_attribute.network <- function(x, name) {
 #' @export
 #'
 #' @examples
-#' g <- igraph::make_ring(10)
+#' g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 6 -- 7 -- 8 -- 9 -- 10 -- 1)
 #' extract_subgraph(g, v_to_keep = 3:8)
 #' extract_subgraph(g, e_to_keep = 4:8)
 #' extract_subgraph(g, v_to_keep = 3:8, e_to_keep = 4:8)
@@ -525,6 +525,372 @@ extract_subgraph.network <- function(x, v_to_keep, e_to_keep) {
     x <- network::get.inducedSubgraph(x, eid = e_to_keep)
   }
   return(x)
+}
+
+
+
+# component extraction ---------------------------------------------------------
+
+#' Extract component membership
+#'
+#' Return for each vertex which connected component it belongs to.
+#'
+#' Components are reachability-based building blocks of a graph. They differ
+#' from communities: component membership is exact, while community detection
+#' relies on optimization or heuristic clustering criteria.
+#'
+#' For directed graphs, \code{type = "weak"} groups vertices that are connected
+#' when edge directions are ignored; \code{type = "strong"} requires mutual
+#' reachability along directed paths.
+#'
+#' The result is returned as a simple data.frame, because that is easy for
+#' students to inspect, join with attribute tables, and use for plotting.
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, \code{matrix},
+#' or \code{data.frame}
+#' @param type character scalar, either \code{"weak"} or \code{"strong"}.
+#'
+#' @return data.frame with columns \code{vertex} and \code{component}
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_components_graph(
+#'   n_vertices = 6,
+#'   membership = c(1, 1, 1, 2, 2, 3),
+#'   directed = FALSE,
+#'   graph = "igraph"
+#' )
+#' g <- snafun::add_vertex_names(g, LETTERS[1:6])
+#' extract_component_membership(g)
+#'
+#' g_d <- snafun::create_manual_graph(A +-+ B -+ C)
+#' extract_component_membership(g_d, type = "strong")
+extract_component_membership <- function(x, type = c("weak", "strong")) {
+  UseMethod("extract_component_membership")
+}
+
+
+#' @export
+extract_component_membership.default <- function(x, type = c("weak", "strong")) {
+  txt <- methods_error_message("x", "extract_component_membership")
+  stop(txt)
+}
+
+
+#' @export
+extract_component_membership.igraph <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  components <- igraph::components(x, mode = type)
+  data.frame(
+    vertex = component_vertex_labels(x),
+    component = as.integer(components$membership),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' @export
+extract_component_membership.network <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  extract_component_membership(snafun::to_igraph(x), type = type)
+}
+
+
+#' @export
+extract_component_membership.matrix <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  bipartite <- nrow(x) != ncol(x)
+  extract_component_membership(
+    snafun::to_igraph(x, bipartite = bipartite),
+    type = type
+  )
+}
+
+
+#' @export
+extract_component_membership.data.frame <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  extract_component_membership(snafun::to_igraph(x), type = type)
+}
+
+
+#' Extract connected components
+#'
+#' Split a graph into its connected components.
+#'
+#' Each component is returned as a separate graph object of the same general
+#' representation as the input. That makes it easy to inspect components one by
+#' one without manually subsetting vertices.
+#'
+#' For directed graphs, \code{type = "weak"} and \code{type = "strong"} follow
+#' the same semantics as \code{\link{extract_component_membership}}.
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, \code{matrix},
+#' or \code{data.frame}
+#' @param type character scalar, either \code{"weak"} or \code{"strong"}.
+#'
+#' @return named list of graph objects
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_components_graph(
+#'   n_vertices = 6,
+#'   membership = c(1, 1, 1, 2, 2, 3),
+#'   directed = FALSE,
+#'   graph = "igraph"
+#' )
+#' g <- snafun::add_vertex_names(g, LETTERS[1:6])
+#' comps <- extract_components(g)
+#' length(comps)
+#' snafun::to_matrix(comps[[1]])
+extract_components <- function(x, type = c("weak", "strong")) {
+  UseMethod("extract_components")
+}
+
+
+#' @export
+extract_components.default <- function(x, type = c("weak", "strong")) {
+  txt <- methods_error_message("x", "extract_components")
+  stop(txt)
+}
+
+
+#' @export
+extract_components.igraph <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  component_object <- igraph::components(x, mode = type)
+  split_vertices <- component_groups(component_object$membership)
+  out <- lapply(split_vertices, function(one_group) {
+    snafun::extract_subgraph(x, v_to_keep = one_group)
+  })
+  names(out) <- paste0("component_", names(split_vertices))
+  out
+}
+
+
+#' @export
+extract_components.network <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  graph_i <- snafun::to_igraph(x)
+  component_object <- igraph::components(graph_i, mode = type)
+  split_vertices <- component_groups(component_object$membership)
+  out <- lapply(split_vertices, function(one_group) {
+    snafun::extract_subgraph(x, v_to_keep = one_group)
+  })
+  names(out) <- paste0("component_", names(split_vertices))
+  out
+}
+
+
+#' @export
+extract_components.matrix <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  graph_i <- snafun::to_igraph(x, bipartite = nrow(x) != ncol(x))
+  component_object <- igraph::components(graph_i, mode = type)
+  split_vertices <- component_groups(component_object$membership)
+  out <- lapply(split_vertices, function(one_group) {
+    subgraph <- igraph::induced_subgraph(graph_i, vids = one_group)
+    snafun::to_matrix(subgraph)
+  })
+  names(out) <- paste0("component_", names(split_vertices))
+  out
+}
+
+
+#' @export
+extract_components.data.frame <- function(x, type = c("weak", "strong")) {
+  type <- snafun.match.arg(type)
+  graph_i <- snafun::to_igraph(x)
+  component_object <- igraph::components(graph_i, mode = type)
+  split_vertices <- component_groups(component_object$membership)
+  out <- lapply(split_vertices, function(one_group) {
+    subgraph <- igraph::induced_subgraph(graph_i, vids = one_group)
+    snafun::to_edgelist(subgraph)
+  })
+  names(out) <- paste0("component_", names(split_vertices))
+  out
+}
+
+
+#' Extract cut vertices
+#'
+#' Identify the articulation points of a graph.
+#'
+#' A cut vertex is a vertex whose removal increases the number of connected
+#' components. For directed graphs, edge directions are ignored, matching the
+#' usual articulation-point interpretation.
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, \code{matrix},
+#' or \code{data.frame}
+#' @param names logical, should symbolic vertex names be returned when
+#' available? Defaults to \code{TRUE}.
+#'
+#' @return vector of vertex ids or names
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_manual_graph(A -- B -- C -- D)
+#' extract_cut_vertices(g)
+#' extract_cut_vertices(snafun::to_matrix(g))
+extract_cut_vertices <- function(x, names = TRUE) {
+  UseMethod("extract_cut_vertices")
+}
+
+
+#' @export
+extract_cut_vertices.default <- function(x, names = TRUE) {
+  txt <- methods_error_message("x", "extract_cut_vertices")
+  stop(txt)
+}
+
+
+#' @export
+extract_cut_vertices.igraph <- function(x, names = TRUE) {
+  cut_vertices <- as.integer(igraph::articulation_points(x))
+  if (length(cut_vertices) == 0L) {
+    return(NULL)
+  }
+  if (isTRUE(names) && snafun::has_vertexnames(x)) {
+    return(igraph::V(x)$name[cut_vertices])
+  }
+  cut_vertices
+}
+
+
+#' @export
+extract_cut_vertices.network <- function(x, names = TRUE) {
+  graph_i <- snafun::to_igraph(x)
+  cut_vertices <- extract_cut_vertices(graph_i, names = FALSE)
+  if (is.null(cut_vertices)) {
+    return(NULL)
+  }
+  if (isTRUE(names) && snafun::has_vertexnames(x)) {
+    return(snafun::extract_vertex_names(x)[cut_vertices])
+  }
+  cut_vertices
+}
+
+
+#' @export
+extract_cut_vertices.matrix <- function(x, names = TRUE) {
+  graph_i <- snafun::to_igraph(x, bipartite = nrow(x) != ncol(x))
+  cut_vertices <- extract_cut_vertices(graph_i, names = FALSE)
+  if (is.null(cut_vertices)) {
+    return(NULL)
+  }
+  if (isTRUE(names) && snafun::has_vertexnames(graph_i)) {
+    return(snafun::extract_vertex_names(graph_i)[cut_vertices])
+  }
+  cut_vertices
+}
+
+
+#' @export
+extract_cut_vertices.data.frame <- function(x, names = TRUE) {
+  graph_i <- snafun::to_igraph(x)
+  cut_vertices <- extract_cut_vertices(graph_i, names = FALSE)
+  if (is.null(cut_vertices)) {
+    return(NULL)
+  }
+  if (isTRUE(names) && snafun::has_vertexnames(graph_i)) {
+    return(snafun::extract_vertex_names(graph_i)[cut_vertices])
+  }
+  cut_vertices
+}
+
+
+#' Extract bridge edges
+#'
+#' Identify the edges whose removal increases the number of connected
+#' components.
+#'
+#' The result is returned as an edgelist-like data.frame because that is easier
+#' to inspect across backends than backend-specific edge ids.
+#'
+#' For directed graphs, edge directions are ignored when deciding whether an
+#' edge is a bridge, matching the underlying \code{igraph} semantics.
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, \code{matrix},
+#' or \code{data.frame}
+#'
+#' @return data.frame with one row per bridge edge, or \code{NULL}
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_manual_graph(A -- B -- C -- D)
+#' extract_bridges(g)
+#' extract_bridges(snafun::to_edgelist(g))
+extract_bridges <- function(x) {
+  UseMethod("extract_bridges")
+}
+
+
+#' @export
+extract_bridges.default <- function(x) {
+  txt <- methods_error_message("x", "extract_bridges")
+  stop(txt)
+}
+
+
+#' @export
+extract_bridges.igraph <- function(x) {
+  bridge_ids <- igraph::bridges(x)
+  if (length(bridge_ids) == 0L) {
+    return(NULL)
+  }
+  bridge_edges <- bridge_edges_as_data_frame(x)
+  bridge_edges[bridge_ids, , drop = FALSE]
+}
+
+
+#' @export
+extract_bridges.network <- function(x) {
+  graph_i <- snafun::to_igraph(x)
+  extract_bridges(graph_i)
+}
+
+
+#' @export
+extract_bridges.matrix <- function(x) {
+  graph_i <- snafun::to_igraph(x, bipartite = nrow(x) != ncol(x))
+  extract_bridges(graph_i)
+}
+
+
+#' @export
+extract_bridges.data.frame <- function(x) {
+  graph_i <- snafun::to_igraph(x)
+  extract_bridges(graph_i)
+}
+
+
+bridge_edges_as_data_frame <- function(x) {
+  edge_frame <- igraph::as_data_frame(x, what = "edges")
+  if ("from" %in% colnames(edge_frame) && "to" %in% colnames(edge_frame)) {
+    return(edge_frame)
+  }
+  
+  # Older igraph versions may still use "from" and "to", but we guard this
+  # fallback to keep the helper robust if the returned names ever change.
+  colnames(edge_frame)[seq_len(min(2, ncol(edge_frame)))] <- c("from", "to")[seq_len(min(2, ncol(edge_frame)))]
+  edge_frame
+}
+
+
+component_vertex_labels <- function(x) {
+  if (snafun::has_vertexnames(x)) {
+    return(snafun::extract_vertex_names(x))
+  }
+  as.character(seq_len(snafun::count_vertices(x)))
+}
+
+
+component_groups <- function(membership) {
+  membership <- as.integer(membership)
+  component_ids <- sort(unique(membership))
+  groups <- lapply(component_ids, function(one_component) which(membership == one_component))
+  names(groups) <- as.character(component_ids)
+  groups
 }
 
 
@@ -677,7 +1043,9 @@ extract_neighbors.network <- function(x, vertex, type = c("out", "in", "all")) {
 #' @export
 #'
 #' @examples
-#' g <- igraph::graph_from_literal(One --+ Two +-+ Three +-- Four --+ Five +-- Six +-- Seven +-+ Eight +-+ One +-+ Five)
+#' g <- snafun::create_manual_graph(
+#'   One --+ Two +-+ Three +-- Four --+ Five +-- Six +-- Seven +-+ Eight +-+ One +-+ Five
+#' )
 #' snafun::to_matrix(g)
 #' extract_egonet(g, vertices = 1, order = 1, type = "in")[[1]] |> snafun::to_matrix()
 #' extract_egonet(g, vertices = 1, order = 1, type = "out")[[1]] |> snafun::to_matrix()
@@ -800,7 +1168,13 @@ get_neigbors_network <- function(x, vertices, type, steps = 1) {
 #' has_loops(x)             # FALSE
 #' extract_loops(x)         # NULL
 #' extract_loops_vertex(x)  # NULL
-#' x <- igraph::add_edges(x, c("Barbadori", "Barbadori", "Medici", "Medici"))
+#' x <- snafun::add_edges(
+#'   x,
+#'   data.frame(
+#'     from = c("Barbadori", "Medici"),
+#'     to = c("Barbadori", "Medici")
+#'   )
+#' )
 #' has_loops(x)             # FALSE
 #' extract_loops(x)         # loops detected
 #' extract_loops_vertex(x)
@@ -833,12 +1207,16 @@ NULL
 #' @name extract_multiple_edges
 #'
 #' @examples
-#' g <- igraph::make_empty_graph(n = 3, directed = TRUE)
-#' g <- igraph::add_edges(g, c(1, 2, 1, 2, 2, 3))
+#' g <- snafun::to_igraph(
+#'   data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+#'   directed = TRUE
+#' )
 #' extract_multiple_edges(g)   # second edge on 1 -> 2
 #'
-#' nw <- network::network.initialize(3, directed = TRUE, loops = TRUE, multiple = TRUE)
-#' nw <- network::add.edges(nw, tail = c(1, 1, 2), head = c(2, 2, 3))
+#' nw <- snafun::to_network(
+#'   data.frame(from = c(1, 1, 2), to = c(2, 2, 3)),
+#'   directed = TRUE
+#' )
 #' extract_multiple_edges(nw)
 NULL
 
@@ -1022,17 +1400,17 @@ extract_loops_vertex.network <- function(x) {
 #' mat <- matrix(0, nrow = 4, ncol = 4)
 #' # edges, incl one self-loop
 #' mat[1, 3] <- mat[4,4] <- 1
-#' ig <- igraph::graph_from_adjacency_matrix(mat)
+#' ig <- snafun::to_igraph(mat)
 #' extract_isolates(ig)  # 2 4
 #' # 4 has a loop to itself, including this removes its isolate-ship
 #' extract_isolates(ig, loops = TRUE)  # 2
-#' igraph::V(ig)$name <-  LETTERS[1:4]
+#' ig <- snafun::add_vertex_names(ig, LETTERS[1:4])
 #' extract_isolates(ig)  # B D
 #' extract_isolates(ig, names = FALSE)  # 2 4
 #' 
-#' nw <- network::as.network(mat, loops = TRUE)
+#' nw <- snafun::to_network(mat)
 #' extract_isolates(nw)  # 2 4
-#' network::set.vertex.attribute(nw, "vertex.names", LETTERS[1:4])
+#' nw <- snafun::add_vertex_names(nw, LETTERS[1:4])
 #' extract_isolates(nw)  # B D
 #' extract_isolates(nw, names = FALSE)  # 2 4
 extract_isolates <- function(x, names = TRUE, loops = FALSE) {

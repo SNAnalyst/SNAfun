@@ -29,7 +29,7 @@
 #' extract_all_vertex_attributes(flomar)
 #'
 #' # NULL
-#' extract_all_vertex_attributes(igraph::erdos.renyi.game(10, 4, type = "gnm"))
+#' extract_all_vertex_attributes(snafun::create_random_graph(10, "gnm", m = 4))
 #'
 #' flomar_nw <- to_network(flomar)
 #' extract_all_vertex_attributes(flomar_nw)

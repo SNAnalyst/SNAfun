@@ -49,19 +49,19 @@ In all cases, the attributes will be added for all vertices, so you need to
 make sure the values in the correct order and exist for all of the vertices.
 }
 \examples{
-g <- igraph::graph.ring(5)
-add_vertex_attributes(g, "at1", 1:5) |> 
-  igraph::vertex_attr("at1")
+g <- snafun::create_manual_graph(1 -- 2 -- 3 -- 4 -- 5 -- 1)
+add_vertex_attributes(g, "at1", 1:5) |>
+  snafun::extract_vertex_attribute("at1")
 
-add_vertex_attributes(g, value = data.frame(naam = 1:5)) |> 
-  igraph::vertex_attr("naam")
+add_vertex_attributes(g, value = data.frame(naam = 1:5)) |>
+  snafun::extract_vertex_attribute("naam")
 
 add_vertex_attributes(g, value = data.frame(een = 11:15, twee = 21:25))
 
 add_vertex_attributes(g, c("twee", "een"), 
   value = data.frame(een = 11:15, twee = 21:25, drie = 31:35))
 
-g <- sna::rgraph(10, tprob = .2) |> network::as.network()
+g <- snafun::create_random_graph(10, "gnp", p = .2, graph = "network")
 add_vertex_attributes(g, "naam", value = data.frame(naam = 1:10))
 
 add_vertex_attributes(g, value = data.frame(naam = 1:10))

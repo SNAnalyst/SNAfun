@@ -11,7 +11,8 @@
 #' The result of this function can be queried using the utility functions 
 #' documented here: \code{\link[igraph]{membership}},
 #' 
-#' @param x The input graph, edge directions are ignored in directed graphs.
+#' @param x The input graph. For directed graphs, edge directions are ignored by
+#'   the walktrap algorithm.
 #' @param weights The weights of the edges. It must be a positive numeric vector, 
 #' \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 
 #' ‘weight’ edge attribute, then that attribute will be used. If \code{NULL} and 
@@ -102,7 +103,7 @@ extract_comm_walktrap.network <- function(x,
 #' The process stops when there is only a single vertex left or when the 
 #' modularity cannot be increased any more in a step.
 #'
-#' @param x The undirected input graph, edge directions are ignored in directed graphs.
+#' @param x The undirected input graph.
 #' @param weights The weights of the edges. It must be a positive numeric vector, 
 #' \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 
 #' ‘weight’ edge attribute, then that attribute will be used. If \code{NULL} and 
@@ -182,7 +183,7 @@ extract_comm_louvain.network <- function(x,
 #' The result of this function can be queried using the utility functions 
 #' documented here: \code{\link[igraph]{membership}},
 #' 
-#' @param x The undirected input graph, edge directions are ignored in directed graphs.
+#' @param x The undirected input graph.
 #' @param weights The weights of the edges. It must be a positive numeric vector, 
 #' \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 
 #' ‘weight’ edge attribute, then that attribute will be used. If \code{NULL} and 
@@ -276,7 +277,7 @@ extract_comm_fastgreedy.network <- function(x,
 #' The result of this function can be queried using the utility functions 
 #' documented here: \code{\link[igraph]{membership}},
 #' 
-#' @param x The input graph, edge directions are ignored in directed graphs.
+#' @param x The input graph.
 #' @param weights The weights of the edges. It must be a positive numeric vector, 
 #' \code{NULL} or \code{NA}. If it is \code{NULL} and the input graph has a 
 #' ‘weight’ edge attribute, then that attribute will be used. If \code{NULL} and 
@@ -297,7 +298,7 @@ extract_comm_fastgreedy.network <- function(x,
 #' which actually splitted a component of the graph.
 #' @param membership Logical scalar, whether to calculate the membership vector 
 #' for the split corresponding to the highest modularity value.
-#' @references this function just wraps the \code{\link[igraph]{edge_betweenness}}
+#' @references this function just wraps the \code{\link[igraph]{cluster_edge_betweenness}}
 #' function and documentation.
 #' @return a communities object that can be handled with the functions at 
 #' \code{\link[igraph]{membership}}.
@@ -342,11 +343,12 @@ extract_comm_girvan.igraph <- function(x,
   #   stop("Fast greedy community detection works for undirected graphs only,
   #        please provide an undirected graph.")
   # }
-  igraph::cluster_edge_betweenness(graph = x, weights = weights, 
-                              modularity = modularity,
-                              merges = merges, membership = membership,
-                              edge.betweenness = edge.betweenness,
-                              bridges = bridges)
+  igraph::cluster_edge_betweenness(graph = x, weights = weights,
+                                   directed = directed,
+                                   modularity = modularity,
+                                   merges = merges, membership = membership,
+                                   edge.betweenness = edge.betweenness,
+                                   bridges = bridges)
 }
 
 
@@ -364,11 +366,12 @@ extract_comm_girvan.network <- function(x,
   #        please provide an undirected graph.")
   # }
   g <- snafun::to_igraph(x)
-  igraph::cluster_edge_betweenness(graph = g, weights = weights, 
-                              modularity = modularity,
-                              merges = merges, membership = membership,
-                              edge.betweenness = edge.betweenness,
-                              bridges = bridges)
+  igraph::cluster_edge_betweenness(graph = g, weights = weights,
+                                   directed = directed,
+                                   modularity = modularity,
+                                   merges = merges, membership = membership,
+                                   edge.betweenness = edge.betweenness,
+                                   bridges = bridges)
 }
 
 
@@ -409,7 +412,7 @@ plot_comm_dendrogram <- function(x, labels = NULL, hang = 0.1,
     stop("Make sure to input a 'communities' object for 'x'.")
   }
   stats::as.hclust(x) |> graphics::plot(labels = labels, hang = hang, check = FALSE,
-                                     axes = axes, frame.plot = frame_plot, ann = ann,
-                                     main = main, sub = sub, xlab = NULL, 
-                                     ylab = "", ...)
+                                        axes = axes, frame.plot = frame_plot, ann = ann,
+                                        main = main, sub = sub, xlab = xlab,
+                                        ylab = ylab, ...)
 }

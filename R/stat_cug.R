@@ -82,14 +82,13 @@
 #' # A snafun statistic
 #' stat_cug(g, FUN = snafun::g_transitivity, cmode = "edges", reps = 99)
 #'
-#' # An igraph statistic on network input
+#' # The same statistic on network input
 #' g_n <- snafun::to_network(g)
 #' stat_cug(
 #'   g_n,
-#'   FUN = igraph::transitivity,
+#'   FUN = snafun::g_transitivity,
 #'   cmode = "edges",
-#'   reps = 99,
-#'   graph = "igraph"
+#'   reps = 99
 #' )
 #'
 #' # A custom function on edgelists
@@ -110,6 +109,7 @@ stat_cug <- function(x,
                      graph = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
                      ignore.eval = TRUE,
                      FUN.args = list()) {
+  call <- match.call(expand.dots = FALSE)
   mode <- mode[[1]]
   cmode <- cmode[[1]]
   graph <- graph[[1]]
@@ -221,7 +221,9 @@ stat_cug <- function(x,
     valid.reps = sum(valid_replicates),
     graph = graph,
     ignore.eval = ignore.eval,
-    call = match.call()
+    fun = stat_cug_fun_label(FUN = FUN, call = call),
+    fun.args = FUN.args,
+    call = call
   )
   class(result) <- "stat_cug"
   result
@@ -281,6 +283,8 @@ summary.stat_cug <- function(object, na.rm = TRUE, ...) {
     valid.reps = object$valid.reps,
     graph = object$graph,
     ignore.eval = object$ignore.eval,
+    fun = object$fun,
+    fun.args = object$fun.args,
     call = object$call,
     null.summary = null_summary,
     null.sd = null_sd
@@ -305,6 +309,8 @@ print.summary.stat_cug <- function(x, digits = 4, ...) {
   cat("Conditioning Method:", x$cmode, "\n")
   cat("Graph Type:", x$mode, "\n")
   cat("Statistic Graph Class:", x$graph, "\n")
+  cat("Statistic Function:", x$fun, "\n")
+  cat("Statistic Arguments:", stat_cug_format_fun_args(x$fun.args, digits = digits), "\n")
   cat("Diagonal Used:", x$diag, "\n")
   cat("Replications:", x$reps, "\n")
   cat("Valid replicate statistics:", x$valid.reps, "\n\n")
@@ -336,6 +342,8 @@ print.stat_cug <- function(x, digits = 4, ...) {
   cat("Conditioning Method:", x$cmode, "\n")
   cat("Graph Type:", x$mode, "\n")
   cat("Statistic Graph Class:", x$graph, "\n")
+  cat("Statistic Function:", x$fun, "\n")
+  cat("Statistic Arguments:", stat_cug_format_fun_args(x$fun.args, digits = digits), "\n")
   cat("Diagonal Used:", x$diag, "\n")
   cat("Replications:", x$reps, "\n")
   cat("Valid replicate statistics:", x$valid.reps, "\n\n")
@@ -380,12 +388,14 @@ as.data.frame.stat_cug <- function(x, row.names = NULL, optional = FALSE,
       mode = x$mode,
       diag = x$diag,
       cmode = x$cmode,
-      reps = x$reps,
-      valid_reps = x$valid.reps,
-      graph = x$graph,
-      ignore_eval = x$ignore.eval,
-      stringsAsFactors = FALSE
-    )
+    reps = x$reps,
+    valid_reps = x$valid.reps,
+    graph = x$graph,
+    fun = x$fun,
+    fun_args = stat_cug_format_fun_args(x$fun.args),
+    ignore_eval = x$ignore.eval,
+    stringsAsFactors = FALSE
+  )
     if (!is.null(row.names)) {
       rownames(out) <- row.names
     }
@@ -403,6 +413,7 @@ as.data.frame.stat_cug <- function(x, row.names = NULL, optional = FALSE,
     cmode = x$cmode,
     reps = x$reps,
     graph = x$graph,
+    fun = x$fun,
     stringsAsFactors = FALSE
   )
   if (!is.null(row.names)) {
@@ -770,4 +781,62 @@ count_cug_edges_from_matrix <- function(x, mode, diag) {
   }
 
   sum(x[upper.tri(x, diag = diag)] != 0)
+}
+
+
+#' Create a stable user-facing label for a CUG statistic function
+#'
+#' @keywords internal
+#' @noRd
+stat_cug_fun_label <- function(FUN, call) {
+  if (!is.null(call[["FUN"]])) {
+    return(paste(deparse(call[["FUN"]], width.cutoff = 500L), collapse = ""))
+  }
+
+  fun <- match.fun(FUN)
+  if (!is.null(attr(fun, "srcref"))) {
+    return("<function>")
+  }
+  fun_name <- tryCatch(deparse(substitute(FUN), width.cutoff = 500L), error = function(e) NULL)
+  if (!is.null(fun_name) && length(fun_name) > 0L) {
+    return(paste(fun_name, collapse = ""))
+  }
+  "<function>"
+}
+
+
+#' Format CUG function arguments for printing
+#'
+#' @keywords internal
+#' @noRd
+stat_cug_format_fun_args <- function(x, digits = 4) {
+  if (!is.list(x) || length(x) == 0L) {
+    return("<none>")
+  }
+
+  formatted <- vapply(
+    names(x),
+    function(one_name) {
+      value <- x[[one_name]]
+      value_text <- paste(
+        utils::capture.output(dput(signif_if_numeric(value, digits = digits))),
+        collapse = ""
+      )
+      paste0(one_name, " = ", value_text)
+    },
+    character(1)
+  )
+  paste(formatted, collapse = ", ")
+}
+
+
+#' Apply signif to numeric objects while leaving others untouched
+#'
+#' @keywords internal
+#' @noRd
+signif_if_numeric <- function(x, digits = 4) {
+  if (is.numeric(x)) {
+    return(signif(x, digits = digits))
+  }
+  x
 }
