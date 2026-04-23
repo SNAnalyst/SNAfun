@@ -147,6 +147,73 @@ expect_equal(
 )
 
 
+# community evaluation ---------------------------------------------------------
+toy_membership <- igraph::membership(toy_coms)
+toy_dist <- igraph::distances(toy_graph)
+toy_sil <- cluster::silhouette(toy_membership, toy_dist)
+toy_mean_sil <- tapply(toy_sil[, "sil_width"], toy_membership, mean)
+toy_modularity <- igraph::modularity(toy_graph, toy_membership)
+toy_degree <- igraph::degree(toy_graph)
+toy_edge_frame <- igraph::as_data_frame(toy_graph, what = "edges")[, 1:2, drop = FALSE]
+
+toy_conductance <- sapply(sort(unique(toy_membership)), function(k) {
+  in_cluster <- which(toy_membership == k)
+  out_cluster <- which(toy_membership != k)
+  cut_size <- sum(xor(
+    toy_membership[match(toy_edge_frame[[1]], igraph::V(toy_graph)$name)] == k,
+    toy_membership[match(toy_edge_frame[[2]], igraph::V(toy_graph)$name)] == k
+  ))
+  cut_size / min(sum(toy_degree[in_cluster]), sum(toy_degree[out_cluster]))
+})
+
+toy_density <- sapply(sort(unique(toy_membership)), function(k) {
+  sub <- igraph::induced_subgraph(toy_graph, vids = which(toy_membership == k))
+  snafun::g_density(sub, loops = FALSE)
+})
+
+expected_eval <- data.frame(
+  Cluster = c("C1", "C2"),
+  Size = c(3, 3),
+  Silhouette = round(as.numeric(toy_mean_sil), 3),
+  Modularity = round(rep(toy_modularity, 2), 3),
+  Conductance = round(as.numeric(toy_conductance), 3),
+  Density = round(as.numeric(toy_density), 3),
+  stringsAsFactors = FALSE
+)
+
+expect_equal(
+  snafun::evaluate_communities(toy_coms, toy_graph),
+  expected_eval
+)
+
+eval_with_sil <- snafun::evaluate_communities(toy_coms, toy_graph, sil_width = TRUE)
+expect_true(is.list(eval_with_sil))
+expect_true(all(c("sil_width", "results") %in% names(eval_with_sil)))
+expect_equal(eval_with_sil$results, expected_eval)
+expect_equal(nrow(eval_with_sil$sil_width), igraph::vcount(toy_graph))
+expect_true(all(c("vertex", "cluster", "neighbor", "sil_width") %in% colnames(eval_with_sil$sil_width)))
+
+disconnected_graph <- igraph::make_empty_graph(n = 4, directed = FALSE)
+disconnected_graph <- igraph::set_vertex_attr(
+  disconnected_graph,
+  "name",
+  value = c("A", "B", "C", "D")
+)
+disconnected_graph <- igraph::add_edges(disconnected_graph, c("A", "B"))
+disconnected_coms <- igraph::make_clusters(disconnected_graph, membership = c(1, 1, 2, 3))
+disconnected_eval <- snafun::evaluate_communities(
+  disconnected_coms,
+  disconnected_graph,
+  sil_width = TRUE
+)
+expect_equal(nrow(disconnected_eval$results), 3)
+expect_equal(disconnected_eval$results$Density[disconnected_eval$results$Cluster %in% c("C2", "C3")], c(0, 0))
+expect_equal(
+  disconnected_eval$sil_width$vertex,
+  c("A", "B", "C", "D")
+)
+
+
 # add community membership -----------------------------------------------------
 g_comm <- snafun::add_comm_membership(judge_net, coms)
 expect_equal(

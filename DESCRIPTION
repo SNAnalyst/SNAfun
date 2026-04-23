@@ -19,6 +19,7 @@ LazyData: true
 URL: https://github.com/SNAnalyst/SNAfun
 BugReports: https://github.com/SNAnalyst/SNAfun/issues
 Imports:
+	cluster,
 	methods,
 	sna (>= 2.7),
 	utils,
