@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 
 ```
 
-```{r gt_tables, include = FALSE, eval = TRUE, file='create_tables.R'}
+```{r gt_tables, include = FALSE, eval = TRUE, file='../inst/extdata/create_tables.R'}
 ```
 
 ```{=html}
@@ -129,6 +129,52 @@ This workflow is especially useful when you want to:
 - color vertices by community in a later plot;
 - identify bridging edges between communities; or
 - compare community structure to other vertex attributes.
+
+## Evaluating community quality
+
+After finding a community structure, you may also want to evaluate how
+well-separated the detected communities are. `snafun` can do this with
+`evaluate_communities()`.
+
+The function returns a community-level table with:
+
+- `Silhouette`: the average silhouette width of the vertices in that
+  community; higher values indicate cleaner separation.
+- `Modularity`: the modularity of the full partition; higher values
+  indicate relatively many ties within communities and relatively few
+  ties between communities.
+- `Conductance`: how strongly a community is tied to the rest of the
+  graph; lower values are usually better.
+- `Density`: how densely connected the vertices are within the
+  community itself.
+
+```{r evaluate_communities, echo = TRUE, eval = TRUE}
+evls <- snafun::evaluate_communities(walk, g)
+evls
+```
+
+If you also want the silhouette width for each individual vertex, set
+`sil_width = TRUE`.
+
+```{r evaluate_communities_sil, echo = TRUE, eval = TRUE}
+evls2 <- snafun::evaluate_communities(walk, g, sil_width = TRUE)
+head(evls2$sil_width)
+```
+
+You can also plot the silhouette widths directly.
+
+```{r evaluate_communities_plot, echo = TRUE, eval = TRUE, fig.width = 10, fig.height = 7}
+plot(evls)
+```
+
+In that plot:
+
+- bars above `0` indicate vertices that fit their own community better
+  than neighbouring communities;
+- bars near `0` indicate ambiguous or boundary cases;
+- bars below `0` indicate vertices that may fit another community
+  better than the one they were assigned to;
+- the red line shows the overall average silhouette width.
 
 # Vertex-level indices
 

@@ -1970,6 +1970,47 @@ df_graph <- rbind(
     NA
   ),
   c(
+    "Evaluate communities",
+    "snafun",
+    '
+    snafun::evaluate_communities(coms, graph, sil_width = FALSE)
+    ',
+    NA
+  ),
+  c(
+    "Evaluate communities",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Evaluate communities",
+    "network",
+    NA,
+    NA
+  ),
+  c(
+    "Plot silhouette widths for communities",
+    "snafun",
+    '
+    evls <- snafun::evaluate_communities(coms, graph)
+    plot(evls)
+    ',
+    NA
+  ),
+  c(
+    "Plot silhouette widths for communities",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Plot silhouette widths for communities",
+    "network",
+    NA,
+    NA
+  ),
+  c(
     "Plot communities",
     "snafun",
     '
