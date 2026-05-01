@@ -181,15 +181,22 @@ expected_eval <- data.frame(
   stringsAsFactors = FALSE
 )
 
-expect_equal(
-  snafun::evaluate_communities(toy_coms, toy_graph),
-  expected_eval
-)
+strip_eval_attrs <- function(x) {
+  base::attr(x, "sil_width") <- NULL
+  class(x) <- "data.frame"
+  rownames(x) <- seq_len(nrow(x))
+  x
+}
+
+toy_eval <- snafun::evaluate_communities(toy_coms, toy_graph)
+expect_inherits(toy_eval, "evaluate_communities")
+expect_equal(strip_eval_attrs(toy_eval), expected_eval)
 
 eval_with_sil <- snafun::evaluate_communities(toy_coms, toy_graph, sil_width = TRUE)
 expect_true(is.list(eval_with_sil))
 expect_true(all(c("sil_width", "results") %in% names(eval_with_sil)))
-expect_equal(eval_with_sil$results, expected_eval)
+expect_inherits(eval_with_sil$results, "evaluate_communities")
+expect_equal(strip_eval_attrs(eval_with_sil$results), expected_eval)
 expect_equal(nrow(eval_with_sil$sil_width), igraph::vcount(toy_graph))
 expect_true(all(c("vertex", "cluster", "neighbor", "sil_width") %in% colnames(eval_with_sil$sil_width)))
 

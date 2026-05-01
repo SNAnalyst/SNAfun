@@ -176,6 +176,56 @@ In that plot:
   better than the one they were assigned to;
 - the red line shows the overall average silhouette width.
 
+## Bridge centralities between communities
+
+Once you have a community structure, you may also want to know which
+vertices act as bridges between those communities. The bridge measures
+in `snafun` take the output of `extract_comm_*()` directly, so you can
+reuse the `walk` object from above.
+
+```{r bridge_centralities, echo = TRUE, eval = TRUE}
+data.frame(
+  vertex = snafun::extract_vertex_ids(g),
+  bridge_strength = snafun::v_bridge_strength(g, walk),
+  bridge_expected_influence = snafun::v_bridge_expected_influence(g, walk),
+  bridge_expected_influence2 = snafun::v_bridge_expected_influence2(g, walk),
+  bridge_closeness = snafun::v_bridge_closeness(g, walk),
+  bridge_betweenness = snafun::v_bridge_betweenness(g, walk)
+)
+```
+
+These measures answer slightly different questions:
+
+- `v_bridge_strength()`: how strongly a vertex is directly tied to
+  vertices outside its own community.
+- `v_bridge_expected_influence()`: like bridge strength, but keeping the
+  sign of the edge weights.
+- `v_bridge_expected_influence2()`: also includes indirect influence
+  through neighbours.
+- `v_bridge_closeness()`: how easily a vertex can reach other
+  communities via short paths.
+- `v_bridge_betweenness()`: how often a vertex lies on shortest paths
+  between different communities.
+
+For directed graphs you can choose whether to focus on incoming,
+outgoing, or all ties. For example:
+
+```{r bridge_centralities_directed, echo = TRUE, eval = TRUE}
+snafun::v_bridge_strength(g, walk, type = "out")
+snafun::v_bridge_strength(g, walk, type = "in")
+```
+
+For weighted signed social networks, the direct bridge measures use the
+weights as they are. The shortest-path bridge measures behave slightly
+differently: positive weights are translated into distances via `1 /
+weight`, while zero and negative weights are ignored in the path search.
+If you want purely topological shortest paths, use `weights = NA`.
+
+```{r bridge_centralities_unweighted_paths, echo = TRUE, eval = TRUE}
+snafun::v_bridge_closeness(g, walk, weights = NA)
+snafun::v_bridge_betweenness(g, walk, weights = NA)
+```
+
 # Vertex-level indices
 
 Here are the functions to determine many of the vertex-level indices you

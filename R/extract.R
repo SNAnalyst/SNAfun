@@ -895,6 +895,316 @@ component_groups <- function(membership) {
 
 
 
+ #' Extract all shortest paths from one source vertex
+#'
+#' This function provides a backend-agnostic equivalent of
+#' \code{igraph::all_shortest_paths()}. It returns all geodesic paths from one
+#' source vertex to one or more target vertices, together with a table that
+#' lists the edge steps in each path and a vector with the number of geodesics
+#' from the source to every vertex.
+#'
+#' The function accepts \code{igraph}, \code{network}, adjacency matrices, and
+#' edgelists/data frames. For non-\code{igraph} inputs, the graph is first
+#' converted internally and then analysed in a consistent way.
+#'
+#' If the graph has vertex names, these names are used in the output. Otherwise
+#' the output uses numeric vertex positions.
+#'
+#' When \code{weights = NULL}, existing \code{weight} edge attributes are used
+#' if they are present, matching \code{igraph}'s shortest-path conventions. Use
+#' \code{weights = NA} to ignore edge weights and compute purely topological
+#' shortest paths.
+#'
+#' @param x graph object of class \code{igraph}, \code{network}, \code{matrix},
+#' or \code{data.frame}
+#' @param from one source vertex, specified either by vertex id or by vertex
+#' name
+#' @param to optional vector of target vertices, specified by ids or names. If
+#' \code{NULL}, all vertices are considered.
+#' @param mode character scalar, one of \code{"out"}, \code{"in"}, or
+#' \code{"all"}
+#' @param weights optional edge weights passed to
+#' \code{\link[igraph:distances]{igraph::all_shortest_paths}}. Leave
+#' \code{NULL} to use the graph's \code{weight} attribute when present, or use
+#' \code{NA} to ignore weights.
+#'
+#' @return a list with components:
+#' \describe{
+#' \item{\code{paths}}{data.frame with one row per shortest path. The
+#' \code{vertices} column is a list-column that stores the full vertex sequence
+#' of each path. The columns \code{path_id}, \code{from}, \code{to}, and
+#' \code{length} identify the path, its source, its target, and its number of
+#' edges.}
+#' \item{\code{edges}}{data.frame with one row per edge step in each path, with
+#' columns \code{path_id}, \code{step}, \code{from}, and \code{to}.}
+#' \item{\code{nrgeo}}{named numeric vector with the number of geodesics from
+#' the source to every vertex in the graph, in the same vertex order as the
+#' graph object.}
+#' \item{\code{from}}{the source vertex label or id.}
+#' \item{\code{to}}{the target vertex labels or ids that were requested.}
+#' \item{\code{mode}}{the mode that was used.}
+#' }
+#' @export
+#'
+#' @examples
+#' g <- snafun::create_manual_graph(A -+ B, A -+ C, B -+ D, C -+ D)
+#' out <- extract_all_shortest_paths(g, from = "A", to = "D")
+#' out$paths
+#' out$edges
+#' out$nrgeo
+#'
+#' # request all targets from one source
+#' extract_all_shortest_paths(g, from = "A")$paths
+#'
+#' # weighted shortest paths
+#' g_w <- snafun::add_edge_attributes(
+#'   g,
+#'   attr_name = "weight",
+#'   value = c(1, 3, 1, 2)
+#' )
+#' extract_all_shortest_paths(g_w, from = "A", to = "D")$paths
+#'
+#' # ignore weights explicitly
+#' extract_all_shortest_paths(g_w, from = "A", to = "D", weights = NA)$paths
+#'
+#' g_n <- snafun::to_network(g)
+#' extract_all_shortest_paths(g_n, from = "A", to = "D")$paths
+#'
+#' mat <- snafun::to_matrix(g)
+#' rownames(mat) <- colnames(mat) <- c("A", "B", "C", "D")
+#' extract_all_shortest_paths(mat, from = "A", to = "D")$paths
+#'
+#' el <- snafun::to_edgelist(g)
+#' extract_all_shortest_paths(el, from = "A", to = "D")$paths
+extract_all_shortest_paths <- function(x, from, to = NULL,
+                                       mode = c("out", "in", "all"),
+                                       weights = NULL) {
+  UseMethod("extract_all_shortest_paths")
+}
+
+
+#' @export
+extract_all_shortest_paths.default <- function(x, from, to = NULL,
+                                               mode = c("out", "in", "all"),
+                                               weights = NULL) {
+  txt <- methods_error_message("x", "extract_all_shortest_paths")
+  stop(txt)
+}
+
+
+#' @export
+extract_all_shortest_paths.igraph <- function(x, from, to = NULL,
+                                              mode = c("out", "in", "all"),
+                                              weights = NULL) {
+  mode <- snafun.match.arg(mode)
+  graph <- x
+  labels <- shortest_path_vertex_labels(graph)
+  from_id <- resolve_shortest_path_vertices(graph, from, arg = "from", single = TRUE)
+  if (is.null(to)) {
+    to_id <- seq_len(igraph::vcount(graph))
+  } else {
+    to_id <- resolve_shortest_path_vertices(graph, to, arg = "to", single = FALSE)
+  }
+
+  shortest <- igraph::all_shortest_paths(
+    graph = graph,
+    from = from_id,
+    to = to_id,
+    mode = mode,
+    weights = weights
+  )
+  vpaths <- shortest$vpaths
+  if (is.null(vpaths)) {
+    vpaths <- shortest$res
+  }
+
+  distance_lookup <- as.vector(
+    igraph::distances(
+      graph = graph,
+      v = from_id,
+      to = to_id,
+      mode = mode,
+      weights = weights
+    )
+  )
+  names(distance_lookup) <- as.character(to_id)
+
+  path_table <- shortest_path_table_from_vpaths(
+    vpaths = vpaths,
+    labels = labels,
+    from_id = from_id,
+    distance_lookup = distance_lookup
+  )
+  edge_table <- shortest_path_edge_table(path_table)
+
+  nrgeo <- shortest$nrgeo
+  names(nrgeo) <- as.character(labels)
+
+  structure(
+    list(
+      paths = path_table,
+      edges = edge_table,
+      nrgeo = nrgeo,
+      from = labels[from_id],
+      to = labels[to_id],
+      mode = mode
+    ),
+    class = c("snafun_all_shortest_paths", "list")
+  )
+}
+
+
+#' @export
+extract_all_shortest_paths.network <- function(x, from, to = NULL,
+                                               mode = c("out", "in", "all"),
+                                               weights = NULL) {
+  extract_all_shortest_paths(
+    snafun::to_igraph(x),
+    from = from,
+    to = to,
+    mode = mode,
+    weights = weights
+  )
+}
+
+
+#' @export
+extract_all_shortest_paths.matrix <- function(x, from, to = NULL,
+                                              mode = c("out", "in", "all"),
+                                              weights = NULL) {
+  extract_all_shortest_paths(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    from = from,
+    to = to,
+    mode = mode,
+    weights = weights
+  )
+}
+
+
+#' @export
+extract_all_shortest_paths.data.frame <- function(x, from, to = NULL,
+                                                  mode = c("out", "in", "all"),
+                                                  weights = NULL) {
+  extract_all_shortest_paths(
+    snafun::to_igraph(x),
+    from = from,
+    to = to,
+    mode = mode,
+    weights = weights
+  )
+}
+
+
+shortest_path_vertex_labels <- function(graph) {
+  if (snafun::has_vertexnames(graph)) {
+    return(snafun::extract_vertex_names(graph))
+  }
+  seq_len(igraph::vcount(graph))
+}
+
+
+resolve_shortest_path_vertices <- function(graph, vertices, arg, single) {
+  labels <- shortest_path_vertex_labels(graph)
+  if (single && length(vertices) != 1L) {
+    stop("Please provide exactly one vertex for '", arg, "'")
+  }
+
+  if (is.character(vertices)) {
+    idx <- match(vertices, as.character(labels))
+    if (anyNA(idx)) {
+      stop("Unknown vertex name in '", arg, "'")
+    }
+    return(as.integer(idx))
+  }
+
+  if (!is.numeric(vertices)) {
+    stop("Please provide vertex ids or vertex names for '", arg, "'")
+  }
+
+  if (any(is.na(vertices)) || any(vertices < 1) || any(vertices > igraph::vcount(graph))) {
+    stop("Unknown vertex id in '", arg, "'")
+  }
+
+  as.integer(vertices)
+}
+
+
+shortest_path_table_from_vpaths <- function(vpaths, labels, from_id, distance_lookup) {
+  if (length(vpaths) == 0L) {
+    out <- data.frame(
+      path_id = integer(0),
+      from = labels[integer(0)],
+      to = labels[integer(0)],
+      distance = numeric(0),
+      stringsAsFactors = FALSE
+    )
+    out$vertices <- I(list())
+    return(out)
+  }
+
+  path_vertices <- lapply(vpaths, function(one_path) {
+    path_ids <- as.integer(one_path)
+    labels[path_ids]
+  })
+  target_ids <- vapply(vpaths, function(one_path) {
+    path_ids <- as.integer(one_path)
+    path_ids[[length(path_ids)]]
+  }, integer(1))
+  distances <- unname(distance_lookup[as.character(target_ids)])
+
+  out <- data.frame(
+    path_id = seq_along(path_vertices),
+    from = rep(labels[from_id], length(path_vertices)),
+    to = labels[target_ids],
+    distance = as.numeric(distances),
+    stringsAsFactors = FALSE
+  )
+  out$vertices <- I(path_vertices)
+  out
+}
+
+
+shortest_path_edge_table <- function(path_table) {
+  if (nrow(path_table) == 0L) {
+    return(data.frame(
+      path_id = integer(0),
+      step = integer(0),
+      from = character(0),
+      to = character(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  edge_rows <- lapply(seq_len(nrow(path_table)), function(i) {
+    vertices <- path_table$vertices[[i]]
+    if (length(vertices) < 2L) {
+      return(NULL)
+    }
+    data.frame(
+      path_id = rep(path_table$path_id[[i]], length(vertices) - 1L),
+      step = seq_len(length(vertices) - 1L),
+      from = vertices[-length(vertices)],
+      to = vertices[-1L],
+      stringsAsFactors = FALSE
+    )
+  })
+
+  edge_rows <- edge_rows[!vapply(edge_rows, is.null, logical(1))]
+  if (length(edge_rows) == 0L) {
+    return(data.frame(
+      path_id = integer(0),
+      step = integer(0),
+      from = path_table$from[integer(0)],
+      to = path_table$to[integer(0)],
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  do.call(rbind, edge_rows)
+}
+
+
 ## neighbors -------------------------------------------------------------------
 
 

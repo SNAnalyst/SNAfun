@@ -2229,6 +2229,139 @@ df_vertices <- rbind(
     ",
     NA
   ),
+  ###### bridge strength ----
+  c(
+    "Bridge strength",
+    "snafun",
+    '
+    snafun::v_bridge_strength(
+      x,
+      communities,
+      type = c("all", "out", "in"),
+      absolute = TRUE,
+      rescaled = FALSE
+    )
+    ',
+    "bridge_comms"
+  ),
+  c(
+    "Bridge strength",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Bridge strength",
+    "network",
+    NA,
+    NA
+  ),
+  ###### bridge expected influence ----
+  c(
+    "Bridge expected influence",
+    "snafun",
+    '
+    snafun::v_bridge_expected_influence(
+      x,
+      communities,
+      type = c("all", "out", "in"),
+      rescaled = FALSE
+    )
+    ',
+    "bridge_comms"
+  ),
+  c(
+    "Bridge expected influence",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Bridge expected influence",
+    "network",
+    NA,
+    NA
+  ),
+  ###### bridge expected influence 2-step ----
+  c(
+    "Bridge expected influence (2-step)",
+    "snafun",
+    '
+    snafun::v_bridge_expected_influence2(
+      x,
+      communities,
+      type = c("all", "out", "in"),
+      rescaled = FALSE
+    )
+    ',
+    "bridge_comms"
+  ),
+  c(
+    "Bridge expected influence (2-step)",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Bridge expected influence (2-step)",
+    "network",
+    NA,
+    NA
+  ),
+  ###### bridge closeness ----
+  c(
+    "Bridge closeness",
+    "snafun",
+    '
+    snafun::v_bridge_closeness(
+      x,
+      communities,
+      mode = c("out", "in", "all"),
+      weights = NULL,
+      rescaled = FALSE
+    )
+    ',
+    "bridge_paths"
+  ),
+  c(
+    "Bridge closeness",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Bridge closeness",
+    "network",
+    NA,
+    NA
+  ),
+  ###### bridge betweenness ----
+  c(
+    "Bridge betweenness",
+    "snafun",
+    '
+    snafun::v_bridge_betweenness(
+      x,
+      communities,
+      directed = NULL,
+      weights = NULL,
+      rescaled = FALSE
+    )
+    ',
+    "bridge_paths"
+  ),
+  c(
+    "Bridge betweenness",
+    "igraph",
+    NA,
+    NA
+  ),
+  c(
+    "Bridge betweenness",
+    "network",
+    NA,
+    NA
+  ),
   ###### harmonic ----
   c(
     "Harmonic centrality",
@@ -2478,6 +2611,20 @@ table_vertices <- df_vertices |>
   gt::tab_footnote(
     footnote = 'These functions serve equivalent purposes, but yield quite different kinds of outputs',
     locations = gt::cells_row_groups(groups = "Neighborhood of a vertex")
+  ) |> 
+  gt::tab_footnote(
+    footnote = "These bridge measures need a community assignment. `communities` can be the output of `snafun::extract_comm_*()`, a membership vector, or a named list of communities.",
+    locations = gt::cells_body(
+      rows = note == "bridge_comms",
+      columns = c(pkg)
+    )
+  ) |> 
+  gt::tab_footnote(
+    footnote = "For these shortest-path bridge measures, positive weights are translated to distances via `1/weight`. Zero and negative weights are ignored in the path search; use `weights = NA` for purely topological paths.",
+    locations = gt::cells_body(
+      rows = note == "bridge_paths",
+      columns = c(pkg)
+    )
   )
 
 

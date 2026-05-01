@@ -35,13 +35,36 @@ if (all(vapply(
   bundled_path <- snafun::browse_cheatsheet(browse = FALSE)
   expect_true(file.exists(bundled_path))
   expect_true(grepl("cheatsheet\\.html$", bundled_path))
+  expect_true(file.exists(snafun:::cheatsheet_table_script_path()))
+  expect_true(file.exists(snafun:::cheatsheet_asset_path("triad_census.png")))
+
+  browser_path <- snafun:::headless_browser_path()
+  if (!is.null(browser_path)) {
+    expect_true(file.exists(browser_path))
+  }
 
   expect_error(
     snafun::create_cheatsheet_html(file = "", browse = FALSE),
     "non-empty path"
   )
   expect_error(
+    snafun::create_cheatsheet_pdf(file = "", browse = FALSE),
+    "non-empty path"
+  )
+  expect_error(
+    snafun::create_cheatsheet_pdf(
+      file = tempfile(fileext = ".pdf"),
+      html = "",
+      browse = FALSE
+    ),
+    "non-empty path"
+  )
+  expect_error(
     snafun::create_cheatsheet_html(file = tempfile(fileext = ".html"), browse = NA),
+    "TRUE or FALSE"
+  )
+  expect_error(
+    snafun::create_cheatsheet_pdf(file = tempfile(fileext = ".pdf"), browse = NA),
     "TRUE or FALSE"
   )
   expect_error(

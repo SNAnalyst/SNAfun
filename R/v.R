@@ -1591,6 +1591,1037 @@ v_shapley.network <- function(x,
 
 
 
+#' Bridge strength centrality
+#'
+#' Bridge centralities quantify how strongly a vertex connects different
+#' communities. They require both a graph and a community assignment.
+#'
+#' These functions are intended for one-mode social networks. The
+#' \code{communities} argument can be supplied in three ways:
+#'
+#' \itemize{
+#' \item as an \code{igraph} \code{communities} object, such as the output of
+#' \code{\link{extract_comm_walktrap}} or \code{\link{extract_comm_fastgreedy}};
+#' \item as a vector of community labels with one value per vertex;
+#' \item as a named list in which each element contains the vertices that belong
+#' to one community.
+#' }
+#'
+#' Named vectors and named lists are matched to vertex names when possible.
+#' Unnamed vectors are aligned by vertex order.
+#'
+#' \code{v_bridge_strength()} sums the magnitudes of ties from a vertex to
+#' vertices in other communities. By default, weights are treated in absolute
+#' value, so a strong negative tie counts as a strong bridge as well.
+#'
+#' \code{v_bridge_expected_influence()} keeps the edge signs and sums the signed
+#' weights from a vertex to vertices in other communities.
+#'
+#' \code{v_bridge_expected_influence2()} extends this idea by adding one extra
+#' indirect step: a vertex receives credit not only for its direct cross-
+#' community ties, but also for how strongly its neighbors connect onward into
+#' other communities.
+#'
+#' Community assignments can be supplied either as an \code{igraph}
+#' \code{communities} object (for example the output of
+#' \code{\link{extract_comm_walktrap}}) or as a vector of community labels with
+#' one value per vertex. Named vectors are matched to vertex names; unnamed
+#' vectors are aligned by vertex order.
+#'
+#' Use \code{use_communities} to restrict the calculation to a subset of
+#' communities. Vertices outside that subset receive \code{NA}.
+#'
+#' \code{v_bridge_closeness()} and \code{v_bridge_betweenness()} are shortest-
+#' path based bridge measures. For these functions, strictly positive edge
+#' weights are interpreted as tie strengths and converted to distances via
+#' \code{1 / weight}. Zero and negative weights are ignored in the path search.
+#' Use \code{weights = NA} if you want purely topological shortest paths.
+#'
+#' @param communities community assignment, either a \code{communities} object
+#' , a vector with one community label per vertex, or a named list of
+#' communities
+#' @param use_communities optional subset of communities to keep in the bridge
+#' calculation. Defaults to all communities.
+#' @param type one of \code{"all"}, \code{"out"}, or \code{"in"}. For
+#' undirected graphs this is treated as \code{"all"}.
+#' @param absolute logical; should bridge strength use absolute tie magnitudes?
+#' Defaults to \code{TRUE}.
+#' @return Named numeric vector with one bridge-centrality score per vertex. If
+#' the graph has vertex names, those names are used; otherwise the vector is
+#' returned in vertex order. Vertices excluded via \code{use_communities}
+#' receive \code{NA}.
+#' @examples
+#' bridge_graph <- snafun::create_manual_graph(
+#'   A -+ B, A -+ C, B -+ D, C -+ A, D -+ A, E -+ A
+#' )
+#' bridge_graph <- snafun::add_edge_attributes(
+#'   bridge_graph,
+#'   attr_name = "weight",
+#'   value = c(2, -1, 4, 3, 1, -2)
+#' )
+#' comms <- c(A = 1, B = 1, C = 2, D = 2, E = 3)
+#'
+#' v_bridge_strength(bridge_graph, communities = comms)
+#' v_bridge_strength(bridge_graph, communities = comms, type = "out")
+#' v_bridge_expected_influence(bridge_graph, communities = comms)
+#' v_bridge_expected_influence2(bridge_graph, communities = comms)
+#'
+#' # limit the calculation to a subset of communities
+#' v_bridge_strength(
+#'   bridge_graph,
+#'   communities = comms,
+#'   use_communities = c(1, 2)
+#' )
+#'
+#' # shortest-path bridge measures
+#' v_bridge_closeness(bridge_graph, communities = comms)
+#' v_bridge_betweenness(bridge_graph, communities = comms)
+#'
+#' # ignore weights and use purely topological shortest paths
+#' v_bridge_closeness(bridge_graph, communities = comms, weights = NA)
+#' v_bridge_betweenness(bridge_graph, communities = comms, weights = NA)
+#'
+#' # the communities argument can also be a named list
+#' comm_list <- list(
+#'   group_1 = c("A", "B"),
+#'   group_2 = c("C", "D"),
+#'   group_3 = "E"
+#' )
+#' v_bridge_strength(bridge_graph, communities = comm_list)
+#'
+#' # or the result of a community-detection function
+#' g_u <- snafun::create_manual_graph(
+#'   A - B, A - C, B - C,
+#'   C - D, D - E, D - F, E - F
+#' )
+#' walk <- snafun::extract_comm_walktrap(g_u)
+#' v_bridge_strength(g_u, communities = walk)
+#'
+#' # matrix and edgelist input work too
+#' mat <- snafun::to_matrix(bridge_graph)
+#' snafun::v_bridge_expected_influence(mat, communities = comms)
+#'
+#' el <- snafun::to_edgelist(bridge_graph)
+#' snafun::v_bridge_expected_influence2(el, communities = comms)
+#' @name v_bridge
+NULL
+
+
+#' @describeIn v_bridge Bridge strength centrality
+#' @export
+v_bridge_strength <- function(x,
+                              communities,
+                              use_communities = NULL,
+                              type = c("all", "out", "in"),
+                              absolute = TRUE,
+                              rescaled = FALSE) {
+  UseMethod("v_bridge_strength")
+}
+
+
+#' @export
+v_bridge_strength.default <- function(x,
+                                      communities,
+                                      use_communities = NULL,
+                                      type = c("all", "out", "in"),
+                                      absolute = TRUE,
+                                      rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_bridge_strength")
+  stop(txt)
+}
+
+
+#' @export
+v_bridge_strength.igraph <- function(x,
+                                     communities,
+                                     use_communities = NULL,
+                                     type = c("all", "out", "in"),
+                                     absolute = TRUE,
+                                     rescaled = FALSE) {
+  prepared <- prepare_bridge_inputs(
+    graph = x,
+    communities = communities,
+    use_communities = use_communities,
+    type = type
+  )
+  mat <- prepared$matrix
+  if (isTRUE(absolute)) {
+    mat <- abs(mat)
+  }
+  scores <- bridge_direct_score(
+    matrix = mat,
+    membership = prepared$membership,
+    included = prepared$included
+  )
+  bridge_finalize_scores(scores, labels = prepared$labels, rescaled = rescaled)
+}
+
+
+#' @export
+v_bridge_strength.network <- function(x,
+                                      communities,
+                                      use_communities = NULL,
+                                      type = c("all", "out", "in"),
+                                      absolute = TRUE,
+                                      rescaled = FALSE) {
+  v_bridge_strength(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    absolute = absolute,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_strength.matrix <- function(x,
+                                     communities,
+                                     use_communities = NULL,
+                                     type = c("all", "out", "in"),
+                                     absolute = TRUE,
+                                     rescaled = FALSE) {
+  v_bridge_strength(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    absolute = absolute,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_strength.data.frame <- function(x,
+                                         communities,
+                                         use_communities = NULL,
+                                         type = c("all", "out", "in"),
+                                         absolute = TRUE,
+                                         rescaled = FALSE) {
+  v_bridge_strength(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    absolute = absolute,
+    rescaled = rescaled
+  )
+}
+
+
+#' @describeIn v_bridge Bridge expected influence (one-step)
+#' @export
+v_bridge_expected_influence <- function(x,
+                                        communities,
+                                        use_communities = NULL,
+                                        type = c("all", "out", "in"),
+                                        rescaled = FALSE) {
+  UseMethod("v_bridge_expected_influence")
+}
+
+
+#' @export
+v_bridge_expected_influence.default <- function(x,
+                                                communities,
+                                                use_communities = NULL,
+                                                type = c("all", "out", "in"),
+                                                rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_bridge_expected_influence")
+  stop(txt)
+}
+
+
+#' @export
+v_bridge_expected_influence.igraph <- function(x,
+                                               communities,
+                                               use_communities = NULL,
+                                               type = c("all", "out", "in"),
+                                               rescaled = FALSE) {
+  prepared <- prepare_bridge_inputs(
+    graph = x,
+    communities = communities,
+    use_communities = use_communities,
+    type = type
+  )
+  scores <- bridge_direct_score(
+    matrix = prepared$matrix,
+    membership = prepared$membership,
+    included = prepared$included
+  )
+  bridge_finalize_scores(scores, labels = prepared$labels, rescaled = rescaled)
+}
+
+
+#' @export
+v_bridge_expected_influence.network <- function(x,
+                                                communities,
+                                                use_communities = NULL,
+                                                type = c("all", "out", "in"),
+                                                rescaled = FALSE) {
+  v_bridge_expected_influence(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_expected_influence.matrix <- function(x,
+                                               communities,
+                                               use_communities = NULL,
+                                               type = c("all", "out", "in"),
+                                               rescaled = FALSE) {
+  v_bridge_expected_influence(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_expected_influence.data.frame <- function(x,
+                                                   communities,
+                                                   use_communities = NULL,
+                                                   type = c("all", "out", "in"),
+                                                   rescaled = FALSE) {
+  v_bridge_expected_influence(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @describeIn v_bridge Bridge expected influence (two-step)
+#' @export
+v_bridge_expected_influence2 <- function(x,
+                                         communities,
+                                         use_communities = NULL,
+                                         type = c("all", "out", "in"),
+                                         rescaled = FALSE) {
+  UseMethod("v_bridge_expected_influence2")
+}
+
+
+#' @export
+v_bridge_expected_influence2.default <- function(x,
+                                                 communities,
+                                                 use_communities = NULL,
+                                                 type = c("all", "out", "in"),
+                                                 rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_bridge_expected_influence2")
+  stop(txt)
+}
+
+
+#' @export
+v_bridge_expected_influence2.igraph <- function(x,
+                                                communities,
+                                                use_communities = NULL,
+                                                type = c("all", "out", "in"),
+                                                rescaled = FALSE) {
+  prepared <- prepare_bridge_inputs(
+    graph = x,
+    communities = communities,
+    use_communities = use_communities,
+    type = type
+  )
+  direct_score <- bridge_direct_score(
+    matrix = prepared$matrix,
+    membership = prepared$membership,
+    included = prepared$included
+  )
+  indirect_score <- bridge_indirect_score(
+    matrix = prepared$matrix,
+    membership = prepared$membership,
+    included = prepared$included
+  )
+  scores <- direct_score + indirect_score
+  bridge_finalize_scores(scores, labels = prepared$labels, rescaled = rescaled)
+}
+
+
+#' @export
+v_bridge_expected_influence2.network <- function(x,
+                                                 communities,
+                                                 use_communities = NULL,
+                                                 type = c("all", "out", "in"),
+                                                 rescaled = FALSE) {
+  v_bridge_expected_influence2(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_expected_influence2.matrix <- function(x,
+                                                communities,
+                                                use_communities = NULL,
+                                                type = c("all", "out", "in"),
+                                                rescaled = FALSE) {
+  v_bridge_expected_influence2(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_expected_influence2.data.frame <- function(x,
+                                                    communities,
+                                                    use_communities = NULL,
+                                                    type = c("all", "out", "in"),
+                                                    rescaled = FALSE) {
+  v_bridge_expected_influence2(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    type = type,
+    rescaled = rescaled
+  )
+}
+
+
+#' @describeIn v_bridge Bridge closeness centrality
+#'
+#' Bridge closeness is the inverse of the average shortest-path distance from a
+#' vertex to vertices outside its own community.
+#'
+#' In directed graphs, \code{mode = "out"} asks how easily a vertex can reach
+#' other communities, whereas \code{mode = "in"} asks how easily other
+#' communities can reach that vertex.
+#'
+#' For these shortest-path bridge measures, strictly positive edge weights are
+#' interpreted as tie strengths and converted to distances via \code{1/weight}.
+#' If negative or zero-weight edges are present, they are removed before the
+#' calculation. Use \code{weights = NA} to ignore weights completely and compute
+#' purely topological shortest paths.
+#'
+#' @param mode one of \code{"out"}, \code{"in"}, or \code{"all"}.
+#' @param weights optional edge weights. Leave \code{NULL} to use the graph's
+#' stored \code{weight} attribute when present, or set \code{NA} to ignore edge
+#' weights.
+#' @export
+v_bridge_closeness <- function(x,
+                               communities,
+                               use_communities = NULL,
+                               mode = c("out", "in", "all"),
+                               weights = NULL,
+                               rescaled = FALSE) {
+  UseMethod("v_bridge_closeness")
+}
+
+
+#' @export
+v_bridge_closeness.default <- function(x,
+                                       communities,
+                                       use_communities = NULL,
+                                       mode = c("out", "in", "all"),
+                                       weights = NULL,
+                                       rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_bridge_closeness")
+  stop(txt)
+}
+
+
+#' @export
+v_bridge_closeness.igraph <- function(x,
+                                      communities,
+                                      use_communities = NULL,
+                                      mode = c("out", "in", "all"),
+                                      weights = NULL,
+                                      rescaled = FALSE) {
+  prepared <- prepare_bridge_shortest_path_inputs(
+    graph = x,
+    communities = communities,
+    use_communities = use_communities,
+    weights = weights,
+    mode = mode
+  )
+  scores <- bridge_closeness_score(
+    graph = prepared$graph,
+    membership = prepared$membership,
+    included = prepared$included,
+    mode = prepared$mode
+  )
+  bridge_finalize_scores(scores, labels = prepared$labels, rescaled = rescaled)
+}
+
+
+#' @export
+v_bridge_closeness.network <- function(x,
+                                       communities,
+                                       use_communities = NULL,
+                                       mode = c("out", "in", "all"),
+                                       weights = NULL,
+                                       rescaled = FALSE) {
+  v_bridge_closeness(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    mode = mode,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_closeness.matrix <- function(x,
+                                      communities,
+                                      use_communities = NULL,
+                                      mode = c("out", "in", "all"),
+                                      weights = NULL,
+                                      rescaled = FALSE) {
+  v_bridge_closeness(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    communities = communities,
+    use_communities = use_communities,
+    mode = mode,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_closeness.data.frame <- function(x,
+                                          communities,
+                                          use_communities = NULL,
+                                          mode = c("out", "in", "all"),
+                                          weights = NULL,
+                                          rescaled = FALSE) {
+  v_bridge_closeness(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    mode = mode,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+#' @describeIn v_bridge Bridge betweenness centrality
+#'
+#' Bridge betweenness counts how often a vertex lies on shortest paths between
+#' source and target vertices from different communities.
+#'
+#' In directed graphs, the calculation respects the graph's edge directions by
+#' default. Set \code{directed = FALSE} if you want to ignore directions and
+#' treat the graph as undirected for this measure.
+#'
+#' @param directed optional logical. Leave \code{NULL} to use the graph's own
+#' directedness; set \code{FALSE} to ignore edge directions.
+#' @export
+v_bridge_betweenness <- function(x,
+                                 communities,
+                                 use_communities = NULL,
+                                 directed = NULL,
+                                 weights = NULL,
+                                 rescaled = FALSE) {
+  UseMethod("v_bridge_betweenness")
+}
+
+
+#' @export
+v_bridge_betweenness.default <- function(x,
+                                         communities,
+                                         use_communities = NULL,
+                                         directed = NULL,
+                                         weights = NULL,
+                                         rescaled = FALSE) {
+  txt <- methods_error_message("x", "v_bridge_betweenness")
+  stop(txt)
+}
+
+
+#' @export
+v_bridge_betweenness.igraph <- function(x,
+                                        communities,
+                                        use_communities = NULL,
+                                        directed = NULL,
+                                        weights = NULL,
+                                        rescaled = FALSE) {
+  prepared <- prepare_bridge_shortest_path_inputs(
+    graph = x,
+    communities = communities,
+    use_communities = use_communities,
+    weights = weights,
+    directed = directed
+  )
+  scores <- bridge_betweenness_score(
+    graph = prepared$graph,
+    membership = prepared$membership,
+    included = prepared$included,
+    directed = prepared$directed
+  )
+  bridge_finalize_scores(scores, labels = prepared$labels, rescaled = rescaled)
+}
+
+
+#' @export
+v_bridge_betweenness.network <- function(x,
+                                         communities,
+                                         use_communities = NULL,
+                                         directed = NULL,
+                                         weights = NULL,
+                                         rescaled = FALSE) {
+  v_bridge_betweenness(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    directed = directed,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_betweenness.matrix <- function(x,
+                                        communities,
+                                        use_communities = NULL,
+                                        directed = NULL,
+                                        weights = NULL,
+                                        rescaled = FALSE) {
+  v_bridge_betweenness(
+    snafun::to_igraph(x, bipartite = nrow(x) != ncol(x)),
+    communities = communities,
+    use_communities = use_communities,
+    directed = directed,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+#' @export
+v_bridge_betweenness.data.frame <- function(x,
+                                            communities,
+                                            use_communities = NULL,
+                                            directed = NULL,
+                                            weights = NULL,
+                                            rescaled = FALSE) {
+  v_bridge_betweenness(
+    snafun::to_igraph(x),
+    communities = communities,
+    use_communities = use_communities,
+    directed = directed,
+    weights = weights,
+    rescaled = rescaled
+  )
+}
+
+
+prepare_bridge_inputs <- function(graph,
+                                  communities,
+                                  use_communities,
+                                  type) {
+  type <- snafun.match.arg(type, c("all", "out", "in"))
+  if (snafun::is_bipartite(graph)) {
+    stop("Bridge centralities are only defined for one-mode networks.")
+  }
+
+  labels <- if (snafun::has_vertexnames(graph)) {
+    as.character(snafun::extract_vertex_names(graph))
+  } else {
+    as.character(seq_len(snafun::count_vertices(graph)))
+  }
+
+  membership <- normalize_bridge_communities(communities = communities, graph = graph)
+  membership <- membership[labels]
+  membership_labels <- unique(as.character(unname(membership)))
+
+  if (is.null(use_communities)) {
+    keep_levels <- membership_labels
+  } else {
+    keep_levels <- as.character(use_communities)
+    if (!all(keep_levels %in% membership_labels)) {
+      stop("Unknown value in 'use_communities'.")
+    }
+  }
+  if (length(unique(keep_levels)) < 2L) {
+    stop("Please include at least two communities in 'use_communities'.")
+  }
+
+  included <- as.character(unname(membership)) %in% keep_levels
+
+  mat <- snafun::to_matrix(graph)
+  storage.mode(mat) <- "double"
+  if (!snafun::is_directed(graph)) {
+    type <- "all"
+  }
+  mat <- bridge_effective_matrix(mat = mat, type = type, directed = snafun::is_directed(graph))
+  diag(mat) <- 0
+
+  list(
+    matrix = mat,
+    membership = membership,
+    included = included,
+    labels = labels,
+    type = type
+  )
+}
+
+
+normalize_bridge_communities <- function(communities, graph) {
+  if (inherits(communities, "communities")) {
+    membership <- align_community_membership_to_graph(x = communities, graph = graph)
+    names(membership) <- as.character(community_graph_vertex_keys(graph))
+    return(membership)
+  }
+
+  if (is.list(communities) && !is.data.frame(communities)) {
+    membership <- bridge_membership_from_list(communities = communities, graph = graph)
+    return(membership)
+  }
+
+  if (is.atomic(communities)) {
+    keys <- as.character(community_graph_vertex_keys(graph))
+    membership <- communities
+    if (is.null(names(membership))) {
+      if (length(membership) != length(keys)) {
+        stop(
+          "The community vector and the supplied graph do not refer to the same ",
+          "number of vertices."
+        )
+      }
+      names(membership) <- keys
+      return(membership)
+    }
+
+    index <- match(keys, as.character(names(membership)))
+    if (anyNA(index)) {
+      stop("The community vector and the supplied graph do not refer to the same vertices.")
+    }
+    out <- membership[index]
+    names(out) <- keys
+    return(out)
+  }
+
+  stop("'communities' should be a community object, an atomic vector, or a named list.")
+}
+
+
+bridge_membership_from_list <- function(communities, graph) {
+  keys <- as.character(community_graph_vertex_keys(graph))
+  out <- rep(NA_character_, length(keys))
+  names(out) <- keys
+
+  for (i in seq_along(communities)) {
+    members <- communities[[i]]
+    if (length(members) == 0L) {
+      next
+    }
+    if (is.numeric(members)) {
+      if (any(members < 1) || any(members > length(keys))) {
+        stop("The community list contains vertex ids outside the graph.")
+      }
+      out[as.integer(members)] <- as.character(i)
+    } else {
+      idx <- match(as.character(members), keys)
+      if (anyNA(idx)) {
+        stop("The community list and the supplied graph do not refer to the same vertices.")
+      }
+      out[idx] <- as.character(i)
+    }
+  }
+
+  if (anyNA(out)) {
+    stop("The community list does not assign every vertex to exactly one community.")
+  }
+
+  out
+}
+
+
+bridge_effective_matrix <- function(mat, type, directed) {
+  if (!directed || identical(type, "all")) {
+    if (directed) {
+      return(mat + t(mat))
+    }
+    return(mat)
+  }
+  if (identical(type, "out")) {
+    return(mat)
+  }
+  t(mat)
+}
+
+
+bridge_direct_score <- function(matrix, membership, included) {
+  membership_chr <- as.character(unname(membership))
+  out <- rep(NA_real_, nrow(matrix))
+  for (i in seq_len(nrow(matrix))) {
+    if (!included[[i]]) {
+      next
+    }
+    target_mask <- included & membership_chr != membership_chr[[i]]
+    out[[i]] <- sum(matrix[i, target_mask, drop = TRUE], na.rm = TRUE)
+  }
+  out
+}
+
+
+bridge_indirect_score <- function(matrix, membership, included) {
+  membership_chr <- as.character(unname(membership))
+  community_levels <- sort(unique(membership_chr[included]))
+  out <- rep(NA_real_, nrow(matrix))
+
+  for (i in seq_len(nrow(matrix))) {
+    if (!included[[i]]) {
+      next
+    }
+
+    own <- membership_chr[[i]]
+    other_levels <- setdiff(community_levels, own)
+    subtotal <- 0
+
+    for (one_level in other_levels) {
+      one_step_to_level <- rep(0, nrow(matrix))
+      target_mask <- included & membership_chr == one_level
+      if (any(target_mask)) {
+        one_step_to_level <- rowSums(matrix[, target_mask, drop = FALSE], na.rm = TRUE)
+      }
+      subtotal <- subtotal + sum(matrix[i, , drop = TRUE] * one_step_to_level, na.rm = TRUE)
+    }
+
+    out[[i]] <- subtotal
+  }
+
+  out
+}
+
+
+bridge_finalize_scores <- function(scores, labels, rescaled) {
+  names(scores) <- labels
+  if (isTRUE(rescaled)) {
+    total <- sum(scores, na.rm = TRUE)
+    if (!isTRUE(all.equal(total, 0))) {
+      scores <- scores / total
+    }
+  }
+  scores
+}
+
+
+prepare_bridge_shortest_path_inputs <- function(graph,
+                                                communities,
+                                                use_communities,
+                                                weights,
+                                                mode = NULL,
+                                                directed = NULL) {
+  if (snafun::is_bipartite(graph)) {
+    stop("Bridge centralities are only defined for one-mode networks.")
+  }
+
+  labels <- if (snafun::has_vertexnames(graph)) {
+    as.character(snafun::extract_vertex_names(graph))
+  } else {
+    as.character(seq_len(snafun::count_vertices(graph)))
+  }
+
+  membership <- normalize_bridge_communities(communities = communities, graph = graph)
+  membership <- membership[labels]
+  membership_labels <- unique(as.character(unname(membership)))
+
+  if (is.null(use_communities)) {
+    keep_levels <- membership_labels
+  } else {
+    keep_levels <- as.character(use_communities)
+    if (!all(keep_levels %in% membership_labels)) {
+      stop("Unknown value in 'use_communities'.")
+    }
+  }
+  if (length(unique(keep_levels)) < 2L) {
+    stop("Please include at least two communities in 'use_communities'.")
+  }
+  included <- as.character(unname(membership)) %in% keep_levels
+
+  graph_sp <- bridge_shortest_path_graph(
+    graph = graph,
+    weights = weights,
+    directed = directed
+  )
+
+  if (is.null(mode)) {
+    mode_out <- if (isTRUE(igraph::is_directed(graph_sp))) "out" else "all"
+  } else {
+    mode_out <- snafun.match.arg(mode, c("out", "in", "all"))
+    if (!isTRUE(igraph::is_directed(graph_sp))) {
+      mode_out <- "all"
+    }
+  }
+
+  list(
+    graph = graph_sp,
+    membership = membership,
+    included = included,
+    labels = labels,
+    mode = mode_out,
+    directed = isTRUE(igraph::is_directed(graph_sp))
+  )
+}
+
+
+bridge_shortest_path_graph <- function(graph,
+                                       weights,
+                                       directed) {
+  use_directed <- if (is.null(directed)) {
+    snafun::is_directed(graph)
+  } else {
+    isTRUE(directed)
+  }
+
+  mat <- snafun::to_matrix(graph)
+  storage.mode(mat) <- "double"
+
+  if (!is.null(weights) && length(weights) == 1L && is.na(weights)) {
+    mat[mat != 0] <- 1
+  } else {
+    positive_mask <- mat > 0
+    mat[!positive_mask] <- 0
+    mat[positive_mask] <- 1 / mat[positive_mask]
+  }
+  diag(mat) <- 0
+
+  if (isTRUE(use_directed)) {
+    return(igraph::graph_from_adjacency_matrix(
+      mat,
+      mode = "directed",
+      weighted = TRUE,
+      diag = FALSE
+    ))
+  }
+
+  mat_sym <- pmin(mat, t(mat))
+  only_one_side <- (mat_sym == 0) & ((mat > 0) | (t(mat) > 0))
+  mat_sym[only_one_side] <- pmax(mat, t(mat))[only_one_side]
+  diag(mat_sym) <- 0
+  igraph::graph_from_adjacency_matrix(
+    mat_sym,
+    mode = "undirected",
+    weighted = TRUE,
+    diag = FALSE
+  )
+}
+
+
+bridge_closeness_score <- function(graph,
+                                   membership,
+                                   included,
+                                   mode) {
+  labels <- if (snafun::has_vertexnames(graph)) {
+    as.character(snafun::extract_vertex_names(graph))
+  } else {
+    as.character(seq_len(snafun::count_vertices(graph)))
+  }
+  out <- rep(NA_real_, length(labels))
+  membership_chr <- as.character(unname(membership))
+
+  for (i in seq_along(labels)) {
+    if (!included[[i]]) {
+      next
+    }
+    target_mask <- included & membership_chr != membership_chr[[i]]
+    if (!any(target_mask)) {
+      out[[i]] <- NA_real_
+      next
+    }
+    dists <- igraph::distances(
+      graph = graph,
+      v = i,
+      to = which(target_mask),
+      mode = mode,
+      weights = NULL
+    )
+    finite_dists <- dists[is.finite(dists)]
+    if (length(finite_dists) == 0L) {
+      out[[i]] <- NaN
+    } else {
+      out[[i]] <- 1 / mean(finite_dists)
+    }
+  }
+
+  out
+}
+
+
+bridge_betweenness_score <- function(graph,
+                                     membership,
+                                     included,
+                                     directed) {
+  labels <- if (snafun::has_vertexnames(graph)) {
+    as.character(snafun::extract_vertex_names(graph))
+  } else {
+    as.character(seq_len(snafun::count_vertices(graph)))
+  }
+  membership_chr <- as.character(unname(membership))
+  counts <- stats::setNames(rep(0, length(labels)), labels)
+
+  for (i in seq_along(labels)) {
+    if (!included[[i]]) {
+      next
+    }
+    target_ids <- which(included & membership_chr != membership_chr[[i]])
+    if (length(target_ids) == 0L) {
+      next
+    }
+    shortest <- igraph::all_shortest_paths(
+      graph = graph,
+      from = i,
+      to = target_ids,
+      mode = if (isTRUE(directed)) "out" else "all",
+      weights = NULL
+    )
+    vpaths <- shortest$vpaths
+    if (is.null(vpaths)) {
+      vpaths <- shortest$res
+    }
+    if (length(vpaths) == 0L) {
+      next
+    }
+
+    mids <- unlist(lapply(vpaths, function(one_path) {
+      ids <- as.integer(one_path)
+      if (length(ids) <= 2L) {
+        return(integer(0))
+      }
+      ids[2:(length(ids) - 1L)]
+    }))
+    if (length(mids) == 0L) {
+      next
+    }
+    tab <- table(factor(labels[mids], levels = labels))
+    counts <- counts + as.numeric(tab)
+  }
+
+  if (!isTRUE(directed)) {
+    counts <- counts / 2
+  }
+  counts[!included] <- NA_real_
+  as.numeric(counts)
+}
+
+
 
 
 

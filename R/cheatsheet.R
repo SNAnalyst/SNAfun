@@ -194,6 +194,138 @@ browse_cheatsheet <- function(browse = TRUE) {
 }
 
 
+#' Create a PDF version of the cheatsheet
+#'
+#' Build a PDF version of the complete \pkg{snafun} cheatsheet by rendering the
+#' standalone HTML cheatsheet in a headless Chromium-based browser such as
+#' Google Chrome or Microsoft Edge.
+#'
+#' This is useful when you want a printable handout with the same contents as
+#' the bundled HTML cheatsheet: the introduction, table of contents, figures,
+#' and all current comparison tables.
+#'
+#' @param file output path for the PDF file
+#' @param html optional path to an existing cheatsheet HTML file. If
+#'   \code{NULL}, [create_cheatsheet_html()] is used to build a temporary HTML
+#'   file first.
+#' @param title title passed to [create_cheatsheet_html()] when a temporary HTML
+#'   file is built internally
+#' @param browse logical; should the generated PDF be opened afterwards?
+#'
+#' @return Invisibly returns the path to the generated PDF file.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' path <- snafun::create_cheatsheet_pdf(
+#'   file = tempfile(fileext = ".pdf")
+#' )
+#' path
+#' }
+create_cheatsheet_pdf <- function(file = "cheatsheet.pdf",
+                                  html = NULL,
+                                  title = "SNA4DS cheatsheet",
+                                  browse = FALSE) {
+  if (length(file) != 1L || is.na(file) || !nzchar(file)) {
+    stop("'file' should be a single non-empty path")
+  }
+  if (!is.null(html) && (length(html) != 1L || is.na(html) || !nzchar(html))) {
+    stop("'html' should be NULL or a single non-empty path")
+  }
+  if (length(title) != 1L || is.na(title) || !nzchar(title)) {
+    stop("'title' should be a single non-empty string")
+  }
+  if (!is.logical(browse) || length(browse) != 1L || is.na(browse)) {
+    stop("'browse' should be either TRUE or FALSE")
+  }
+
+  browser <- headless_browser_path()
+  if (is.null(browser)) {
+    stop(
+      "Could not locate a supported headless browser. ",
+      "Please install Google Chrome or Microsoft Edge."
+    )
+  }
+
+  html_is_temp <- is.null(html)
+  if (isTRUE(html_is_temp)) {
+    html <- tempfile(fileext = ".html")
+    create_cheatsheet_html(
+      file = html,
+      title = title,
+      browse = FALSE
+    )
+  } else {
+    html <- normalizePath(html, winslash = "/", mustWork = TRUE)
+  }
+
+  file <- normalizePath(file, winslash = "/", mustWork = FALSE)
+  dir.create(dirname(file), recursive = TRUE, showWarnings = FALSE)
+  if (file.exists(file)) {
+    file.remove(file)
+  }
+
+  user_data_dir <- tempfile(pattern = "cheatsheet-browser-")
+  dir.create(user_data_dir, recursive = TRUE, showWarnings = FALSE)
+
+  args <- c(
+    paste0("--user-data-dir=", normalizePath(
+      user_data_dir,
+      winslash = "/",
+      mustWork = FALSE
+    )),
+    "--headless",
+    "--disable-gpu",
+    "--run-all-compositor-stages-before-draw",
+    "--no-first-run",
+    "--no-default-browser-check",
+    paste0("--print-to-pdf=", file),
+    "--print-to-pdf-no-header",
+    html_path_to_uri(html)
+  )
+
+  on.exit(
+    unlink(user_data_dir, recursive = TRUE, force = TRUE),
+    add = TRUE
+  )
+  if (isTRUE(html_is_temp)) {
+    on.exit(
+      unlink(html, force = TRUE),
+      add = TRUE
+    )
+  }
+
+  status <- suppressWarnings(
+    system2(
+      command = browser,
+      args = args,
+      stdout = TRUE,
+      stderr = TRUE
+    )
+  )
+
+  for (i in seq_len(20L)) {
+    if (file.exists(file)) {
+      break
+    }
+    Sys.sleep(0.5)
+  }
+
+  if (!file.exists(file)) {
+    stop(
+      "PDF export failed. Browser output was:\n",
+      paste(status, collapse = "\n")
+    )
+  }
+
+  if (isTRUE(browse)) {
+    utils::browseURL(file)
+  }
+
+  invisible(file)
+}
+
+
 #' Locate the bundled cheatsheet table definitions
 #'
 #' @keywords internal
@@ -204,7 +336,7 @@ cheatsheet_table_script_path <- function() {
     return(installed_path)
   }
 
-  source_path <- file.path(getwd(), "vignettes", "create_tables.R")
+  source_path <- file.path(getwd(), "inst", "extdata", "create_tables.R")
   if (file.exists(source_path)) {
     return(source_path)
   }
@@ -250,7 +382,7 @@ cheatsheet_asset_path <- function(filename) {
     return(installed_path)
   }
 
-  source_path <- file.path(getwd(), "vignettes", filename)
+  source_path <- file.path(getwd(), "inst", "extdata", "cheatsheet_assets", filename)
   if (file.exists(source_path)) {
     return(source_path)
   }
@@ -260,6 +392,44 @@ cheatsheet_asset_path <- function(filename) {
     filename,
     "'."
   )
+}
+
+
+#' Find a supported headless browser
+#'
+#' @keywords internal
+#' @noRd
+headless_browser_path <- function() {
+  candidates <- c(
+    Sys.which("chrome"),
+    Sys.which("msedge"),
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+    "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+  )
+
+  candidates <- unique(candidates[nzchar(candidates)])
+  candidates <- candidates[file.exists(candidates)]
+
+  if (length(candidates) < 1L) {
+    return(NULL)
+  }
+
+  candidates[[1L]]
+}
+
+
+#' Convert a local HTML path to a file URI
+#'
+#' @keywords internal
+#' @noRd
+html_path_to_uri <- function(path) {
+  path <- normalizePath(path, winslash = "/", mustWork = TRUE)
+  path <- gsub("%", "%25", path, fixed = TRUE)
+  path <- gsub(" ", "%20", path, fixed = TRUE)
+  path <- gsub("#", "%23", path, fixed = TRUE)
+  paste0("file:///", path)
 }
 
 
