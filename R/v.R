@@ -1637,6 +1637,8 @@ v_shapley.network <- function(x,
 #' \code{1 / weight}. Zero and negative weights are ignored in the path search.
 #' Use \code{weights = NA} if you want purely topological shortest paths.
 #'
+#' @param x graph object of class \code{igraph} or \code{network}, an adjacency
+#' \code{matrix}, or an edgelist \code{data.frame}
 #' @param communities community assignment, either a \code{communities} object
 #' , a vector with one community label per vertex, or a named list of
 #' communities
@@ -1646,6 +1648,9 @@ v_shapley.network <- function(x,
 #' undirected graphs this is treated as \code{"all"}.
 #' @param absolute logical; should bridge strength use absolute tie magnitudes?
 #' Defaults to \code{TRUE}.
+#' @param rescaled logical; if \code{TRUE}, the scores are divided by their sum,
+#' so that they add up to 1. Missing values are ignored in that sum, and the
+#' scores are returned unchanged when the sum is zero. Defaults to \code{FALSE}.
 #' @return Named numeric vector with one bridge-centrality score per vertex. If
 #' the graph has vertex names, those names are used; otherwise the vector is
 #' returned in vertex order. Vertices excluded via \code{use_communities}

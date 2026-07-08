@@ -145,25 +145,33 @@ rm(g, g1, mat)
 
 
 ## check that previous vertex attrs remain after adding new ones
-flomar_network <- sna4tutti:::flomar_network
+# sna4tutti is a Suggests, and flomar_network is one of its internal objects, so
+# guard the block rather than let the whole test file die where the package is
+# not installed.
+if (requireNamespace("sna4tutti", quietly = TRUE)) {
+  flomar_network <- sna4tutti:::flomar_network
 
-atts <- snafun::extract_all_vertex_attributes(flomar_network)
-# exclude the names and Wealth attrs
-atts <- atts[, !colnames(atts) %in% c("name", "Wealth")]
-# these attrs are already in the object, so rename them
-colnames(atts) <- paste0(colnames(atts), "_1")
-# now add them, call the resulting graph g
-g <- add_vertex_attributes(flomar_network, value = atts)
-# check that the new ones have been added correctly
-expect_equal(snafun::extract_vertex_attribute(g, "Wealth"), 
-             snafun::extract_vertex_attribute(flomar_network, "Wealth"))
-expect_equal(snafun::extract_vertex_attribute(g, "NumberPriorates"), 
-             snafun::extract_vertex_attribute(g, "NumberPriorates_1"))
-expect_equal(snafun::extract_vertex_attribute(g, "NumberTies"), 
-             snafun::extract_vertex_attribute(g, "NumberTies_1"))
-expect_equal(snafun::extract_vertex_names(g), 
-             snafun::extract_vertex_names(flomar_network))
+  atts <- snafun::extract_all_vertex_attributes(flomar_network)
+  # exclude the names and Wealth attrs
+  atts <- atts[, !colnames(atts) %in% c("name", "Wealth")]
+  # these attrs are already in the object, so rename them
+  colnames(atts) <- paste0(colnames(atts), "_1")
+  # now add them, call the resulting graph g
+  g <- add_vertex_attributes(flomar_network, value = atts)
+  # check that the new ones have been added correctly
+  expect_equal(snafun::extract_vertex_attribute(g, "Wealth"),
+               snafun::extract_vertex_attribute(flomar_network, "Wealth"))
+  expect_equal(snafun::extract_vertex_attribute(g, "NumberPriorates"),
+               snafun::extract_vertex_attribute(g, "NumberPriorates_1"))
+  expect_equal(snafun::extract_vertex_attribute(g, "NumberTies"),
+               snafun::extract_vertex_attribute(g, "NumberTies_1"))
+  expect_equal(snafun::extract_vertex_names(g),
+               snafun::extract_vertex_names(flomar_network))
 
-rm(g, flomar_network, atts)
+  rm(g, flomar_network, atts)
+} else {
+  message("test_add_vertex_attributes.R: sna4tutti not installed; ",
+          "skipping the flomar_network block")
+}
 
 

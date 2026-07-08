@@ -53,6 +53,9 @@ v_bridge_betweenness(
 )
 }
 \arguments{
+\item{x}{graph object of class \code{igraph} or \code{network}, an adjacency
+\code{matrix}, or an edgelist \code{data.frame}}
+
 \item{communities}{community assignment, either a \code{communities} object
 , a vector with one community label per vertex, or a named list of
 communities}
@@ -65,6 +68,10 @@ undirected graphs this is treated as \code{"all"}.}
 
 \item{absolute}{logical; should bridge strength use absolute tie magnitudes?
 Defaults to \code{TRUE}.}
+
+\item{rescaled}{logical; if \code{TRUE}, the scores are divided by their sum,
+so that they add up to 1. Missing values are ignored in that sum, and the
+scores are returned unchanged when the sum is zero. Defaults to \code{FALSE}.}
 
 \item{mode}{one of \code{"out"}, \code{"in"}, or \code{"all"}.}
 
