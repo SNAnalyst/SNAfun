@@ -44,6 +44,23 @@ invisible(lapply(c("igraph", "network"), requireNamespace, quietly = TRUE))
 # described above. For these we assert registration, but not ownership.
 reclaimable <- c("igraph", "network", "communities")
 
+# pkgload::setup_ns_exports() keeps only those exports it can find in the
+# namespace env or the imports env; it does not follow the parent chain up to
+# base. Our four generics live in base, so under devtools::load_all() pkgload
+# warns about them and then *drops them from the exports*. snafun::plot() really
+# does not exist under load_all(), fix or no fix -- which is very probably how
+# the @export tags came to be deleted in the first place.
+#
+# The export assertions below therefore only mean something against an installed
+# package, which is what R CMD check (and therefore CI) uses. Under load_all()
+# they would fail for a reason that has nothing to do with snafun.
+loaded_by_pkgload <- !is.null(get0(".__DEVTOOLS__", envir = ns, inherits = FALSE))
+if (loaded_by_pkgload) {
+  message("test_generic_reexports.R: package loaded by pkgload; ",
+          "skipping the export assertions, which pkgload cannot satisfy. ",
+          "Run them against an installed package (R CMD check).")
+}
+
 
 # --- the set of foreign generics is a deliberate choice, not an accident ------
 # If this fails, snafun started providing methods for a generic it does not own
@@ -54,7 +71,7 @@ expect_equal(sort(generics[!vapply(generics, is_local, logical(1))]), foreign,
 
 
 # --- (a) every foreign generic is reachable as snafun::<generic> -------------
-for (g in foreign) {
+for (g in if (loaded_by_pkgload) character(0) else foreign) {
   expect_true(g %in% exported,
               info = paste0("snafun::", g, "() is not exported; a qualified call ",
                             "fails with \"'", g, "' is not an exported object\""))
@@ -130,16 +147,21 @@ grDevices::pdf(NULL)
 on.exit(grDevices::dev.off(), add = TRUE)
 empty_cug <- structure(list(), class = "stat_cug")
 
+# Bare dispatch is what property (b) protects, and it holds under load_all() too.
 expect_error(plot(empty_cug), pattern = "no valid replicate statistics",
              info = "bare plot(<stat_cug>) does not reach snafun's method")
-expect_error(snafun::plot(empty_cug), pattern = "no valid replicate statistics",
-             info = "snafun::plot(<stat_cug>) does not reach snafun's method")
 
-# and the qualified calls that started all this
-g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
-g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
+# The qualified calls that started all this. Only meaningful when the package is
+# installed; see the note on pkgload above.
+if (!loaded_by_pkgload) {
+  expect_error(snafun::plot(empty_cug), pattern = "no valid replicate statistics",
+               info = "snafun::plot(<stat_cug>) does not reach snafun's method")
 
-expect_stdout(snafun::print(g_i), pattern = "IGRAPH")
-expect_stdout(snafun::print(g_n), pattern = "Network attributes")
-expect_silent(snafun::plot(g_i))
-expect_silent(snafun::plot(g_n))
+  g_i <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
+  g_n <- snafun::create_random_graph(10, "gnm", m = 20, graph = "network")
+
+  expect_stdout(snafun::print(g_i), pattern = "IGRAPH")
+  expect_stdout(snafun::print(g_n), pattern = "Network attributes")
+  expect_silent(snafun::plot(g_i))
+  expect_silent(snafun::plot(g_n))
+}
