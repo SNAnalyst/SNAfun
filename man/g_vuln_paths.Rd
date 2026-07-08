@@ -82,8 +82,8 @@ The implementation in the \code{snafun} package corrects this.
 In addition, it is more robust and more useful.
 }
 \seealso{
-Other vulnerability measures: 
-\code{\link{g_vuln_attack}()},
-\code{\link{g_vuln_efficiency}()}
+Other vulnerability measures:
+\code{\link[=g_vuln_attack]{g_vuln_attack()}},
+\code{\link[=g_vuln_efficiency]{g_vuln_efficiency()}}
 }
 \concept{vulnerability measures}

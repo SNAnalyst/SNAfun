@@ -31,6 +31,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Roger Leenders \email{SNA4DS@jads.nl}
   \item Claudia Zucca \email{SNA4DS@jads.nl}
 }
 

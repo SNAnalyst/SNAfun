@@ -115,12 +115,12 @@ x1_n <- snafun::to_network(x1)
 stat_qap_lm(y_m, x = x1_n, reps = 49, directed = "undirected")
 }
 \seealso{
-Other statistics functions: 
-\code{\link{stat_cug}()},
-\code{\link{stat_ef_int}()},
-\code{\link{stat_plot_gof}()},
-\code{\link{stat_plot_gof_as_btergm}()},
-\code{\link{stat_qap_cor}()},
-\code{\link{stat_qap_logit}()}
+Other statistics functions:
+\code{\link[=stat_cug]{stat_cug()}},
+\code{\link[=stat_ef_int]{stat_ef_int()}},
+\code{\link[=stat_plot_gof]{stat_plot_gof()}},
+\code{\link[=stat_plot_gof_as_btergm]{stat_plot_gof_as_btergm()}},
+\code{\link[=stat_qap_cor]{stat_qap_cor()}},
+\code{\link[=stat_qap_logit]{stat_qap_logit()}}
 }
 \concept{statistics functions}
