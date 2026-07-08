@@ -38,6 +38,7 @@ Remotes:
 Suggests:
 	SNA4DSData,
 	sna4tutti,
+	numDeriv,
 	tinytest,
 	gt, 
 	htmltools,

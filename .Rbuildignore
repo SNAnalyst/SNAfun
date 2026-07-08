@@ -6,3 +6,4 @@
 ^pkgload-issue\.md$
 ^_pkgdown\.yml$
 ^figure$
+^\.claude$
