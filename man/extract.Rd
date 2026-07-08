@@ -4,6 +4,7 @@
 \alias{extract}
 \alias{extract_vertex_attribute}
 \alias{extract_vertex_names}
+\alias{extract_vertex_ids}
 \alias{extract_edge_attribute}
 \alias{extract_graph_attribute}
 \title{Extract attributes from the graph object}
@@ -20,6 +21,8 @@ extract_vertex_attribute(
 )
 
 extract_vertex_names(x)
+
+extract_vertex_ids(x)
 
 extract_edge_attribute(
   x,
@@ -60,7 +63,9 @@ and \code{x} is a \code{networkDynamic} object.}
 \code{rule}, \code{dynamic.only}, \code{unlist}, \code{v}, or \code{e}.}
 }
 \value{
-the values of the requested attributes (if any)
+for the attribute accessors, the values of the requested attributes
+(if any); for \code{extract_vertex_names()} the vertex names; for
+\code{extract_vertex_ids()} an integer vector \code{1:n}
 }
 \description{
 These accessors provide one consistent API for static \code{igraph} and
@@ -80,4 +85,22 @@ timing arguments are forwarded to the corresponding
 \code{networkDynamic::get.*.attribute.active()} function. This makes it
 possible to request attribute values at a single time point (\code{at}) or
 over an interval (\code{onset}, \code{terminus}, \code{length}).
+}
+\section{Vertex names and vertex id's}{
+
+\code{igraph}, \code{network}, and \code{sna} all number the vertices of a
+graph internally, from 1 to the number of vertices. Some functions accept a
+vertex by name, but it is often more convenient to say that you mean vertices
+12, 18, and 23. \code{extract_vertex_ids()} returns those internal numbers,
+and \code{extract_vertex_names()} returns the names (or \code{NULL} when the
+graph has none).
+
+The distinction matters. \code{\link{extract_edge_id}}, for instance, accepts
+numeric vertex id's only and will not take vertex names.
+}
+
+\examples{
+g <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
+snafun::extract_vertex_ids(g)
+snafun::extract_vertex_ids(snafun::to_network(g))
 }
