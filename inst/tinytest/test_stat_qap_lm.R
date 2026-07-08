@@ -280,12 +280,19 @@ expect_equal(single_predictor_no_intercept_fit$nullhyp, "qapy")
 
 
 # Simple one-predictor qapspp cases should now fit cleanly.
+# seed is required, not optional: with intercept = TRUE (the default) the
+# deterministic one-predictor fallback does not apply, so reaching "qapy" depends
+# on the QAP-SPP permutations producing a singular intermediate regression. That
+# is an RNG-dependent event -- without a seed this assertion passes only ~60% of
+# the time, on any platform. seed = 1 makes it reliably fall back, matching the
+# seeded calls above.
 fallback_y <- snafun::create_manual_graph(A -- B, B -- C, C -- D)
 fallback_x <- snafun::create_manual_graph(A -- B, B -- D, C -- D)
 fallback_fit <- snafun::stat_qap_lm(
   y = fallback_y,
   x = fallback_x,
-  reps = 19
+  reps = 19,
+  seed = 1
 )
 expect_equal(fallback_fit$requested.nullhyp, "qapspp")
 expect_equal(fallback_fit$nullhyp, "qapy")
