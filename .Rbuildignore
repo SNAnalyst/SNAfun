@@ -4,3 +4,5 @@
 ^\.tmp_lib$
 ^\.github$
 ^pkgload-issue\.md$
+^_pkgdown\.yml$
+^figure$

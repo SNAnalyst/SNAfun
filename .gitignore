@@ -3,3 +3,11 @@
 .RData
 .Ruserdata
 snafun.Rproj
+
+# knitr output from running knit() on a vignette from the project root, rather
+# than letting R CMD build render it from vignettes/. The rendered .md lands in
+# the root too, but it is not ignored here: a blanket /*.md rule would silently
+# swallow a future NEWS.md or CONTRIBUTING.md. Leave it visible in git status,
+# and let .Rbuildignore keep it out of the tarball.
+/figure/
+.tmp_lib/
