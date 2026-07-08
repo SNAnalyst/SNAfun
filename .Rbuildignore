@@ -3,3 +3,4 @@
 ^docs$
 ^\.tmp_lib$
 ^\.github$
+^pkgload-issue\.md$
