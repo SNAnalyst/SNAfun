@@ -91,6 +91,10 @@ make_handcrafted_nam_fixture <- function() {
 }
 
 
+# sna::lnam() loads numDeriv to compute its standard errors. numDeriv is a
+# Suggests of snafun for exactly this reason: R CMD check --as-cran restricts the
+# library to declared dependencies, so an undeclared one is invisible even when
+# it is installed.
 fit_lnam_reference <- function(data, W, W2 = NULL, model) {
   design_matrix <- stats::model.matrix(y ~ x1 + grp, data = data)
 

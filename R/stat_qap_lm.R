@@ -21,13 +21,16 @@
 #' coefficient, \code{stat_qap_lm()} stores the permutation distribution for the
 #' requested \code{test.statistic}. This keeps the function close to the speed
 #' of \code{\link[sna]{netlm}} while still reporting both observed coefficients
-#' and observed t-values. In the special case of a one-predictor model without
-#' an intercept, \pkg{sna} automatically falls back from \code{"qapspp"} to
-#' \code{"qapy"}; \code{stat_qap_lm()} follows that behavior and records both
-#' the requested and the actually used null model. In addition, some very small
-#' or perfectly determined one-predictor examples can make the semi-partialling
-#' step numerically singular under \code{"qapspp"}; in those cases
-#' \code{stat_qap_lm()} also falls back to \code{"qapy"} with a warning.
+#' and observed t-values. With a single predictor there is nothing but the
+#' intercept for the semi-partialling step to residualize against, so
+#' \code{"qapspp"} reduces to permuting the predictor itself. In that case
+#' \code{stat_qap_lm()} uses \code{"qapy"} regardless of whether an intercept is
+#' included, and records both the requested and the actually used null model
+#' (\code{requested.nullhyp} and \code{nullhyp}). This also avoids a numerically
+#' fragile code path: on very small graphs the one-predictor \code{"qapspp"} fit
+#' in \pkg{sna} can become singular for some permutations, and whether it does so
+#' depends on the random-number stream, the R version, and the platform, so the
+#' chosen null model would otherwise not be reproducible.
 #'
 #' As in \code{\link{stat_qap_cor}}, the vectorization convention follows the
 #' adjacency matrix that students actually inspect: for directed analyses, all
@@ -56,10 +59,10 @@
 #' @param nullhyp Which QAP null model should be used? One of \code{"qapspp"}
 #'   or \code{"qapy"}. The default \code{"qapspp"} permutes each predictor
 #'   after residualizing it on the other predictors; \code{"qapy"} permutes the
-#'   dependent network. In a one-predictor model without an intercept,
-#'   \code{\link[sna]{netlm}} automatically uses \code{"qapy"}. If
-#'   \code{"qapspp"} becomes numerically singular for a simple one-predictor
-#'   model, \code{stat_qap_lm()} also falls back to \code{"qapy"}.
+#'   dependent network. Any one-predictor model uses \code{"qapy"}, with or
+#'   without an intercept, since \code{"qapspp"} has no other predictors to
+#'   residualize against; \code{requested.nullhyp} still records what was asked
+#'   for.
 #' @param tol Numerical tolerance passed to the underlying QR decomposition.
 #' @param seed Optional integer seed for reproducible permutations.
 #'
@@ -150,9 +153,18 @@ stat_qap_lm <- function(y,
     x_call = call[["x"]]
   )
   mode <- if (directed_flag) "digraph" else "graph"
+  # With a single predictor, qapspp has nothing but the intercept to residualize
+  # against, so it reduces to permuting the (centred) predictor. sna::netlm makes
+  # the same reduction, but only when it counts a single column: it folds the
+  # intercept into its predictor count (nx <- stackcount(x) + intercept), so with
+  # an intercept present nx == 2 and it runs qapspp for real. On the tiny graphs
+  # this produces, some permutations leave the design rank-deficient, and whether
+  # netlm reports that as a singular matrix depends on the RNG stream, the R
+  # version, and the platform BLAS -- so the outcome was not reproducible. Fall
+  # back to qapy for every one-predictor model, with or without an intercept, so
+  # the null model a caller gets no longer depends on any of that.
   if (identical(nullhyp, "qapspp") &&
-      length(predictor_matrices) == 1L &&
-      !isTRUE(intercept)) {
+      length(predictor_matrices) == 1L) {
     nullhyp <- "qapy"
   }
   fit <- stat_qap_lm_run_netlm(

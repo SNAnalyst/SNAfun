@@ -231,8 +231,25 @@ extract_edge_id.igraph <- function(object, ego, alter, edgelist, ordered = FALSE
 #' \code{networkDynamic} active-attribute accessors, for example
 #' \code{rule}, \code{dynamic.only}, \code{unlist}, \code{v}, or \code{e}.
 #'
-#' @return the values of the requested attributes (if any)
+#' @section Vertex names and vertex id's:
+#' \code{igraph}, \code{network}, and \code{sna} all number the vertices of a
+#' graph internally, from 1 to the number of vertices. Some functions accept a
+#' vertex by name, but it is often more convenient to say that you mean vertices
+#' 12, 18, and 23. \code{extract_vertex_ids()} returns those internal numbers,
+#' and \code{extract_vertex_names()} returns the names (or \code{NULL} when the
+#' graph has none).
+#'
+#' The distinction matters. \code{\link{extract_edge_id}}, for instance, accepts
+#' numeric vertex id's only and will not take vertex names.
+#'
+#' @return for the attribute accessors, the values of the requested attributes
+#' (if any); for \code{extract_vertex_names()} the vertex names; for
+#' \code{extract_vertex_ids()} an integer vector \code{1:n}
 #' @name extract
+#' @examples
+#' g <- snafun::create_random_graph(10, "gnm", m = 20, graph = "igraph")
+#' snafun::extract_vertex_ids(g)
+#' snafun::extract_vertex_ids(snafun::to_network(g))
 NULL
 
 
@@ -329,6 +346,33 @@ extract_vertex_names.igraph <- function(x) {
 #' @export
 extract_vertex_names.network <- function(x) {
   network::network.vertex.names(x)
+}
+
+
+#' @export
+#' @rdname extract
+extract_vertex_ids <- function(x) {
+  UseMethod("extract_vertex_ids")
+}
+
+#' @export
+extract_vertex_ids.default <- function(x) {
+  txt <- methods_error_message("x", "extract_vertex_ids")
+  stop(txt)
+}
+
+# igraph and network both number their vertices 1..n internally, but the two
+# packages construct and order their objects differently, so the numbering is a
+# property of the object rather than of the graph. Ask the object itself.
+#' @export
+extract_vertex_ids.igraph <- function(x) {
+  seq_len(igraph::vcount(x))
+}
+
+
+#' @export
+extract_vertex_ids.network <- function(x) {
+  seq_len(network::network.size(x))
 }
 
 

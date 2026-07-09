@@ -2,3 +2,8 @@
 ^\.Rproj\.user$
 ^docs$
 ^\.tmp_lib$
+^\.github$
+^pkgload-issue\.md$
+^_pkgdown\.yml$
+^figure$
+^\.claude$

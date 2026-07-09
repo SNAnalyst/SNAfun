@@ -116,12 +116,12 @@ zm <- snafun::to_matrix(z)
 stat_qap_cor(xm, ym, controls = zm, reps = 49, diagonal = TRUE)
 }
 \seealso{
-Other statistics functions: 
-\code{\link{stat_cug}()},
-\code{\link{stat_ef_int}()},
-\code{\link{stat_plot_gof}()},
-\code{\link{stat_plot_gof_as_btergm}()},
-\code{\link{stat_qap_lm}()},
-\code{\link{stat_qap_logit}()}
+Other statistics functions:
+\code{\link[=stat_cug]{stat_cug()}},
+\code{\link[=stat_ef_int]{stat_ef_int()}},
+\code{\link[=stat_plot_gof]{stat_plot_gof()}},
+\code{\link[=stat_plot_gof_as_btergm]{stat_plot_gof_as_btergm()}},
+\code{\link[=stat_qap_lm]{stat_qap_lm()}},
+\code{\link[=stat_qap_logit]{stat_qap_logit()}}
 }
 \concept{statistics functions}

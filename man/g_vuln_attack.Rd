@@ -109,8 +109,8 @@ faster or slower than you would expect in a random connected network.
 Note that this number does not correct for potential isolates in the network.
 }
 \seealso{
-Other vulnerability measures: 
-\code{\link{g_vuln_efficiency}()},
-\code{\link{g_vuln_paths}()}
+Other vulnerability measures:
+\code{\link[=g_vuln_efficiency]{g_vuln_efficiency()}},
+\code{\link[=g_vuln_paths]{g_vuln_paths()}}
 }
 \concept{vulnerability measures}

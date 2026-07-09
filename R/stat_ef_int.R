@@ -29,7 +29,10 @@
 #' @export
 stat_ef_int <- function(m, type = "odds"){
 
-  if (class(m) != "ergm") {
+  # inherits(), not class(m) != "ergm": an S3 class attribute can have more than
+  # one element, and then `!=` compares element-wise and if() errors out with
+  # "the condition has length > 1" rather than reporting the real problem.
+  if (!inherits(m, "ergm")) {
     stop(paste("ERROR: The argument provided is not class ergm. Please, provide an ergm class object")
     )
   }

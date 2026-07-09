@@ -135,8 +135,8 @@ through
 \code{g_vuln_efficiency(g, method = "sum", weight = NULL, disconnected = "infinite")}.
 }
 \seealso{
-Other vulnerability measures: 
-\code{\link{g_vuln_attack}()},
-\code{\link{g_vuln_paths}()}
+Other vulnerability measures:
+\code{\link[=g_vuln_attack]{g_vuln_attack()}},
+\code{\link[=g_vuln_paths]{g_vuln_paths()}}
 }
 \concept{vulnerability measures}
