@@ -256,6 +256,10 @@ default_fit <- snafun::stat_qap_lm(
 expect_equal(default_fit$requested.nullhyp, "qapspp")
 expect_equal(default_fit$nullhyp, "qapspp")
 
+# A one-predictor qapspp request resolves to qapy, with or without an intercept:
+# with a single predictor there is nothing but the intercept to residualize
+# against, so qapspp reduces to permuting the predictor. requested.nullhyp still
+# records what was asked for.
 single_predictor_fit <- snafun::stat_qap_lm(
   y = directed_y,
   x = directed_x1,
@@ -264,7 +268,7 @@ single_predictor_fit <- snafun::stat_qap_lm(
   directed = "directed"
 )
 expect_equal(single_predictor_fit$requested.nullhyp, "qapspp")
-expect_equal(single_predictor_fit$nullhyp, "qapspp")
+expect_equal(single_predictor_fit$nullhyp, "qapy")
 
 single_predictor_no_intercept_fit <- snafun::stat_qap_lm(
   y = directed_y,
@@ -279,20 +283,18 @@ expect_equal(single_predictor_no_intercept_fit$nullhyp, "qapy")
 
 
 
-# Simple one-predictor qapspp cases should now fit cleanly.
-# seed is required, not optional: with intercept = TRUE (the default) the
-# deterministic one-predictor fallback does not apply, so reaching "qapy" depends
-# on the QAP-SPP permutations producing a singular intermediate regression. That
-# is an RNG-dependent event -- without a seed this assertion passes only ~60% of
-# the time, on any platform. seed = 1 makes it reliably fall back, matching the
-# seeded calls above.
+# The resolution is deterministic: it happens in stat_qap_lm() before sna::netlm
+# is called, so it no longer depends on netlm's singularity detection, on the RNG
+# stream, or on the platform. This tiny graph used to reach qapy only through a
+# singular-matrix fallback that fired for roughly 60% of seeds, which made the
+# suite flaky across R versions and operating systems; no seed is set here on
+# purpose, to show the outcome no longer depends on one.
 fallback_y <- snafun::create_manual_graph(A -- B, B -- C, C -- D)
 fallback_x <- snafun::create_manual_graph(A -- B, B -- D, C -- D)
 fallback_fit <- snafun::stat_qap_lm(
   y = fallback_y,
   x = fallback_x,
-  reps = 19,
-  seed = 1
+  reps = 19
 )
 expect_equal(fallback_fit$requested.nullhyp, "qapspp")
 expect_equal(fallback_fit$nullhyp, "qapy")

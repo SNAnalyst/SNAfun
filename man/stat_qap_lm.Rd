@@ -46,10 +46,10 @@ estimation uncertainty. This default matches the default
 \item{nullhyp}{Which QAP null model should be used? One of \code{"qapspp"}
 or \code{"qapy"}. The default \code{"qapspp"} permutes each predictor
 after residualizing it on the other predictors; \code{"qapy"} permutes the
-dependent network. In a one-predictor model without an intercept,
-\code{\link[sna]{netlm}} automatically uses \code{"qapy"}. If
-\code{"qapspp"} becomes numerically singular for a simple one-predictor
-model, \code{stat_qap_lm()} also falls back to \code{"qapy"}.}
+dependent network. Any one-predictor model uses \code{"qapy"}, with or
+without an intercept, since \code{"qapspp"} has no other predictors to
+residualize against; \code{requested.nullhyp} still records what was asked
+for.}
 
 \item{tol}{Numerical tolerance passed to the underlying QR decomposition.}
 
@@ -84,13 +84,16 @@ semi-partialling strategy from \code{\link[sna]{netlm}}. For each
 coefficient, \code{stat_qap_lm()} stores the permutation distribution for the
 requested \code{test.statistic}. This keeps the function close to the speed
 of \code{\link[sna]{netlm}} while still reporting both observed coefficients
-and observed t-values. In the special case of a one-predictor model without
-an intercept, \pkg{sna} automatically falls back from \code{"qapspp"} to
-\code{"qapy"}; \code{stat_qap_lm()} follows that behavior and records both
-the requested and the actually used null model. In addition, some very small
-or perfectly determined one-predictor examples can make the semi-partialling
-step numerically singular under \code{"qapspp"}; in those cases
-\code{stat_qap_lm()} also falls back to \code{"qapy"} with a warning.
+and observed t-values. With a single predictor there is nothing but the
+intercept for the semi-partialling step to residualize against, so
+\code{"qapspp"} reduces to permuting the predictor itself. In that case
+\code{stat_qap_lm()} uses \code{"qapy"} regardless of whether an intercept is
+included, and records both the requested and the actually used null model
+(\code{requested.nullhyp} and \code{nullhyp}). This also avoids a numerically
+fragile code path: on very small graphs the one-predictor \code{"qapspp"} fit
+in \pkg{sna} can become singular for some permutations, and whether it does so
+depends on the random-number stream, the R version, and the platform, so the
+chosen null model would otherwise not be reproducible.
 
 As in \code{\link{stat_qap_cor}}, the vectorization convention follows the
 adjacency matrix that students actually inspect: for directed analyses, all
