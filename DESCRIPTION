@@ -1,7 +1,7 @@
 Package: snafun
 Type: Package
 Title: Bringing more fun to Social Network Analysis 
-Version: 0.2026.0
+Version: 0.2026.1
 Authors@R:
 	c(person(given = "Roger",
 					family = "Leenders",
