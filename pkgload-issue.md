@@ -1,19 +1,30 @@
-# load_all() drops exports of generics re-exported from base, and warns about them
+# load_all() drops exports of generics re-exported from base
 
-pkgload 1.5.3, R 4.6.1.
+> Filed upstream as [r-lib/pkgload#339](https://github.com/r-lib/pkgload/issues/339).
+> This is the reference copy of what was submitted.
 
-A package that supplies S3 methods for a base generic can export the generic's
-name so that `pkg::plot(x)` works without the package being attached. `@export`
-on a documentation-only roxygen block (or a hand-written `export(plot)`) exports
-the *name* without creating an object called `plot` in the namespace. R resolves
-it through the namespace's parent chain, and `pkg::plot` becomes `base::plot`.
+### Summary
 
-Under `load_all()` this breaks. `setup_ns_exports()` warns about the name and
-then removes it from the package's exports, so `pkg::plot` does not exist.
+A package that provides S3 methods for a base generic can export the generic's
+*name* so that `pkg::plot(x)` works without the package being attached. This is
+`export(plot)` with no object named `plot` in the namespace; R resolves the
+export through the namespace's parent chain, and `pkg::plot` becomes `base::plot`.
 
-## Reprex
+When the package is **installed**, this works exactly as intended. Under
+`load_all()`, `setup_ns_exports()` removes such names from the package's exports,
+so `pkg::plot` does not exist. `load_all()` and an installed package therefore
+disagree about the package's API.
 
-No roxygen2 involved; the NAMESPACE is hand-written.
+This is not the same as #31. I'm not arguing the warning is wrong â€” I understand
+the position there that `plot` is genuinely "exported but not in the package
+namespace". The point here is the second half: after warning, `setup_ns_exports()`
+*drops the export*, and that is what makes `load_all()` diverge from an installed
+package. A developer working under `load_all()` sees `pkg::plot()` fail with an
+error that does not occur for their users.
+
+### Reprex
+
+No roxygen2 involved; hand-written `NAMESPACE`.
 
 ```
 basegen/
@@ -22,16 +33,18 @@ basegen/
   R/plot.R
 ```
 
-```r
+```
 # NAMESPACE
 S3method(plot,widget)
 export(plot)
+```
 
+```r
 # R/plot.R
 plot.widget <- function(x, ...) invisible("widget method ran")
 ```
 
-Installed, this behaves exactly as intended:
+Installed, this behaves as intended:
 
 ```r
 "plot" %in% getNamespaceExports("basegen")
@@ -40,18 +53,14 @@ identical(basegen::plot, base::plot)
 #> TRUE
 basegen::plot(structure(1, class = "widget"))
 #> "widget method ran"
-exists("plot.widget", envir = get(".__S3MethodsTable__.", envir = baseenv()))
-#> TRUE
 ```
 
 Under `load_all()`:
 
 ```r
 pkgload::load_all("basegen", export_all = FALSE)
-#> ℹ Loading basegen
-#> Warning message:
-#> Objects listed as exports, but not present in namespace:
-#> • plot
+#> Warning: Objects listed as exports, but not present in namespace:
+#> â€¢ plot
 
 "plot" %in% getNamespaceExports("basegen")
 #> FALSE
@@ -60,89 +69,62 @@ basegen::plot(structure(1, class = "widget"))
 #> Error: 'plot' is not an exported object from 'namespace:basegen'
 ```
 
-## Cause
+### Mechanism
 
-`setup_ns_exports()` looks in the namespace environment and the imports
-environment, but does not follow the parent chain to `base`:
+`setup_ns_exports()` (R/namespace-env.R, current dev) keeps only names it finds
+in the namespace env or the imports env, and does not follow the parent chain to
+`base`:
 
 ```r
 ns_and_imports <- c(env_names(nsenv), env_names(imports_env(package)))
-extra_exports <- setdiff(exports, ns_and_imports)
-if (length(extra_exports) > 0) {
-    cli::cli_warn(c("Objects listed as exports, but not present in namespace: ",
-        set_names(extra_exports, "*")))
-    exports <- intersect(ns_and_imports, exports)
-}
+extra_exports  <- setdiff(exports, ns_and_imports)
+...
+exports <- intersect(ns_and_imports, exports)   # base-inherited exports dropped here
 ```
 
-Consistent with that, a re-export from a normal package is fine, because the
-object lands in the imports environment:
+Consistently, a re-export from a *normal* package is fine, because the object
+lands in the imports env:
 
 ```r
-# NAMESPACE
-export(head)
-importFrom(utils,head)
-export(plot)
-```
-
-```r
+# NAMESPACE:  export(head)  +  importFrom(utils, head)
 pkgload::load_all("basegen", export_all = FALSE)
-e <- getNamespaceExports("basegen")
-"head" %in% e   #> TRUE   (importFrom, in imports env)
-"plot" %in% e   #> FALSE  (base generic, only via parent chain)
+"head" %in% getNamespaceExports("basegen")   #> TRUE
+"plot" %in% getNamespaceExports("basegen")   #> FALSE
 ```
 
-## There is no workaround
+So `base` is the special case: the object it re-exports is reachable through the
+parent chain but is neither in the namespace env nor the imports env.
 
-The obvious one, importing from base, is not allowed by R:
+### No workaround
 
-```r
-# NAMESPACE
-export(plot)
-importFrom(base,plot)
-```
+The obvious one, importing from base, is rejected by R itself:
 
 ```r
+# NAMESPACE:  export(plot)  +  importFrom(base, plot)
 pkgload::load_all("basegen")
 #> Error: operation not allowed on base namespace
-
 install.packages("basegen", repos = NULL, type = "source")
 #> Error in asNamespace(ns, base.OK = FALSE) : operation not allowed on base namespace
-#> ERROR: lazy loading failed for package 'basegen'
 ```
 
 `@rawNamespace export(plot)` produces the same NAMESPACE line and the same
-warning. So a package in this position cannot make `load_all()` behave, and
-cannot silence the warning either.
+outcome. So a package in this position cannot make `load_all()` match an
+installed build.
 
-Note also that replacing the name-only export with a real object is not an
-equivalent spelling. `loadNamespace()` treats a generic as *local* as soon as an
-object of that name exists in the package namespace, and then registers the
-package's methods in the package's own S3 method table rather than in base's.
-Adding `plot <- base::plot` therefore satisfies `load_all()` while silently
-stopping a bare `plot(<widget>)` from dispatching.
+### Suggestion
 
-## Why this matters
+Would `setup_ns_exports()` be willing to keep exports that resolve in the
+namespace's parent chain â€” e.g. `exists(name, envir = nsenv, inherits = TRUE)`,
+or at minimum names that resolve in `baseenv()` â€” rather than dropping them? That
+would make `load_all()` agree with an installed package for re-exported base
+generics, independently of whether the warning is kept.
 
-This cost our package (`snafun`) a three-month regression. Working under
-`load_all()`, a contributor saw the warning naming `plot` and `print`, saw
-`snafun::plot(g)` fail, and removed the `@export` tags. The next `roxygenise()`
-dropped `export(plot)` and `export(print)` from NAMESPACE, and the *installed*
-package then failed too:
+Happy to send a PR if that direction is acceptable.
 
-```
-Error: 'plot' is not an exported object from 'namespace:snafun'
-```
+### Context
 
-Both signals pointed at the tags. Both were artefacts of `load_all()`. Following
-them broke the package for every user.
+This bit us in practice: working under `load_all()`, a contributor saw
+`pkg::plot()` fail and removed the `@export` tag to "fix" it, which then broke the
+installed package for every user. Reduced example above.
 
-## Suggested fix
-
-In `setup_ns_exports()`, treat a name as present when it resolves anywhere in
-the namespace's parent chain — `exists(name, envir = nsenv, inherits = TRUE)` —
-or at minimum when it resolves in `baseenv()`. Keeping such names in `exports`
-would make `load_all()` agree with an installed package.
-
-Failing that, dropping the warning for names found in `baseenv()` would already
-remove the trap, since the warning is what invites the fatal "fix".
+pkgload 1.5.3 (current CRAN); dev `setup_ns_exports()` is unchanged. R 4.6.1.
