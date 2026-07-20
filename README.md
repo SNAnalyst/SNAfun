@@ -1,4 +1,9 @@
 # SNAfun
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/SNAnalyst/SNAfun/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/SNAnalyst/SNAfun/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 FUNctions to enjoy alongside the SNA4DS course
 
 The following API is used:
