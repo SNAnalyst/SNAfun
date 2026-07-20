@@ -56,3 +56,17 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+      # Guard against forgotten exports (the class of bug that hid the
+      # snafun::plot() regression). The audit parses R/*.R against NAMESPACE, so
+      # it must run on the source tree, not on the installed package -- which is
+      # why it is a workflow step rather than a tinytest test. Run once, on the
+      # ubuntu-release job, reusing the dependencies already installed above so
+      # the roxygen drift check can load the package. Exits non-zero on a hard
+      # problem, failing the job.
+      - name: Audit exports
+        if: runner.os == 'Linux' && matrix.config.r == 'release'
+        run: |
+          Rscript -e 'if (!requireNamespace("roxygen2", quietly = TRUE)) install.packages("roxygen2")'
+          Rscript tools/audit-exports.R
+        shell: bash
