@@ -23,6 +23,15 @@
 #' @keywords internal
 save_internal_data <- function(..., overwrite_vars = FALSE, overwrite = FALSE,
                                 compress = "bzip2", version = 2) {
+  # usethis and desc are Suggests, needed only by this development helper and the
+  # internal functions it calls (all of which are reached only from here). Guard
+  # the single entry point rather than every call site.
+  if (!requireNamespace("usethis", quietly = TRUE) ||
+      !requireNamespace("desc", quietly = TRUE)) {
+    stop("save_internal_data() requires the 'usethis' and 'desc' packages. ",
+         "Install them, or use usethis::use_data(internal = TRUE) instead.",
+         call. = FALSE)
+  }
   check_is_package("use_data()")
   objs <- get_objs_from_dots(dots(...))
   use_dependency("R", "depends", "2.10")

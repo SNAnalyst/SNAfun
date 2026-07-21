@@ -24,19 +24,19 @@ Imports:
 	sna (>= 2.7),
 	utils,
 	btergm (>= 1.10.6),
-	desc,
 	ergm (>= 4.2.2),
 	igraph (>= 2.0.3),
 	network (>= 1.17.2),
 	networkDynamic (>= 0.11.2),
 	spatialreg (>= 1.2-9),
-	spdep (>= 1.2-8),
-	usethis
+	spdep (>= 1.2-8)
 Remotes:
 	github::SNAnalyst/SNA4DSData
 Suggests:
 	SNA4DSData,
 	numDeriv,
+	usethis,
+	desc,
 	tinytest,
 	gt,
 	htmltools,
