@@ -397,7 +397,7 @@ df_create <- rbind(
   )
   ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 
 
@@ -590,7 +590,7 @@ df_convert <- rbind(
   )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### CONVERT table ----
 table_convert <- df_convert |> 
@@ -1268,7 +1268,7 @@ df_manipulate <- rbind(
   )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### MANIPULATE table ----
 table_manipulate <- df_manipulate |> 
@@ -2074,7 +2074,7 @@ df_graph <- rbind(
   )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### GRAPH table ----
 table_graph <- df_graph |> 
@@ -2593,7 +2593,7 @@ df_vertices <- rbind(
   )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### VERTICES table ----
 table_vertices <- df_vertices |> 
@@ -2750,7 +2750,7 @@ df_dyads <- rbind(
   )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### DYADS table ----
 table_dyads <- df_dyads |> 
@@ -2804,7 +2804,7 @@ c(
 )
 ) |> 
   as.data.frame() |> 
-  setNames(c("topic", "pkg", "code", "note"))
+  `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### STATS table ----
 table_stats <- df_stats |> 
@@ -2853,7 +2853,7 @@ df_models <- rbind(
   )
 ) |>
   as.data.frame() |>
-  setNames(c("When", "Which approach", "Function"))
+  `colnames<-`(c("When", "Which approach", "Function"))
 
 
 table_models <-
@@ -2963,7 +2963,7 @@ df_btergm_terms <- rbind(
   )
 )  |>
   as.data.frame() |>
-  setNames(c("type", "what", "meaning", "btergm"))
+  `colnames<-`(c("type", "what", "meaning", "btergm"))
 
 
 table_btergm_terms <- df_btergm_terms |>
