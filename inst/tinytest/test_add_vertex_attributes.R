@@ -145,11 +145,13 @@ rm(g, g1, mat)
 
 
 ## check that previous vertex attrs remain after adding new ones
-# sna4tutti is a Suggests, and flomar_network is one of its internal objects, so
-# guard the block rather than let the whole test file die where the package is
-# not installed.
-if (requireNamespace("sna4tutti", quietly = TRUE)) {
-  flomar_network <- sna4tutti:::flomar_network
+# The Florentine marriage network (Padgett), with its Wealth / NumberPriorates /
+# NumberTies vertex attributes. It lives in SNA4DSData (a Suggests) as an igraph;
+# convert it to a network object, which is what this block exercises. Guard the
+# block so the test file does not die where SNA4DSData is not installed.
+if (requireNamespace("SNA4DSData", quietly = TRUE)) {
+  data(florentine, package = "SNA4DSData")
+  flomar_network <- snafun::to_network(florentine$flomarriage)
 
   atts <- snafun::extract_all_vertex_attributes(flomar_network)
   # exclude the names and Wealth attrs
@@ -170,7 +172,7 @@ if (requireNamespace("sna4tutti", quietly = TRUE)) {
 
   rm(g, flomar_network, atts)
 } else {
-  message("test_add_vertex_attributes.R: sna4tutti not installed; ",
+  message("test_add_vertex_attributes.R: SNA4DSData not installed; ",
           "skipping the flomar_network block")
 }
 
