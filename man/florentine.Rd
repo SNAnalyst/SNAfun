@@ -9,7 +9,9 @@ A list containing two \code{igraph} networks and a data.frame with
 attributes.
 }
 \source{
-\url{http://networkdata.ics.uci.edu/netdata/html/florentine.html}
+http://networkdata.ics.uci.edu/netdata/html/florentine.html
+(plain text on purpose: this stale external link is kept for reference but
+not marked up as a link, so R CMD check does not fetch it)
 }
 \usage{
 data(florentine, package = "snafun")

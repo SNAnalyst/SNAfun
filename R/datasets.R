@@ -43,7 +43,9 @@
 #' @keywords internal
 #' @format A list containing two \code{igraph} networks and a data.frame with
 #' attributes.
-#' @source \url{http://networkdata.ics.uci.edu/netdata/html/florentine.html}
+#' @source http://networkdata.ics.uci.edu/netdata/html/florentine.html
+#' (plain text on purpose: this stale external link is kept for reference but
+#' not marked up as a link, so R CMD check does not fetch it)
 NULL
 
 
@@ -65,7 +67,7 @@ NULL
 #' @keywords internal
 #'
 #' @source
-#' Own calculation by Michal Bojanowski, based on \href{https://saos-test.icm.edu.pl}{SAOS}.
+#' Own calculation by Michal Bojanowski, based on SAOS (https://saos-test.icm.edu.pl).
 #' Originally published in the \code{isnar} package at \href{https://github.com/mbojan/isnar}{isnar}.
 #'
 NULL
@@ -122,7 +124,7 @@ NULL
 #' @source
 #' Data collected by Lothar Krempel, October 5, 1999.
 #' Transformed in Pajek format by V. Batagelj, February 9, 2001.
-#' Raw data are available at \href{http://vlado.fmf.uni-lj.si/pub/networks/data/sport/football.htm}{Pajek datasets}.
+#' Raw data are available at the Pajek datasets (http://vlado.fmf.uni-lj.si/pub/networks/data/sport/football.htm).
 #'
 NULL
 

@@ -10,7 +10,7 @@ Object of class network of size 36, directed, weighted, named.
 \source{
 Data collected by Lothar Krempel, October 5, 1999.
 Transformed in Pajek format by V. Batagelj, February 9, 2001.
-Raw data are available at \href{http://vlado.fmf.uni-lj.si/pub/networks/data/sport/football.htm}{Pajek datasets}.
+Raw data are available at the Pajek datasets (http://vlado.fmf.uni-lj.si/pub/networks/data/sport/football.htm).
 }
 \usage{
 data(soccer98, package = "snafun")

@@ -49,8 +49,8 @@ This can be overridden by setting the \code{weights} argument to
 \code{NA} (no weight is used) or to a vector with weights (typically 
 this is a numeric edge attribute).
 
-More detail at 
-\href{http://www.centiserver.org/?q1=centrality&q2=Geodesic_K-Path_Centrality}{Geodesic K-Path Centrality}
+More detail at Geodesic K-Path Centrality
+(http://www.centiserver.org/?q1=centrality&q2=Geodesic_K-Path_Centrality)
 }
 \examples{
 g <- igraph::barabasi.game(100)
