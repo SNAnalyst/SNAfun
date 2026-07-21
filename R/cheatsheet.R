@@ -41,7 +41,7 @@ create_cheatsheet_html <- function(file = "cheatsheet.html",
     stop("'browse' should be either TRUE or FALSE")
   }
 
-  required_pkgs <- c("gt", "htmltools", "magrittr", "knitr")
+  required_pkgs <- c("gt", "htmltools", "knitr")
   missing_pkgs <- required_pkgs[!vapply(
     required_pkgs,
     FUN = requireNamespace,
