@@ -8,7 +8,7 @@
 Object of class igraph of size 40, undirected, with predefined layout.
 }
 \source{
-Own calculation by Michal Bojanowski, based on \href{https://saos-test.icm.edu.pl}{SAOS}.
+Own calculation by Michal Bojanowski, based on SAOS (https://saos-test.icm.edu.pl).
 Originally published in the \code{isnar} package at \href{https://github.com/mbojan/isnar}{isnar}.
 }
 \usage{

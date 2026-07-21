@@ -12,8 +12,8 @@
 #' \code{NA} (no weight is used) or to a vector with weights (typically 
 #' this is a numeric edge attribute).
 #' 
-#' More detail at 
-#' \href{http://www.centiserver.org/?q1=centrality&q2=Geodesic_K-Path_Centrality}{Geodesic K-Path Centrality}
+#' More detail at Geodesic K-Path Centrality
+#' (http://www.centiserver.org/?q1=centrality&q2=Geodesic_K-Path_Centrality)
 #' @param graph The input graph as igraph object
 #' @param mode Character constant, gives whether the shortest paths to or from 
 #' the given vertices should be calculated for directed graphs. 
