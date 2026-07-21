@@ -47,7 +47,7 @@
 #' @param verbose logical, if \code{FALSE}, the printing of most details 
 #' by the gof function is suppressed (but some warnings may still appear and 
 #' errors are always shown)
-#' @import ergm
+#' @importFrom ergm gof
 #' @family statistics functions
 #' @return the goodness of fit is silently returned
 #' @export
