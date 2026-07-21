@@ -38,10 +38,9 @@ Suggests:
 	SNA4DSData,
 	numDeriv,
 	tinytest,
-	gt, 
+	gt,
 	htmltools,
-	magrittr, 
-	knitr, 
+	knitr,
 	rmarkdown,
 	tsna
 VignetteBuilder: 

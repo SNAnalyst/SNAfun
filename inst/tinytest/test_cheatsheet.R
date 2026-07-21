@@ -2,7 +2,7 @@ report_side_effects()
 
 
 if (all(vapply(
-  c("gt", "htmltools", "magrittr", "knitr"),
+  c("gt", "htmltools", "knitr"),
   FUN = requireNamespace,
   FUN.VALUE = logical(1),
   quietly = TRUE
