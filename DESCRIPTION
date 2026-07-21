@@ -33,11 +33,9 @@ Imports:
 	spdep (>= 1.2-8),
 	usethis
 Remotes:
-	github::SNAnalyst/SNA4DSData,
-	github::SNAnalyst/sna4tutti
+	github::SNAnalyst/SNA4DSData
 Suggests:
 	SNA4DSData,
-	sna4tutti,
 	numDeriv,
 	tinytest,
 	gt, 
