@@ -170,6 +170,13 @@ snafun::extract_edge_attribute(classroom, "weight", active = TRUE, at = 1)
 
 ## Network measures and descriptives
 
+The `snafun` package adds a few convenience helpers for temporal
+descriptives. They operate directly on `networkDynamic` objects:
+
+```{r table_temporal, echo = FALSE, eval = TRUE}
+table_temporal
+```
+
 -   `networkDynamic::duration.matrix(g, changes, start, end)` This
     function takes a given temporal network `g`, a matrix with columns
     "time", "tail", "head" (this matrix is called a *toggle list*), and
@@ -194,7 +201,7 @@ temporal network.
 -   `tsna::tiedDuration(g, mode = "duration")` Measures the total amount
     of time each vertex has ties.
 
--   `tsna::tiesDuration(g, mode = "counts")` Computes the total number
+-   `tsna::tiedDuration(g, mode = "counts")` Computes the total number
     of edge spells each vertex is tied by.
 
 The functions `tsna::tEdgeFormation` and `tsna::tEdgeDissolution`
@@ -358,7 +365,8 @@ changes over time. It also works nicely for networks where changes
 happen in continuous time.
 
 ```{r}
-snafun::plot_network_slices(9, number = 93)
+# plot g at 9 equally-spaced time slices
+snafun::plot_network_slices(g, number = 9)
 ```
 
 A sometimes useful function is `ndtv::proximity.timeline`, which shows

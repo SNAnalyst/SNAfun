@@ -60,7 +60,19 @@ graph at the graph-level.
 table_graph
 ```
 
-## Communities and other subgroups
+# Components and communities
+
+This chapter gathers the functions for *components* (structural cohesion:
+counting and extracting components, cut vertices, and bridges) and
+*communities* (subgroup detection and everything you do with the result).
+The comparison table below lists them next to their `igraph`/`network`
+equivalents.
+
+```{r table_components_communities, echo = FALSE, eval = TRUE}
+table_components_communities
+```
+
+## Working with communities
 
 It is informative to know that the `snafun` functions to extract
 communities yield results that can be scrutinized by `igraph`. The

@@ -6,6 +6,8 @@
 \alias{v_eccentricity}
 \alias{v_betweenness}
 \alias{v_stress}
+\alias{v_flow}
+\alias{v_power}
 \alias{v_eigenvector}
 \alias{v_closeness}
 \alias{v_harmonic}
@@ -30,6 +32,15 @@ v_eccentricity(x, vids = NULL, mode = c("all", "out", "in"), rescaled = FALSE)
 v_betweenness(x, vids = NULL, directed = TRUE, rescaled = FALSE)
 
 v_stress(x, vids = NULL, directed = TRUE, rescaled = FALSE)
+
+v_flow(
+  x,
+  vids = NULL,
+  mode = c("rawflow", "normflow", "fracflow"),
+  rescaled = FALSE
+)
+
+v_power(x, vids = NULL, exponent = 1, rescaled = FALSE)
 
 v_eigenvector(x, directed = TRUE, rescaled = FALSE)
 
@@ -83,6 +94,9 @@ This rarely makes sense. Default is \code{FALSE}.}
 
 \item{directed}{Logical, whether the graph should be considered directed (if 
 it is directed to begin with)}
+
+\item{exponent}{number, the Bonacich attenuation parameter \eqn{\beta}
+(default \code{1}); may be positive, negative, or zero (see the description).}
 
 \item{isolates}{character scalar. Either \code{"nan"} to keep undefined
 values as \code{NaN}, or \code{"zero"} to replace them by zero.}
@@ -189,6 +203,53 @@ It is important to consider whether it is assumed that flow through the network
 occurs along the directions of the edges (\code{directed == TRUE}) or whether 
 edge direction does not matter (\code{directed == FALSE})--the latter is 
 always the case when the graph is undirected itself.
+
+\item \code{v_flow()}: Flow betweenness of a vertex. Weights are discarded.
+
+Flow betweenness measures the extent to which the maximum flow between pairs
+of other vertices depends on a given vertex. Where (shortest-path) betweenness
+only counts geodesics, flow betweenness considers all independent paths and
+asks how much of the total possible flow between \eqn{i} and \eqn{j} has to
+pass through \eqn{v}. Vertices with a high flow betweenness therefore control
+a large share of the potential flow in the network.
+
+The \code{mode} argument selects how that flow is expressed:
+\code{"rawflow"} is the raw amount of flow through the vertex,
+\code{"normflow"} normalizes this by the total maximum flow in the graph, and
+\code{"fracflow"} is the fraction of each pairwise maximum flow that runs
+through the vertex.
+
+The directedness of the calculation is taken from the input graph itself: a
+directed graph is analyzed as directed and an undirected graph as undirected.
+There is deliberately no separate \code{directed} argument (unlike
+\code{v_betweenness}/\code{v_stress}), because the underlying
+\code{\link[sna]{flowbet}} expresses direction only through the graph mode.
+
+\item \code{v_power()}: Bonacich power centrality of a vertex. Weights are discarded.
+
+Power centrality (Bonacich, 1987) generalizes eigenvector centrality with an
+attenuation parameter \code{exponent} (often written \eqn{\beta}). A vertex is
+scored by the (weighted) sum of the centralities of its neighbours, where
+\code{exponent} sets how strongly---and with which sign---the neighbours' own
+centralities count. Positive values reward being connected to central others
+(as in eigenvector centrality); negative values reward being connected to
+\emph{weakly} connected others (as in some bargaining/exchange settings).
+With \code{exponent = 0} the measure reduces to a degree-based score.
+
+The computation is class-native: for an \code{igraph} object it uses
+\code{\link[igraph]{power_centrality}}, and for a \code{network} object it uses
+\code{\link[sna]{bonpow}}. Both return identical values, so the choice of
+input class does not affect the result. Loops are ignored, exactly as in the
+other \code{v_*} functions, which is why there is deliberately no \code{loops}
+argument.
+
+NOTE: for some graphs and some values of \code{exponent} (in particular values
+close to the reciprocal of the largest eigenvalue of the adjacency matrix) the
+underlying matrix inversion is (near-)singular, so the scores can come out as
+\code{NaN} or \code{Inf}. This is inherent to the measure; the raw value is
+returned unchanged rather than silently substituted. Note also that Bonacich
+power scores can be negative, so \code{rescaled = TRUE} (scores divided by
+their sum) can behave oddly when the scores sum to (nearly) zero.
 
 \item \code{v_eigenvector()}: Eigenvector centrality of a vertex. Weights are discarded. 
 
@@ -404,6 +465,28 @@ g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 plot(g)
 v_stress(g) # there are no shortest paths with length >= 3
 v_stress(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
+#
+# v_flow
+g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 15,
+                                   directed = TRUE, graph = "igraph")
+v_flow(g_i)
+v_flow(g_i, mode = "fracflow")
+v_flow(g_i, rescaled = TRUE)
+v_flow(g_i, vids = c(1, 2, 3, 5))
+
+g_n <- snafun::to_network(g_i)
+v_flow(g_n)
+v_flow(g_n, mode = "normflow", rescaled = TRUE)
+#
+# v_power
+g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 15,
+                                   directed = TRUE, graph = "igraph")
+v_power(g_i)
+v_power(g_i, exponent = 0.5)
+v_power(g_i, vids = c(1, 2, 3))
+
+g_n <- snafun::to_network(g_i)
+v_power(g_n)                       # identical to the igraph result
 # 
 # v_eigenvector
 g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 

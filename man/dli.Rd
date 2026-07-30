@@ -3,9 +3,12 @@
 \name{dli}
 \alias{dli}
 \alias{d_distance}
+\alias{d_betweenness}
 \title{Dyad level indices}
 \usage{
 d_distance(x, mode = c("all", "out", "in"))
+
+d_betweenness(x, directed = TRUE, weights = NA)
 }
 \arguments{
 \item{x}{graph object}
@@ -16,6 +19,15 @@ then the shortest paths from the vertex, if \code{in} then to it will be
 considered. If \code{all}, the default, then the corresponding undirected 
 graph will be used, ie. not directed paths are searched. 
 This argument is ignored for undirected graphs.}
+
+\item{directed}{logical, should edge direction be taken into account? Default
+\code{TRUE}. Ignored for undirected graphs.}
+
+\item{weights}{edge weights. \code{NA} (the default) discards weights and
+computes purely topological betweenness, consistent with the other
+\code{d_*}/\code{v_*} functions. \code{NULL} uses the graph's \code{weight}
+edge attribute if it has one; a numeric vector uses those weights (interpreted
+as edge distances).}
 }
 \description{
 Dyad level indices
@@ -30,6 +42,22 @@ Weights are discarded. The output of this function is a matrix.
 Use \code{\link[igraph]{distances}} or \code{\link[sna]{geodist}} if edge 
 weights are to be used or specific options are needed.
 
+\item \code{d_betweenness()}: Edge betweenness of each edge in the graph.
+
+The edge betweenness of an edge is the number of shortest paths (geodesics)
+between all pairs of vertices that run through that edge. Edges with a high
+edge betweenness bridge otherwise-distant parts of the graph and are often the
+ties that, when removed, break the network apart; this is the basis of
+Girvan-Newman community detection.
+
+Unlike the other \code{d_*} functions, the output is NOT a full vertex-by-
+vertex matrix (edge betweenness is only defined for edges that exist).
+Instead it is a \code{data.frame} with one row per edge and the columns
+\code{from}, \code{to} and \code{betweenness}, in the same order as
+\code{\link[igraph]{as_edgelist}}. The endpoints are the vertex names when the
+graph has them, and the internal vertex ids otherwise. The heavy lifting is
+done by \code{\link[igraph]{edge_betweenness}}.
+
 }}
 \examples{
 # 
@@ -40,4 +68,9 @@ d_distance(snafun::to_network(g))
 g <- snafun::add_vertex_names(g, LETTERS[1:10])
 d_distance(g)
 d_distance(snafun::to_network(g))
+#
+# edge betweenness
+g <- snafun::create_manual_graph(A -+ B, B -+ C, C -+ A, C -+ D)
+d_betweenness(g)
+d_betweenness(snafun::to_network(g))
 }

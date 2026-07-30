@@ -101,7 +101,7 @@ df_create <- rbind(
     "Create an empty network",
     "network",
     "
-    network::network::initialize()
+    network::network.initialize(n)
     ",
     "The output is a matrix object"
   ),
@@ -315,7 +315,7 @@ df_create <- rbind(
     "Create random bipartite graph"
     , "igraph"
     , "
-    igraph::sample_bipartite()
+    igraph::sample_bipartite_gnp(n1, n2, p)
     "
     , NA
   ),
@@ -367,8 +367,8 @@ df_create <- rbind(
     # from a data.frame
     igraph::graph_from_data_frame(d, directed = TRUE, vertices = NULL)
     
-    # from an incidence matrix (in matrix format)
-    igraph::graph_from_incidence_matrix(incidence, directed = FALSE, 
+    # from a bipartite incidence / biadjacency matrix (in matrix format)
+    igraph::graph_from_biadjacency_matrix(incidence, directed = FALSE,
       mode = c("all", "out", "in", "total"), multiple = FALSE,
       weighted = NULL, add.names = NULL)
     '
@@ -394,9 +394,34 @@ df_create <- rbind(
       names.eval = NULL, na.rm = FALSE, edge.check = FALSE, ...)
     ',
     NA
-  )
-  ) |> 
-  as.data.frame() |> 
+  ),
+  ###### read UCINET data ----
+  c(
+    "Read data from a UCINET file",
+    "snafun",
+    '
+    snafun::read_ucinet(file,
+      graph = c("igraph", "network", "matrix", "edgelist"),
+      directed = c("auto", "directed", "undirected"))
+    ',
+    NA
+  ),
+  c("Read data from a UCINET file", "igraph", NA, NA),
+  c("Read data from a UCINET file", "network", NA, NA),
+  ###### build edgelist/nodelist from raw data ----
+  c(
+    "Build an edgelist / nodelist from raw data",
+    "snafun",
+    '
+    snafun::make_edgelist(names = NULL, attribute = NULL)
+    snafun::make_nodelist(names = NULL, attribute = NULL)
+    ',
+    NA
+  ),
+  c("Build an edgelist / nodelist from raw data", "igraph", NA, NA),
+  c("Build an edgelist / nodelist from raw data", "network", NA, NA)
+  ) |>
+  as.data.frame() |>
   `colnames<-`(c("topic", "pkg", "code", "note"))
 
 
@@ -495,7 +520,7 @@ df_convert <- rbind(
     "Make the network directed",
     "igraph",
     "
-    igraph::as.directed(g)
+    igraph::as_directed(g)
     ",
     NA
   ),
@@ -521,10 +546,10 @@ df_convert <- rbind(
     "Make the network undirected",
     "igraph",
     "
-    igraph::as.undirected(g)
+    igraph::as_undirected(g)
 
     # for example
-    igraph::as.undirected(g, mode = 'collapse', edge.attrib.comb = list(weight = 'sum'))
+    igraph::as_undirected(g, mode = 'collapse', edge.attr.comb = list(weight = 'sum'))
     ",
     NA
   ),
@@ -587,9 +612,21 @@ df_convert <- rbind(
     "network",
     NA,
     NA
-  )
-) |> 
-  as.data.frame() |> 
+  ),
+  ###### dichotomize a matrix ----
+  c(
+    "Dichotomize a matrix (make binary)",
+    "snafun",
+    "
+    # values below 'min' become 0, the rest become 1
+    snafun::to_binary_matrix(mat, min)
+    ",
+    NA
+  ),
+  c("Dichotomize a matrix (make binary)", "igraph", NA, NA),
+  c("Dichotomize a matrix (make binary)", "network", NA, NA)
+) |>
+  as.data.frame() |>
   `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### CONVERT table ----
@@ -697,7 +734,7 @@ df_manipulate <- rbind(
     "Print the graph object",
     "snafun",
     '
-    print(x)
+    snafun::print(x)
     ',
     NA
   ),
@@ -876,7 +913,7 @@ df_manipulate <- rbind(
     "igraph",
     '
     igraph::V(x)$name
-    igraph::vertex_attr(x, name = "names")
+    igraph::vertex_attr(x, name = "name")
     ',
     NA
   ),
@@ -903,7 +940,7 @@ df_manipulate <- rbind(
     "igraph",
     '
     igraph::V(x)$name <- value
-    igraph::set_vertex_attr(x, name = "names")
+    igraph::set_vertex_attr(x, name = "name", value = value)
     ',
     NA
   ),
@@ -911,19 +948,47 @@ df_manipulate <- rbind(
     "set vertex names",
     "network",
     '
-    network::set.vertex.attr(x, "vertex.names", value)
+    network::set.vertex.attribute(x, "vertex.names", value)
     network::network.vertex.names(x) <- value
     ',
     NA
   ),
+  ###### extract internal vertex ids ----
+  # The *internal* vertex numbers (1..n) that igraph/network use under the hood.
+  # There is no single igraph/network helper that returns exactly this, so those
+  # cells are left empty.
+  c(
+    "Extract internal vertex ids",
+    "snafun",
+    '
+    snafun::extract_vertex_ids(x)
+    ',
+    NA
+  ),
+  c("Extract internal vertex ids", "igraph", NA, NA),
+  c("Extract internal vertex ids", "network", NA, NA),
+  ###### matrix from a vertex attribute ----
+  c(
+    "Make a matrix from a vertex attribute",
+    "snafun",
+    '
+    # e.g. to build covariate matrices for ERGM edgecov()/absdiff()
+    snafun::make_matrix_from_vertex_attribute(x, name,
+      measure = c("absdiff", "diff", "sum", "max", "min",
+                  "mean", "sender", "receiver", "equal"))
+    ',
+    NA
+  ),
+  c("Make a matrix from a vertex attribute", "igraph", NA, NA),
+  c("Make a matrix from a vertex attribute", "network", NA, NA),
   ###### list attrs ----
   c(
     "List vertex / edge / graph attributes",
     "snafun",
     '
-    snafun::list_vertex_attribute(x, name)
-    snafun::list_edge_attribute(x, name)
-    snafun::list_graph_attribute(x, name)
+    snafun::list_vertex_attributes(x)
+    snafun::list_edge_attributes(x)
+    snafun::list_graph_attributes(x)
     
     ',
     NA
@@ -944,7 +1009,7 @@ df_manipulate <- rbind(
     "network",
     '
     network::list.vertex.attributes(x)
-    network::list.edge.attributes(x
+    network::list.edge.attributes(x)
     network::list.network.attributes(x)
     ',
     NA
@@ -1143,7 +1208,7 @@ df_manipulate <- rbind(
     igraph::induced_subgraph(g, vids = theVerticesYouWantToKeep)
 
     # subset based on edges
-    igraph::subgraph.edges(g, eids = theEdgesYouWantToKeep)
+    igraph::subgraph_from_edges(g, eids = theEdgesYouWantToKeep)
       ",
     NA
   ),
@@ -1189,9 +1254,11 @@ df_manipulate <- rbind(
     "Clean up the graph",
     "snafun",
     "
-    snafun::find_isolates(x, names = TRUE, loops = FALSE)
+    snafun::extract_isolates(x, names = TRUE, loops = FALSE)
     snafun::remove_isolates(x, loops = FALSE)
     snafun::remove_loops(x)
+    snafun::extract_loops(x)          # which edges are loops
+    snafun::extract_loops_vertex(x)   # which vertices carry a loop
     snafun::has_multiple_edges(x)
     snafun::extract_multiple_edges(x)
     snafun::remove_multiple_edges(x)
@@ -1206,7 +1273,7 @@ df_manipulate <- rbind(
 
     # for example
     igraph::simplify(g, remove.multiple = TRUE,
-        remove.loops = TRUE, edge.attrib.comb = list(weight = 'max'))
+        remove.loops = TRUE, edge.attr.comb = list(weight = 'max'))
     ",
     NA
   ),
@@ -1394,8 +1461,8 @@ df_graph <- rbind(
     "Density",
     "network",
     "
-    # preferable for biprartite graphs
-    network::network_density(g)
+    # preferable for bipartite graphs
+    network::network.density(g)
 
     # preferable for valued graphs
     sna::gden(g)
@@ -1423,7 +1490,7 @@ df_graph <- rbind(
     "Reciprocity",
     "network",
     "
-    sna::grecip(g,'measure = 'edgewise')
+    sna::grecip(g, measure = 'edgewise')
     ",
     NA
   ),
@@ -1559,8 +1626,11 @@ df_graph <- rbind(
   c(
     "Degree assortativity",
     "snafun",
-    NA,
-    NA
+    '
+    snafun::g_assortativity(x, attrname = NULL, values = NULL,
+      vertices = NULL, directed = TRUE, normalized = TRUE)
+    ',
+    "assortativity_general"
   ),
   c(
     "Degree assortativity",
@@ -1739,6 +1809,187 @@ df_graph <- rbind(
     ",
     NA
   ),
+  # ---------------------------------------------------------------------------
+  # Graph-level "covert/robustness" measures. snafun::g_efficiency() computes the
+  # Krackhardt efficiency and does the actual work via sna::efficiency(), so that
+  # is the natural sna/network equivalent shown below. igraph::global_efficiency()
+  # is a DIFFERENT measure (mean inverse shortest-path length), so the igraph cell
+  # is deliberately left empty rather than listing a non-equivalent. Secrecy and
+  # the vulnerability measures are snafun-specific here, hence their empty cells.
+  # ---------------------------------------------------------------------------
+  ###### graph efficiency ----
+  c(
+    "Graph efficiency",
+    "snafun",
+    '
+    snafun::g_efficiency(g, diag = FALSE)
+    ',
+    NA
+  ),
+  c("Graph efficiency", "igraph", NA, NA),
+  c(
+    "Graph efficiency",
+    "network",
+    '
+    sna::efficiency(g, diag = FALSE)
+    ',
+    NA
+  ),
+  ###### secrecy ----
+  c(
+    "Secrecy index",
+    "snafun",
+    '
+    snafun::g_secrecy(g, type = 0, p = 0.25, digits = 3)
+    ',
+    NA
+  ),
+  c("Secrecy index", "igraph", NA, NA),
+  c("Secrecy index", "network", NA, NA),
+  ###### vulnerability ----
+  c(
+    "Vulnerability: attack",
+    "snafun",
+    '
+    snafun::g_vuln_attack(g, mode = c("all", "out", "in"),
+      weight = NA, k = 10, digits = 4)
+    ',
+    NA
+  ),
+  c("Vulnerability: attack", "igraph", NA, NA),
+  c("Vulnerability: attack", "network", NA, NA),
+  c(
+    "Vulnerability: efficiency",
+    "snafun",
+    '
+    snafun::g_vuln_efficiency(g, method = c("harmonic", "sum"),
+      mode = c("all", "out", "in"), weight = NA,
+      disconnected = c("size", "max", "infinite"), digits = 3)
+    ',
+    NA
+  ),
+  c("Vulnerability: efficiency", "igraph", NA, NA),
+  c("Vulnerability: efficiency", "network", NA, NA),
+  c(
+    "Vulnerability: paths",
+    "snafun",
+    '
+    snafun::g_vuln_paths(g, mode = c("all", "out", "in"),
+      weight = NULL, digits = 3)
+    ',
+    NA
+  ),
+  c("Vulnerability: paths", "igraph", NA, NA),
+  c("Vulnerability: paths", "network", NA, NA)
+) |>
+  as.data.frame() |>
+  `colnames<-`(c("topic", "pkg", "code", "note"))
+
+
+#### COMPONENTS AND COMMUNITIES -----------------------------------------------
+# This chapter gathers everything about components (structural cohesion) and
+# communities (subgroup detection). The whole community block was MOVED here out
+# of df_graph so that all subgroup material lives in one place. In the rendered
+# cheatsheet this table is placed BEFORE the vertex-level indices (wired up in
+# R/cheatsheet.R). Component rows come first, community rows follow below.
+df_components_communities <- rbind(
+  ###### count components ----
+  c(
+    "Count the number of components",
+    "snafun",
+    '
+    snafun::count_components(x, type = c("weak", "strong"))
+    ',
+    NA
+  ),
+  c(
+    "Count the number of components",
+    "igraph",
+    '
+    igraph::count_components(graph, mode = c("weak", "strong"))
+    ',
+    NA
+  ),
+  c(
+    "Count the number of components",
+    "network",
+    '
+    sna::components(dat, connected = "weak")
+    ',
+    NA
+  ),
+  ###### extract components ----
+  c(
+    "Extract the components",
+    "snafun",
+    '
+    snafun::extract_components(x, type = c("weak", "strong"))
+    ',
+    NA
+  ),
+  c(
+    "Extract the components",
+    "igraph",
+    '
+    igraph::decompose(graph, mode = c("weak", "strong"))
+    ',
+    NA
+  ),
+  c("Extract the components", "network", NA, NA),
+  ###### component membership ----
+  c(
+    "Extract component membership",
+    "snafun",
+    '
+    snafun::extract_component_membership(x, type = c("weak", "strong"))
+    ',
+    NA
+  ),
+  c(
+    "Extract component membership",
+    "igraph",
+    '
+    igraph::components(graph)$membership
+    ',
+    NA
+  ),
+  c("Extract component membership", "network", NA, NA),
+  ###### cut vertices ----
+  c(
+    "Extract cut vertices (articulation points)",
+    "snafun",
+    '
+    snafun::extract_cut_vertices(x, names = TRUE)
+    ',
+    NA
+  ),
+  c(
+    "Extract cut vertices (articulation points)",
+    "igraph",
+    '
+    igraph::articulation_points(graph)
+    ',
+    NA
+  ),
+  c("Extract cut vertices (articulation points)", "network", NA, NA),
+  ###### bridges ----
+  c(
+    "Extract bridges",
+    "snafun",
+    '
+    snafun::extract_bridges(x)
+    ',
+    NA
+  ),
+  c(
+    "Extract bridges",
+    "igraph",
+    '
+    igraph::bridges(graph)
+    ',
+    NA
+  ),
+  c("Extract bridges", "network", NA, NA),
   ###### Fast-greedy community detection ----
   c(
     "Fast-greedy community detection",
@@ -2071,13 +2322,85 @@ df_graph <- rbind(
     "network",
     NA,
     NA
-  )
-) |> 
-  as.data.frame() |> 
+  ),
+  ###### summarize a community partition ----
+  c(
+    "Summarize a community partition",
+    "snafun",
+    '
+    snafun::summarize_communities(x, graph = NULL)
+    ',
+    NA
+  ),
+  c("Summarize a community partition", "igraph", NA, NA),
+  c("Summarize a community partition", "network", NA, NA),
+  ###### community dendrogram ----
+  c(
+    "Plot a community dendrogram",
+    "snafun",
+    '
+    snafun::plot_comm_dendrogram(x, labels = NULL, hang = 0.1)
+    ',
+    NA
+  ),
+  c(
+    "Plot a community dendrogram",
+    "igraph",
+    '
+    igraph::plot_dendrogram(coms)
+    ',
+    NA
+  ),
+  c("Plot a community dendrogram", "network", NA, NA),
+  ###### detection algorithm used ----
+  c(
+    "Which detection algorithm was used",
+    "snafun",
+    '
+    snafun::extract_comm_algorithm(x)
+    ',
+    NA
+  ),
+  c(
+    "Which detection algorithm was used",
+    "igraph",
+    '
+    igraph::algorithm(coms)
+    ',
+    NA
+  ),
+  c("Which detection algorithm was used", "network", NA, NA),
+  ###### community merges ----
+  c(
+    "Extract the community merges",
+    "snafun",
+    '
+    snafun::extract_comm_merges(x)
+    ',
+    NA
+  ),
+  c(
+    "Extract the community merges",
+    "igraph",
+    '
+    igraph::merges(coms)
+    ',
+    NA
+  ),
+  c("Extract the community merges", "network", NA, NA)
+) |>
+  as.data.frame() |>
   `colnames<-`(c("topic", "pkg", "code", "note"))
 
+###### COMPONENTS AND COMMUNITIES table ----
+table_components_communities <- df_components_communities |>
+  basic_theme() |>
+  gt::tab_header(        # add table title
+    title = "Components and communities",
+  )
+
 ###### GRAPH table ----
-table_graph <- df_graph |> 
+table_graph <- df_graph |>
   basic_theme() |> 
   gt::tab_header(        # add table title
     title = "Explore the graph",
@@ -2094,6 +2417,14 @@ table_graph <- df_graph |>
     footnote = "`\\$res` or `\\$vector` return the centrality scores",
     locations = gt::cells_body(
       rows = note == "freeman" & pkg == "igraph",
+      columns = c(pkg)
+    )
+  ) |>
+  gt::tab_footnote(
+    footnote = "This function is more general than degree assortativity only:
+    it can be computed on any vertex attribute (via `attrname` or `values`).",
+    locations = gt::cells_body(
+      rows = note == "assortativity_general",
       columns = c(pkg)
     )
   )
@@ -2164,7 +2495,10 @@ df_vertices <- rbind(
   c(
     "Flow betweenness",
     "snafun",
-    NA,
+    '
+    snafun::v_flow(x, vids = NULL,
+      mode = c("rawflow", "normflow", "fracflow"), rescaled = FALSE)
+    ',
     NA
   ),
   c(
@@ -2185,7 +2519,9 @@ df_vertices <- rbind(
   c(
     "Bonacich power centrality",
     "snafun",
-    NA,
+    '
+    snafun::v_power(x, vids = NULL, exponent = 1, rescaled = FALSE)
+    ',
     NA
   ),
   c(
@@ -2237,6 +2573,7 @@ df_vertices <- rbind(
     snafun::v_bridge_strength(
       x,
       communities,
+      use_communities = NULL,
       type = c("all", "out", "in"),
       absolute = TRUE,
       rescaled = FALSE
@@ -2264,6 +2601,7 @@ df_vertices <- rbind(
     snafun::v_bridge_expected_influence(
       x,
       communities,
+      use_communities = NULL,
       type = c("all", "out", "in"),
       rescaled = FALSE
     )
@@ -2290,6 +2628,7 @@ df_vertices <- rbind(
     snafun::v_bridge_expected_influence2(
       x,
       communities,
+      use_communities = NULL,
       type = c("all", "out", "in"),
       rescaled = FALSE
     )
@@ -2316,6 +2655,7 @@ df_vertices <- rbind(
     snafun::v_bridge_closeness(
       x,
       communities,
+      use_communities = NULL,
       mode = c("out", "in", "all"),
       weights = NULL,
       rescaled = FALSE
@@ -2343,6 +2683,7 @@ df_vertices <- rbind(
     snafun::v_bridge_betweenness(
       x,
       communities,
+      use_communities = NULL,
       directed = NULL,
       weights = NULL,
       rescaled = FALSE
@@ -2434,7 +2775,7 @@ df_vertices <- rbind(
   ),
   ###### eigenvector ----
   c(
-    "Eigenvector",
+    "Eigenvector centrality",
     "snafun",
     '
     snafun::v_eigenvector(x, directed = TRUE, rescaled = FALSE)
@@ -2442,7 +2783,7 @@ df_vertices <- rbind(
     NA
   ),
   c(
-    "Eigenvector",
+    "Eigenvector centrality",
     "igraph",
     "
     igraph::eigen_centrality(g, directed = TRUE, scale = FALSE)$vector
@@ -2450,7 +2791,7 @@ df_vertices <- rbind(
     NA
   ),
   c(
-    "Eigenvector",
+    "Eigenvector centrality",
     "network",
     "
     sna::evcent(g, gmode = 'digraph', rescale=FALSE)
@@ -2528,7 +2869,100 @@ df_vertices <- rbind(
     NA,
     NA
   ),
-  
+  ###### distances from/to a vertex ----
+  c(
+    "Distances to and from a vertex",
+    "snafun",
+    '
+    snafun::v_distance(x, mode = c("all", "out", "in"),
+      weights = NULL, count_unnconnected = FALSE)
+    ',
+    NA
+  ),
+  c(
+    "Distances to and from a vertex",
+    "igraph",
+    "
+    igraph::distances(g, v = igraph::V(g), mode = 'out')
+    ",
+    NA
+  ),
+  c(
+    "Distances to and from a vertex",
+    "network",
+    "
+    sna::geodist(g)$gdist
+    ",
+    NA
+  ),
+  ###### local transitivity ----
+  c(
+    "Vertex transitivity (local clustering)",
+    "snafun",
+    '
+    snafun::v_transitivity(x, vids = NULL, isolates = c("nan", "zero"))
+    ',
+    NA
+  ),
+  c(
+    "Vertex transitivity (local clustering)",
+    "igraph",
+    "
+    igraph::transitivity(g, type = 'local')
+    ",
+    NA
+  ),
+  c("Vertex transitivity (local clustering)", "network", NA, NA),
+  ###### bottleneck ----
+  # Snafun-specific vertex measures below (bottleneck, diffusion, fragmentation,
+  # secrecy): igraph/network have no direct single-function equivalent, so those
+  # cells stay empty.
+  c(
+    "Bottleneck centrality",
+    "snafun",
+    '
+    snafun::v_bottleneck(graph, mode = c("all", "out", "in"),
+      vids = igraph::V(graph), n = 4)
+    ',
+    NA
+  ),
+  c("Bottleneck centrality", "igraph", NA, NA),
+  c("Bottleneck centrality", "network", NA, NA),
+  ###### diffusion ----
+  c(
+    "Diffusion centrality",
+    "snafun",
+    '
+    snafun::v_diffusion(x, vids = NULL, T = NULL, rescaled = FALSE)
+    ',
+    NA
+  ),
+  c("Diffusion centrality", "igraph", NA, NA),
+  c("Diffusion centrality", "network", NA, NA),
+  ###### fragmentation ----
+  c(
+    "Fragmentation",
+    "snafun",
+    '
+    snafun::v_fragment(x, vids = NULL, M = Inf, binary = FALSE,
+      large = TRUE, rescaled = FALSE)
+    ',
+    NA
+  ),
+  c("Fragmentation", "igraph", NA, NA),
+  c("Fragmentation", "network", NA, NA),
+  ###### vertex secrecy ----
+  c(
+    "Vertex secrecy",
+    "snafun",
+    '
+    snafun::v_secrecy(g, type = 1, p = 0.25, digits = 3)
+    ',
+    NA
+  ),
+  c("Vertex secrecy", "igraph", NA, NA),
+  c("Vertex secrecy", "network", NA, NA),
+
   ###### neighbors ----
   c(
     "Who are the neighbors of a vertex",
@@ -2559,39 +2993,8 @@ df_vertices <- rbind(
     network::get.neighborhood(x, v, type = c('out', 'in', 'combined'), na.omit = TRUE)
       ",
     NA
-  ),
-  ###### neighborhood ----
-  c(
-    "Neighborhood of a vertex",
-    "snafun",
-    NA,
-    NA
-  ),
-  c(
-    "Neighborhood of a vertex",
-    "igraph",
-    
-    '
-    igraph::make_ego_graph(g, order = 1, nodes = "Jane", mode = "all")
-
-    # all options
-    igraph::make_ego_graph(graph, order = 1, nodes = V(graph),
-      mode = c("all", "out", "in"), mindist = 0)
-      ',
-    NA
-  ),
-  c(
-    "Neighborhood of a vertex",
-    "network",
-    '
-    sna::ego.extract(dat, ego = NULL, neighborhood = c("combined", "in", "out"))
-
-    sna::neighborhood(dat, order, neighborhood.type = c("in", "out", "total"),
-      mode = "digraph", diag = FALSE, thresh = 0, return.all = FALSE, partial = TRUE)
-      ',
-    NA
   )
-) |> 
+) |>
   as.data.frame() |> 
   `colnames<-`(c("topic", "pkg", "code", "note"))
 
@@ -2607,11 +3010,7 @@ table_vertices <- df_vertices |>
   #     rows = topic == "The neighborhood of a vertex",
   #     columns = c(pkg)
   #   )
-  ) |> 
-  gt::tab_footnote(
-    footnote = 'These functions serve equivalent purposes, but yield quite different kinds of outputs',
-    locations = gt::cells_row_groups(groups = "Neighborhood of a vertex")
-  ) |> 
+  ) |>
   gt::tab_footnote(
     footnote = "These bridge measures need a community assignment. `communities` can be the output of `snafun::extract_comm_*()`, a membership vector, or a named list of communities.",
     locations = gt::cells_body(
@@ -2637,13 +3036,16 @@ table_vertices <- df_vertices |>
 df_dyads <- rbind(
   ###### shortest ----
   c(
-    "shortest path for a given set of vertics",
+    "shortest path for a given set of vertices",
     "snafun",
-    NA,
+    '
+    snafun::extract_all_shortest_paths(x, from, to = NULL,
+      mode = c("out", "in", "all"), weights = NULL)
+    ',
     NA
   ),
   c(
-    "shortest path for a given set of vertics",
+    "shortest path for a given set of vertices",
     "igraph",
     "
     igraph::all_shortest_paths(g, from = IDofVertex, to = igraph::V(g), mode = 'out')
@@ -2651,7 +3053,7 @@ df_dyads <- rbind(
     NA
   ),
   c(
-    "shortest path for a given set of vertics",
+    "shortest path for a given set of vertices",
     "network",
     NA,
     NA
@@ -2731,14 +3133,16 @@ df_dyads <- rbind(
   c(
     "Edge betweenness",
     "snafun",
-    NA,
+    '
+    snafun::d_betweenness(x, directed = TRUE, weights = NA)
+    ',
     NA
   ),
   c(
     "Edge betweenness",
     "igraph",
     "
-    igraph::edge.betweenness(g, directed = FALSE)
+    igraph::edge_betweenness(g, directed = FALSE)
     ",
     NA
   ),
@@ -2807,13 +3211,63 @@ c(
   `colnames<-`(c("topic", "pkg", "code", "note"))
 
 ###### STATS table ----
-table_stats <- df_stats |> 
-  basic_theme() |> 
+# This "permute the network" table is rendered next to the CUG test (stat_cug),
+# because conditional-uniform-graph (and QAP) inference is permutation-based.
+table_stats <- df_stats |>
+  basic_theme() |>
   gt::tab_header(        # add table title
-    title = "Statistical analysis",
+    title = "Permuting the network",
   )
-  
-  
+
+
+
+#### TEMPORAL -----------------------------------------------------------------
+# Snafun helpers for temporal (networkDynamic) networks. Deliberately a
+# snafun-ONLY table (no igraph/network comparison column): the natural
+# comparison partners here are networkDynamic/tsna/ndtv, not igraph/network.
+# TODO (later, if wanted): expand into a full comparison table with the
+#       tsna/ndtv equivalents (e.g. ndtv::filmstrip, tsna::tEdgeFormation).
+df_temporal <- rbind(
+  ###### filmstrip of snapshots ----
+  c(
+    "Plot network snapshots over time (filmstrip)",
+    "snafun",
+    '
+    snafun::plot_network_slices(x, number = 9, start = NULL, end = NULL)
+    ',
+    NA
+  ),
+  ###### edges present per interval ----
+  c(
+    "Count edges present over a time interval",
+    "snafun",
+    '
+    snafun::count_edges_in_interval(x, start = NULL, end = NULL, number = 30)
+    ',
+    NA
+  ),
+  ###### unique edges per interval ----
+  c(
+    "Count unique edges over a time interval",
+    "snafun",
+    '
+    snafun::count_unique_edges_in_interval(x, start = NULL, end = NULL,
+      number = 30, directed = network::is.directed(x))
+    ',
+    NA
+  )
+) |>
+  as.data.frame() |>
+  `colnames<-`(c("topic", "pkg", "code", "note"))
+
+###### TEMPORAL table ----
+table_temporal <- df_temporal |>
+  basic_theme() |>
+  gt::tab_header(        # add table title
+    title = "Temporal network descriptives",
+  )
+
+
 
 #### STATISTICAL MODELS --------------------------------------------------------
 df_models <- rbind(
@@ -2895,7 +3349,7 @@ df_btergm_terms <- rbind(
     "Previous existing edges persist in a next network",
     
     '
-     btergm::memory(type = "autoregression", lag = 1)
+     memory(type = "autoregression", lag = 1)
      '
   ),
   c("memory",
@@ -2904,7 +3358,7 @@ df_btergm_terms <- rbind(
     "Both previous existing and non-existing ties are carried over to the current network",
     
     '
-     btergm::memory(type = "stability", lag = 1)
+     memory(type = "stability", lag = 1)
      '
   ),
   c("memory",
@@ -2913,7 +3367,7 @@ df_btergm_terms <- rbind(
     "A non-existing previous tie becomes existent in the current network",
     
     '
-     btergm::memory(type = "innovation", lag = 1)
+     memory(type = "innovation", lag = 1)
      '
   ),
   c("memory",
@@ -2922,7 +3376,7 @@ df_btergm_terms <- rbind(
     "An existing previous tie is dissolved in the current network",
     
     '
-     btergm::memory(type = "loss", lag = 1)
+     memory(type = "loss", lag = 1)
      '
   ),
   c("delayed reciprocity",
@@ -2931,7 +3385,7 @@ df_btergm_terms <- rbind(
     "if node j is tied to node i at t = 1, does this lead to a reciprocation of that tie back from i to j at t = 2?",
     
     '
-     btergm::delrecip(mutuality = FALSE, lag = 1)
+     delrecip(mutuality = FALSE, lag = 1)
      '
   ),
   c("delayed reciprocity",
@@ -2940,7 +3394,7 @@ df_btergm_terms <- rbind(
     "if node j is tied to node i at t = 1, does this lead to a reciprocation of that tie back from i to j at t = 2 AND if i is not tied to j at t = 1, will this lead to j not being tied to i at t = 2? This captures a trend away from asymmetry.",
     
     '
-     btergm::delrecip(mutuality = TRUE, lag = 1)
+     delrecip(mutuality = TRUE, lag = 1)
      '
   ),
   c("time covariates",
@@ -2949,7 +3403,7 @@ df_btergm_terms <- rbind(
     "Test for a specific trend (linear or non-linear) for edge formation",
     
     '
-     btergm::timecov(transform = function(t) t)
+     timecov(transform = function(t) t)
      '
   ),
   c("time covariates",
@@ -2958,7 +3412,7 @@ df_btergm_terms <- rbind(
     "Interaction effect to test whether the importance of a covariate increases or decreases over time",
     
     '
-     btergm::timecov(x, transform = function(t) t)
+     timecov(x, transform = function(t) t)
      '
   )
 )  |>
@@ -3021,6 +3475,11 @@ table_btergm_terms <- df_btergm_terms |>
       weight = "bold"
     ) ,
     locations = gt::cells_row_groups()
+  ) |>
+  gt::tab_source_note(
+    source_note = gt::md(
+      "These are ERGM model *terms* used **inside** the model formula, e.g. `... ~ edges + memory(type = 'stability') + delrecip()`. `timecov()` is an exported btergm function, while `memory()` and `delrecip()` are model terms (documented under btergm's tergm-terms help), so they are not called as `btergm::memory()`."
+    )
   )
 
 

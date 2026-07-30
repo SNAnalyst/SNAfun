@@ -68,9 +68,11 @@ create_cheatsheet_html <- function(file = "cheatsheet.html",
     "table_to",
     "table_manipulate",
     "table_graph",
+    "table_components_communities",
     "table_vertices",
     "table_dyads",
     "table_stats",
+    "table_temporal",
     "table_models",
     "table_btergm_terms"
   )
@@ -473,13 +475,13 @@ cheatsheet_sections <- function() {
     ),
     list(
       id = "graph-level-indices",
-      title = "Graph level indices",
-      children = list(
-        list(
-          id = "communities-and-other-subgroups",
-          title = "Communities and other subgroups"
-        )
-      )
+      title = "Graph level indices"
+    ),
+    # The whole community block plus the component functions now live in their
+    # own chapter, placed right before the vertex-level indices.
+    list(
+      id = "components-and-communities",
+      title = "Components and communities"
     ),
     list(
       id = "vertex-level-indices",
@@ -530,14 +532,16 @@ cheatsheet_sections <- function() {
           title = "Bipartite ERGMs"
         ),
         list(
-          id = "ergm-for-temporal-networks",
-          title = "ERGM for temporal networks"
+          id = "ergm-goodness-of-fit-and-effects",
+          title = "ERGM goodness of fit and effect interpretation"
         )
+        # NOTE: "ERGM for temporal networks" moved to the Temporal networks
+        # chapter (see below).
       )
     ),
     list(
       id = "temporal-networks-exploration-and-description",
-      title = "Temporal networks (exploration and description)",
+      title = "Temporal networks",
       children = list(
         list(
           id = "network-generation-and-manipulation",
@@ -546,6 +550,10 @@ cheatsheet_sections <- function() {
         list(
           id = "network-measures-and-descriptives",
           title = "Network measures and descriptives"
+        ),
+        list(
+          id = "ergm-for-temporal-networks",
+          title = "ERGM for temporal networks"
         ),
         list(
           id = "participation-shifts",
@@ -751,7 +759,12 @@ cheatsheet_section_node <- function(section, tables) {
       table_name = "table_manipulate",
       tables = tables
     ),
-    "graph-level-indices" = cheatsheet_graph_level_node(section, tables),
+    "graph-level-indices" = cheatsheet_simple_table_section(
+      section = section,
+      table_name = "table_graph",
+      tables = tables
+    ),
+    "components-and-communities" = cheatsheet_components_communities_node(section, tables),
     "vertex-level-indices" = cheatsheet_simple_table_section(
       section = section,
       table_name = "table_vertices",
@@ -764,7 +777,7 @@ cheatsheet_section_node <- function(section, tables) {
     ),
     "plotting" = cheatsheet_plotting_node(section),
     "statistical-models" = cheatsheet_stat_models_node(section, tables),
-    "temporal-networks-exploration-and-description" = cheatsheet_temporal_node(section),
+    "temporal-networks-exploration-and-description" = cheatsheet_temporal_node(section, tables),
     stop("Unknown cheatsheet section id: ", section$id)
   )
 }
@@ -913,16 +926,21 @@ cheatsheet_simple_table_section <- function(section,
 }
 
 
-#' Graph-level section
+#' Components and communities section
+#'
+#' Renders the dedicated "Components and communities" table (built in
+#' create_tables.R) plus a short note on the community API. This whole chapter
+#' was split out of the graph-level indices so that all subgroup/cohesion
+#' material (components, cut vertices, bridges, and community detection) lives
+#' together, right before the vertex-level indices.
 #'
 #' @keywords internal
 #' @noRd
-cheatsheet_graph_level_node <- function(section, tables) {
+cheatsheet_components_communities_node <- function(section, tables) {
   htmltools::tags$section(
     class = "cheatsheet-section",
     make_heading(1L, section$id, section$title),
-    gt_table_div(tables$table_graph),
-    make_heading(2L, "communities-and-other-subgroups", "Communities and other subgroups"),
+    gt_table_div(tables$table_components_communities),
     htmltools::tags$p(
       "Community results returned by ", htmltools::tags$code("snafun::extract_comm_*()"),
       " are compatible with the wider ", htmltools::tags$code("igraph"),
@@ -948,7 +966,8 @@ cheatsheet_plotting_node <- function(section) {
       "so a plain call to ", htmltools::tags$code("plot(x)"), " gives a quick plot ",
       "regardless of whether ", htmltools::tags$code("x"), " is an ",
       htmltools::tags$code("igraph"), " or ", htmltools::tags$code("network"),
-      " object. The package also includes a dedicated centrality comparison plot."
+      " object. The package also includes a dedicated centrality comparison ",
+      "plot through ", htmltools::tags$code("snafun::plot_centralities()"), "."
     ),
     cheatsheet_figure_node(
       filename = "plot_centralities.png",
@@ -963,45 +982,83 @@ cheatsheet_plotting_node <- function(section) {
 #'
 #' @keywords internal
 #' @noRd
+# The statistical-models chapter is prose (not a comparison table), grouped by
+# model family. Each snafun stat_* function is shown with its KEY arguments only
+# (full signatures are in the help pages), followed by a one-line explanation.
+# NOTE: the temporal ERGM material (tergm figure + btergm-terms table) used to
+# live here; it moved to the Temporal networks chapter.
 cheatsheet_stat_models_node <- function(section, tables) {
   htmltools::tags$section(
     class = "cheatsheet-section",
     make_heading(1L, section$id, section$title),
     make_heading(2L, "overview-table", "Overview table"),
     gt_table_div(tables$table_models),
+
+    ## ---- Network autocorrelation models (NAM) ----
     make_heading(
       2L,
       "network-autocorrelation-models",
       "Network autocorrelation models"
     ),
     htmltools::tags$p(
-      "Use ", htmltools::tags$code("snafun::stat_nam()"),
-      " for network autocorrelation models with row-normalized weight matrices."
+      htmltools::tags$code(
+        "snafun::stat_nam(formula, data, W, model = c(\"lag\", \"error\", \"combined\"))"
+      ),
+      " — fit a network autocorrelation model, where ",
+      htmltools::tags$code("W"), " is the (row-normalized) network weight matrix."
     ),
+    htmltools::tags$p(
+      htmltools::tags$code(
+        "snafun::stat_nam_summary(x, correlation = TRUE, R2 = TRUE, digits = 3)"
+      ),
+      " — a full summary (coefficients, correlations, R²) of a fitted NAM."
+    ),
+    htmltools::tags$p(
+      htmltools::tags$code("snafun::plot_nam(x)"),
+      " — diagnostic plots (e.g. residuals vs. fitted) for a fitted NAM."
+    ),
+
+    ## ---- Conditional Uniform Graphs (CUG) + permutation table ----
     make_heading(
       2L,
       "conditional-uniform-graphs-cug",
       "Conditional Uniform graphs (CUG)"
     ),
     htmltools::tags$p(
-      "Use ", htmltools::tags$code("snafun::stat_cug()"),
-      " for conditional uniform graph tests on supported graph classes."
+      htmltools::tags$code(
+        "snafun::stat_cug(x, FUN, cmode = c(\"size\", \"edges\", \"dyad.census\"), reps = 1000)"
+      ),
+      " — test the statistic ", htmltools::tags$code("FUN"),
+      " on a single network against random graphs conditioned on ",
+      htmltools::tags$code("cmode"), "."
     ),
+    htmltools::tags$p(
+      "CUG (and QAP below) inference is permutation-based; the table below shows ",
+      "how to randomly permute a network."
+    ),
+    gt_table_div(tables$table_stats),
+
+    ## ---- QAP family ----
     make_heading(2L, "qap-test", "QAP test"),
     htmltools::tags$p(
-      "Use ", htmltools::tags$code("snafun::stat_qap_cor()"),
-      " to test the association between two networks."
+      htmltools::tags$code(
+        "snafun::stat_qap_cor(x, y, controls = NULL, reps = 1000)"
+      ),
+      " — test the association between two networks (optionally controlling for others)."
     ),
     make_heading(2L, "qap-linear-regression", "QAP linear regression"),
     htmltools::tags$p(
-      "Use ", htmltools::tags$code("snafun::stat_qap_lm()"),
-      " for valued dependent networks explained by one or more predictor networks."
+      htmltools::tags$code("snafun::stat_qap_lm(y, x, reps = 1000)"),
+      " — a valued dependent network ", htmltools::tags$code("y"),
+      " explained by one or more predictor networks ", htmltools::tags$code("x"), "."
     ),
     make_heading(2L, "qap-logistic-regression", "QAP logistic regression"),
     htmltools::tags$p(
-      "Use ", htmltools::tags$code("snafun::stat_qap_logit()"),
-      " when the dependent network is binary."
+      htmltools::tags$code("snafun::stat_qap_logit(y, x, reps = 1000)"),
+      " — same idea, but for a binary dependent network ", htmltools::tags$code("y"), "."
     ),
+
+    ## ---- ERGM: term families (figures) ----
     make_heading(
       2L,
       "terms-classification-for-every-exponential-random-graph-model-ergm",
@@ -1021,13 +1078,28 @@ cheatsheet_stat_models_node <- function(section, tables) {
       alt = "Bipartite ERGM terms overview",
       caption = "Overview of common bipartite ERGM terms."
     ),
-    make_heading(2L, "ergm-for-temporal-networks", "ERGM for temporal networks"),
-    cheatsheet_figure_node(
-      filename = "tergm_terms.jpg",
-      alt = "Temporal ERGM terms overview",
-      caption = "Overview of common temporal ERGM terms."
+
+    ## ---- ERGM: goodness of fit + effect interpretation ----
+    make_heading(
+      2L,
+      "ergm-goodness-of-fit-and-effects",
+      "ERGM goodness of fit and effect interpretation"
     ),
-    gt_table_div(tables$table_btergm_terms)
+    htmltools::tags$p(
+      htmltools::tags$code("snafun::stat_plot_gof(gof)"),
+      " — plot an already-computed goodness-of-fit object of a fitted ergm or btergm."
+    ),
+    htmltools::tags$p(
+      htmltools::tags$code(
+        "snafun::stat_plot_gof_as_btergm(m, silent = FALSE, verbose = TRUE)"
+      ),
+      " — compute AND plot the goodness of fit for a fitted model ",
+      htmltools::tags$code("m"), " via the btergm engine (works for both ergm and btergm)."
+    ),
+    htmltools::tags$p(
+      htmltools::tags$code("snafun::stat_ef_int(m, type = \"odds\")"),
+      " — translate the effects of a fitted ergm into odds ratios (or probabilities)."
+    )
   )
 }
 
@@ -1036,7 +1108,10 @@ cheatsheet_stat_models_node <- function(section, tables) {
 #'
 #' @keywords internal
 #' @noRd
-cheatsheet_temporal_node <- function(section) {
+# The Temporal networks chapter now also carries the temporal ERGM material
+# (moved out of Statistical models) and a small snafun-only descriptives table.
+# It therefore needs the `tables` list (unlike before).
+cheatsheet_temporal_node <- function(section, tables) {
   htmltools::tags$section(
     class = "cheatsheet-section",
     make_heading(1L, section$id, section$title),
@@ -1059,8 +1134,22 @@ cheatsheet_temporal_node <- function(section) {
     ),
     htmltools::tags$p(
       "Temporal descriptives often focus on durations, edge formations, dissolutions, ",
-      "and time-varying ERGM terms."
+      "and time-varying ERGM terms. The snafun helpers below operate on ",
+      htmltools::tags$code("networkDynamic"), " objects."
     ),
+    gt_table_div(tables$table_temporal),
+    make_heading(2L, "ergm-for-temporal-networks", "ERGM for temporal networks"),
+    htmltools::tags$p(
+      "Temporal ERGMs (", htmltools::tags$code("btergm"),
+      ") extend ERGMs with memory, delayed-reciprocity and time-covariate terms. ",
+      "The figure and table below summarize the common temporal terms."
+    ),
+    cheatsheet_figure_node(
+      filename = "tergm_terms.jpg",
+      alt = "Temporal ERGM terms overview",
+      caption = "Overview of common temporal ERGM terms."
+    ),
+    gt_table_div(tables$table_btergm_terms),
     make_heading(2L, "participation-shifts", "Participation shifts"),
     cheatsheet_figure_node(
       filename = "pshifts.png",
