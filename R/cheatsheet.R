@@ -1004,18 +1004,18 @@ cheatsheet_stat_models_node <- function(section, tables) {
       htmltools::tags$code(
         "snafun::stat_nam(formula, data, W, model = c(\"lag\", \"error\", \"combined\"))"
       ),
-      " — fit a network autocorrelation model, where ",
+      " -- fit a network autocorrelation model, where ",
       htmltools::tags$code("W"), " is the (row-normalized) network weight matrix."
     ),
     htmltools::tags$p(
       htmltools::tags$code(
         "snafun::stat_nam_summary(x, correlation = TRUE, R2 = TRUE, digits = 3)"
       ),
-      " — a full summary (coefficients, correlations, R²) of a fitted NAM."
+      " -- a full summary (coefficients, correlations, R2) of a fitted NAM."
     ),
     htmltools::tags$p(
       htmltools::tags$code("snafun::plot_nam(x)"),
-      " — diagnostic plots (e.g. residuals vs. fitted) for a fitted NAM."
+      " -- diagnostic plots (e.g. residuals vs. fitted) for a fitted NAM."
     ),
 
     ## ---- Conditional Uniform Graphs (CUG) + permutation table ----
@@ -1028,7 +1028,7 @@ cheatsheet_stat_models_node <- function(section, tables) {
       htmltools::tags$code(
         "snafun::stat_cug(x, FUN, cmode = c(\"size\", \"edges\", \"dyad.census\"), reps = 1000)"
       ),
-      " — test the statistic ", htmltools::tags$code("FUN"),
+      " -- test the statistic ", htmltools::tags$code("FUN"),
       " on a single network against random graphs conditioned on ",
       htmltools::tags$code("cmode"), "."
     ),
@@ -1044,18 +1044,18 @@ cheatsheet_stat_models_node <- function(section, tables) {
       htmltools::tags$code(
         "snafun::stat_qap_cor(x, y, controls = NULL, reps = 1000)"
       ),
-      " — test the association between two networks (optionally controlling for others)."
+      " -- test the association between two networks (optionally controlling for others)."
     ),
     make_heading(2L, "qap-linear-regression", "QAP linear regression"),
     htmltools::tags$p(
       htmltools::tags$code("snafun::stat_qap_lm(y, x, reps = 1000)"),
-      " — a valued dependent network ", htmltools::tags$code("y"),
+      " -- a valued dependent network ", htmltools::tags$code("y"),
       " explained by one or more predictor networks ", htmltools::tags$code("x"), "."
     ),
     make_heading(2L, "qap-logistic-regression", "QAP logistic regression"),
     htmltools::tags$p(
       htmltools::tags$code("snafun::stat_qap_logit(y, x, reps = 1000)"),
-      " — same idea, but for a binary dependent network ", htmltools::tags$code("y"), "."
+      " -- same idea, but for a binary dependent network ", htmltools::tags$code("y"), "."
     ),
 
     ## ---- ERGM: term families (figures) ----
@@ -1087,18 +1087,18 @@ cheatsheet_stat_models_node <- function(section, tables) {
     ),
     htmltools::tags$p(
       htmltools::tags$code("snafun::stat_plot_gof(gof)"),
-      " — plot an already-computed goodness-of-fit object of a fitted ergm or btergm."
+      " -- plot an already-computed goodness-of-fit object of a fitted ergm or btergm."
     ),
     htmltools::tags$p(
       htmltools::tags$code(
         "snafun::stat_plot_gof_as_btergm(m, silent = FALSE, verbose = TRUE)"
       ),
-      " — compute AND plot the goodness of fit for a fitted model ",
+      " -- compute AND plot the goodness of fit for a fitted model ",
       htmltools::tags$code("m"), " via the btergm engine (works for both ergm and btergm)."
     ),
     htmltools::tags$p(
       htmltools::tags$code("snafun::stat_ef_int(m, type = \"odds\")"),
-      " — translate the effects of a fitted ergm into odds ratios (or probabilities)."
+      " -- translate the effects of a fitted ergm into odds ratios (or probabilities)."
     )
   )
 }
