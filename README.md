@@ -4,7 +4,8 @@
 [![R-CMD-check](https://github.com/SNAnalyst/SNAfun/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/SNAnalyst/SNAfun/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-FUNctions to enjoy alongside the SNA4DS course
+FUNctions to make much of network analysis more seamless. This package Increases the fun in SNA by making repeated intermediate conversion between classes (`network` versus `igraph`) unnecessary: all functions will work regardless of import class (often, also `data.frame` and `matrix`). Moreover, the API is much more consistent than that of packages like `sna`, `network`, `igraph`, `intergraph`. 
+The `snafun` package adds some additional functionality as well and provides connectivity with the main sna packages in R (so you can use their full plotting capability or functions that aren't covered by `snafun`).
 
 The following API is used:
 
