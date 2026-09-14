@@ -1313,11 +1313,11 @@ extract_neighbors.igraph <- function(x, vertex, type = c("out", "in", "all")) {
     # We normalize the common "vertex not found" variants here so users
     # continue to see the stable snafun-facing error message.
     if (identical(nb_message, "Invalid vertex names")) {
-      stop("This vertex is in not the graph")
+      stop("This vertex is not in the graph")
     } else if (grepl("Given vertex is not in the graph", nb_message, fixed = TRUE)) {
-      stop("This vertex is in not the graph")
+      stop("This vertex is not in the graph")
     } else if (grepl("Vertex .* is not in the graph", nb_message)) {
-      stop("This vertex is in not the graph")
+      stop("This vertex is not in the graph")
     } else {
       stop(nb_message)
     }
@@ -1341,7 +1341,7 @@ extract_neighbors.network <- function(x, vertex, type = c("out", "in", "all")) {
     is_naam <- TRUE
     vertex <- which(network::network.vertex.names(x) == vertex)
     if (length(vertex) == 0) {
-      stop("This vertex is in not the graph")
+      stop("This vertex is not in the graph")
     }
   } else {
     is_naam <- FALSE

@@ -1532,7 +1532,12 @@ infer_vertex_types_from_new_edges <- function(edge_data, vertex_keys) {
 #' @return graph with the added graph attribute
 #' @export
 add_graph_attribute <- function(x, attr_name = NULL, value) {
-  UseMethod("add_graph_attributes")  
+  # The S3 methods are named add_graph_attribute.* (singular) and NAMESPACE
+  # registers them as such, so UseMethod() must dispatch on the singular name.
+  # It previously called UseMethod("add_graph_attributes") (plural), for which
+  # no methods exist, so every call failed with "no applicable method". (fixed
+  # 2026-09-14)
+  UseMethod("add_graph_attribute")
 }
 
 

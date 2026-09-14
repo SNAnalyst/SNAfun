@@ -172,17 +172,22 @@ In other words, we count the number of triplets in which i -> j,
 j -> k, and i -> k, and divide by the number of triplets in which 
 i -> j and j -> k (regardless of whether there is an i -> k edge).
 
-Weights are discarded. Specific functions that can alternatively be used (and are 
-called by this function) include \code{\link[sna]{gtrans}} (for objects of 
-class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
-class \code{igraph}). Internally, \code{snafun} now computes weak
-transitivity from a binary adjacency matrix for all supported input formats.
-This keeps the result consistent across backends and also allows the
-function to work for one-mode matrices and edge lists.
+Weights are discarded. The calculation is delegated to trusted, well-tested
+implementations: \code{\link[igraph]{transitivity}} with
+\code{type = "global"} for objects of class \code{igraph}, and
+\code{\link[sna]{gtrans}} (weak measure) for objects of class \code{network}.
+\code{matrix} and \code{data.frame} (edge list) inputs are turned into an
+\code{igraph} object and then handled by \code{igraph::transitivity()}, so
+they return exactly the same value as for the equivalent \code{igraph}
+object. These paths are kept sparse on purpose, so they also work on very
+large networks (the earlier matrix backend built a dense adjacency product
+and hung on large graphs).
 
-Self-loops are ignored, weights are discarded, and the result is
-\code{NaN} when there are no valid length-2 paths that could potentially be
-transitive. Bipartite inputs are not supported.
+NB: the \code{igraph} backend (used for igraph/matrix/edge-list inputs)
+reports the classic global transitivity (clustering coefficient), whereas the
+\code{network} backend reports \code{sna}'s weak transitivity; for directed
+graphs these two measures can differ. This mirrors the long-standing
+behaviour of \code{snafun} prior to April 2026.
 
 \item \code{g_assortativity()}: Assortativity by vertex attribute or supplied vertex values.
 

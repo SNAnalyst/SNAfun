@@ -328,7 +328,14 @@ stat_nam <- function(formula, data = list(), W,
                      quiet = TRUE,
                      zero.policy = TRUE,
                      check_vars = TRUE) {
-    
+
+    # Capture the user-facing call now, so we can attach a clean, short call to
+    # the fitted object below. Without this, spatialreg records match.call() of
+    # the internal do.call(), which inlines the entire fitting function, the full
+    # 'listw' object and the data frame -- printing the model then dumps tens of
+    # thousands of characters.
+    cl <- match.call()
+
     model <- model[1]
     if (!model %in% c("lag", "error", "combined")) {
         stop("The only options for 'model' are 'lag', 'error', or 'combined'")
@@ -351,6 +358,36 @@ stat_nam <- function(formula, data = list(), W,
     model_frame <- stats::model.frame(formula = formula,
                                       data = data,
                                       na.action = stats::na.pass)
+
+    # Convention: a network autocorrelation model always includes an intercept
+    # unless one is already present among the predictors. If the user removed it
+    # from the formula (e.g. 'y ~ . - 1'), we add it back so the model matches
+    # the canonical sna::lnam() setup (which is fitted with an explicit intercept
+    # column). A normal formula already carries an intercept and is untouched.
+    #
+    # We rebuild the formula from the model-frame terms (where any '.' has already
+    # been expanded against the data) with stats::reformulate(intercept = TRUE);
+    # stats::update(., . ~ . + 1) cannot be used here because it fails on a '.'
+    # formula when no data argument is in scope. The original formula environment
+    # is preserved so variables are still looked up correctly.
+    mf_terms <- attr(model_frame, "terms")
+    if (attr(mf_terms, "intercept") == 0L) {
+        response_index <- attr(mf_terms, "response")
+        term_variables <- attr(mf_terms, "variables")
+        response_name <- deparse(term_variables[[response_index + 1L]])
+        new_formula <- stats::reformulate(
+            termlabels = attr(mf_terms, "term.labels"),
+            response = response_name,
+            intercept = TRUE
+        )
+        environment(new_formula) <- environment(formula)
+        formula <- new_formula
+        model_frame <- stats::model.frame(formula = formula,
+                                          data = data,
+                                          na.action = stats::na.pass)
+        message("stat_nam() always includes an intercept; one has been added to the model.")
+    }
+
     n_observations <- nrow(model_frame)
 
     W <- prepare_nam_weight_listw(x = W,
@@ -370,7 +407,7 @@ stat_nam <- function(formula, data = list(), W,
                                    model_frame = model_frame)
     }
 
-    if (identical(model, "lag")) {
+    fitted <- if (identical(model, "lag")) {
         fit_nam_spatialreg(
             fit_function = spatialreg::lagsarlm,
             formula = formula,
@@ -408,6 +445,11 @@ stat_nam <- function(formula, data = list(), W,
             na_action_supplied = na_action_supplied
         )
     }
+
+    # Replace the (enormous) internal spatialreg call with the clean stat_nam()
+    # call captured above, so printing/summary shows a short, meaningful call.
+    fitted$call <- cl
+    fitted
 }
 
 

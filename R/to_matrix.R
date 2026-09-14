@@ -133,6 +133,12 @@ to_matrix.data.frame <- function(x, directed = NULL){
   is_bipartite_edgelist <- semantics$bipartite
   is_directed_edgelist <- semantics$directed
   x <- semantics$x
+
+  # Keep numeric (double) vertex ids as exact integers. Otherwise ids >= 1e5
+  # stringify as "1e+05" and no longer match the (integer) stored vertex table,
+  # which would drop those vertices during matrix construction. (2026-09-14)
+  if (is.numeric(x[[1]])) x[[1]] <- as.integer(x[[1]])
+  if (is.numeric(x[[2]])) x[[2]] <- as.integer(x[[2]])
   
   # Normalize the edgelist to a three-column representation. This keeps the
   # rest of the logic simple and allows us to reconstruct full matrices with

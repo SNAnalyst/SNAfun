@@ -258,10 +258,26 @@ of the graph adjacency matrix; these scores may, in turn, be interpreted as
 arising from a reciprocal process in which the centrality of each actor is 
 proportional to the sum of the centralities of those actors to whom he or she i
 s connected. In general, vertices with high eigenvector centralities are 
-those which are connected to many other vertices which are, in turn, connected 
+those which are connected to many other vertices which are, in turn, connected
 to many others (and so on).
 
-Eigenvector centrality is generalized by the Bonacich power centrality measure; 
+Two normalizations are at play here and should not be confused. First,
+\code{\link[igraph]{eigen_centrality}} always scales the raw eigenvector so
+that its largest entry equals 1; as of \pkg{igraph} 2.1.1 this is automatic
+and cannot be switched off, so raw (unnormalized) eigenvector values are never
+returned. Second, the \code{rescaled} argument of \code{v_eigenvector} then
+optionally rescales that vector further:
+\itemize{
+  \item \code{rescaled = FALSE} (the default) returns igraph's vector, whose
+  maximum is 1, so all scores lie in \eqn{[0, 1]};
+  \item \code{rescaled = TRUE} returns a vector that instead sums to 1.
+}
+Note that \code{rescaled = FALSE} is therefore \emph{not} a no-op: it selects
+the max-of-1 scaling rather than the sum-to-1 scaling. The \code{rescaled}
+argument behaves the same way for all \code{v_*} centrality functions in
+\pkg{snafun}.
+
+Eigenvector centrality is generalized by the Bonacich power centrality measure;
 see \code{\link[igraph]{power_centrality}} and \code{\link[igraph]{bonpow}}
 for more details on this generalization.
 

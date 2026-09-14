@@ -231,7 +231,18 @@ to_igraph.data.frame <- function(x,
   x <- semantics$x
   bipartite <- semantics$bipartite
   directed <- semantics$directed
-  
+
+  # Numeric (double) vertex ids >= 1e5 stringify in scientific notation
+  # ("1e+05") when igraph::graph_from_data_frame() matches them against the
+  # (integer) vertex table, which broke the edge-list -> igraph roundtrip on
+  # large, unnamed networks such as enwiki. Coerce whole-number id columns to
+  # integer so the endpoints match the vertex table exactly. (2026-09-14)
+  if (is.numeric(x[[1]])) x[[1]] <- as.integer(x[[1]])
+  if (is.numeric(x[[2]])) x[[2]] <- as.integer(x[[2]])
+  if (!is.null(vertices) && is.numeric(vertices[[1]])) {
+    vertices[[1]] <- as.integer(vertices[[1]])
+  }
+
   graph <- tryCatch(
     igraph::graph_from_data_frame(x, directed = directed, vertices = vertices),
     error = function(e) e

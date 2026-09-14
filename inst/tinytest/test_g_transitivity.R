@@ -1,254 +1,177 @@
+# Regression tests for g_transitivity().
+#
+# CONTEXT (2026-09-14): the April 2026 rewrite replaced the trusted igraph/sna
+# implementations with a hand-rolled matrix backend that
+#   (a) computed transitivity from a DENSE `x %*% x` product, so it hung / ran
+#       out of memory on large networks (e.g. the enwiki dataset), and
+#   (b) was only "tested" against a verbatim copy of its own formula, so it
+#       could never catch a conceptual error.
+# The backend has been removed and the behaviour restored / hardened:
+#   * g_transitivity.igraph  -> igraph::transitivity(x, type = "global")
+#   * g_transitivity.network -> sna::gtrans(..., measure = "weak")
+#   * g_transitivity.matrix / .data.frame -> build a (sparse) igraph object and
+#     delegate to igraph::transitivity(), so they equal the igraph result AND
+#     scale to very large networks.
+#
+# The tests below validate against igraph and sna as INDEPENDENT sources of
+# truth, over a battery of generated networks (directed/undirected,
+# weighted/unweighted), across all four input types (igraph, network, matrix,
+# data.frame), and at both small and very large sizes. They are meant to stay
+# in place as a regression guard for any future change to g_transitivity().
+
 report_side_effects()
 
+set.seed(20260914)
 
 
-expected_weak_transitivity <- function(x) {
-  if (!is.matrix(x)) {
-    x <- as.matrix(x)
+# ---------------------------------------------------------------------------
+# Helper: check every input format for one generated network against the
+# correct external reference.
+#   - igraph / matrix / data.frame  -> igraph::transitivity(type = "global")
+#     (this measure ignores edge weights and edge direction)
+#   - network                       -> sna::gtrans(measure = "weak")
+#   For undirected, unweighted graphs sna and igraph must additionally agree.
+# ---------------------------------------------------------------------------
+
+check_formats <- function(g, directed, weighted, label) {
+  ref_ig <- igraph::transitivity(g, type = "global")
+
+  # igraph object ----------------------------------------------------------
+  expect_equal(snafun::g_transitivity(g), ref_ig,
+               info = paste0(label, ": igraph input vs igraph::transitivity"))
+
+  # matrix -----------------------------------------------------------------
+  m <- snafun::to_matrix(g)
+  expect_equal(snafun::g_transitivity(m), ref_ig,
+               info = paste0(label, ": matrix input vs igraph::transitivity"))
+
+  # data.frame (edge list) -------------------------------------------------
+  el <- snafun::to_edgelist(g)
+  expect_equal(snafun::g_transitivity(el), ref_ig,
+               info = paste0(label, ": edge-list input vs igraph::transitivity"))
+
+  # network object ---------------------------------------------------------
+  net <- snafun::to_network(g)
+  mode <- if (directed) "digraph" else "graph"
+  ref_sna <- sna::gtrans(net, mode = mode, measure = "weak", use.adjacency = TRUE)
+  expect_equal(snafun::g_transitivity(net), ref_sna,
+               info = paste0(label, ": network input vs sna::gtrans(weak)"))
+
+  # Independent cross-check between the two ecosystems, where the measures
+  # coincide (undirected, unweighted graphs).
+  if (!directed && !weighted) {
+    expect_equal(snafun::g_transitivity(net), ref_ig, tolerance = 1e-6,
+                 info = paste0(label, ": sna weak == igraph global (undirected)"))
   }
-  
-  if (nrow(x) != ncol(x)) {
-    stop("expected_weak_transitivity() only supports one-mode matrices")
-  }
-  
-  x <- matrix(
-    data = x,
-    nrow = nrow(x),
-    ncol = ncol(x),
-    dimnames = dimnames(x)
-  )
-  storage.mode(x) <- "numeric"
-  x[is.na(x)] <- 0
-  x[x != 0] <- 1
-  
-  if (nrow(x) > 0) {
-    diag(x) <- 0
-  }
-  
-  if (nrow(x) == 0) {
-    return(NaN)
-  }
-  
-  two_paths <- x %*% x
-  diag(two_paths) <- 0
-  
-  denominator <- sum(two_paths)
-  if (denominator == 0) {
-    return(NaN)
-  }
-  
-  numerator <- sum(two_paths * x)
-  numerator / denominator
+
+  # All four formats must agree with each other for the igraph-based measure.
+  expect_equal(snafun::g_transitivity(m), snafun::g_transitivity(g),
+               info = paste0(label, ": matrix == igraph"))
+  expect_equal(snafun::g_transitivity(el), snafun::g_transitivity(g),
+               info = paste0(label, ": edge-list == igraph"))
 }
 
 
-
-expect_transitivity_across_formats <- function(mat, directed, weighted = FALSE) {
-  expected <- expected_weak_transitivity(mat)
-  binary_mat <- mat
-  binary_mat[is.na(binary_mat)] <- 0
-  binary_mat[binary_mat != 0] <- 1
-  
-  ig <- igraph::graph_from_adjacency_matrix(
-    adjmatrix = binary_mat,
-    mode = if (directed) "directed" else "undirected",
-    weighted = NULL,
-    diag = TRUE
-  )
-  
-  if (weighted) {
-    edge_pairs <- which(mat != 0, arr.ind = TRUE)
-    if (!directed) {
-      edge_pairs <- edge_pairs[edge_pairs[, 1] <= edge_pairs[, 2], , drop = FALSE]
-    }
-    if (nrow(edge_pairs) > 0) {
-      edge_ids <- igraph::get_edge_ids(
-        graph = ig,
-        vp = as.vector(t(edge_pairs[, c(1, 2), drop = FALSE])),
-        directed = directed,
-        error = FALSE
-      )
-      igraph::edge_attr(ig, "weight", index = edge_ids) <- mat[edge_pairs]
-    }
-  }
-  
-  nw <- network::as.network.matrix(
-    x = mat,
-    directed = directed,
-    matrix.type = "adjacency",
-    ignore.eval = FALSE,
-    names.eval = "weight"
-  )
-  edgelist <- snafun::to_edgelist(ig)
-  
-  actual_values <- list(
-    matrix = snafun::g_transitivity(mat),
-    igraph = snafun::g_transitivity(ig),
-    network = snafun::g_transitivity(nw),
-    data_frame = snafun::g_transitivity(edgelist)
-  )
-  
-  for (value in actual_values) {
-    if (is.nan(expected)) {
-      expect_true(is.nan(value))
-    } else {
-      expect_equal(value, expected, tolerance = 1e-12)
-    }
-  }
+# Helper: attach random positive weights to an igraph object.
+add_weights <- function(g) {
+  igraph::E(g)$weight <- stats::runif(igraph::ecount(g), min = 1, max = 10)
+  g
 }
 
 
+# ---------------------------------------------------------------------------
+# Battery of SMALL and MEDIUM networks, all four kinds, both input sizes.
+# Erdos-Renyi graphs give a mix of open and closed triads; the small-world
+# graph guarantees a high, clearly non-trivial transitivity.
+# ---------------------------------------------------------------------------
 
-# Directed 3-cycle is the main historical regression for the igraph backend.
-directed_cycle <- matrix(
-  c(0, 1, 0,
-    0, 0, 1,
-    1, 0, 0),
-  nrow = 3,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(directed_cycle, directed = TRUE)
+sizes <- c(small = 25L, medium = 300L)
 
+for (sz_name in names(sizes)) {
+  n <- sizes[[sz_name]]
 
+  # undirected, unweighted
+  g <- igraph::sample_gnp(n, p = 6 / n, directed = FALSE)
+  check_formats(g, directed = FALSE, weighted = FALSE,
+                label = paste0("gnp undirected unweighted (", sz_name, ")"))
 
-# A transitive directed triad should score 1.
-directed_transitive <- matrix(
-  c(0, 1, 1,
-    0, 0, 1,
-    0, 0, 0),
-  nrow = 3,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(directed_transitive, directed = TRUE)
+  # directed, unweighted
+  g <- igraph::sample_gnp(n, p = 6 / n, directed = TRUE)
+  check_formats(g, directed = TRUE, weighted = FALSE,
+                label = paste0("gnp directed unweighted (", sz_name, ")"))
 
+  # undirected, weighted (weights must be ignored -> same as unweighted skeleton)
+  g <- add_weights(igraph::sample_gnp(n, p = 6 / n, directed = FALSE))
+  check_formats(g, directed = FALSE, weighted = TRUE,
+                label = paste0("gnp undirected weighted (", sz_name, ")"))
 
+  # directed, weighted
+  g <- add_weights(igraph::sample_gnp(n, p = 6 / n, directed = TRUE))
+  check_formats(g, directed = TRUE, weighted = TRUE,
+                label = paste0("gnp directed weighted (", sz_name, ")"))
 
-# If there are no valid 2-paths, transitivity is undefined and should be NaN.
-single_edge <- matrix(
-  c(0, 1, 0,
-    0, 0, 0,
-    0, 0, 0),
-  nrow = 3,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(single_edge, directed = TRUE)
-
-
-
-# Undirected examples.
-triangle <- matrix(
-  c(0, 1, 1,
-    1, 0, 1,
-    1, 1, 0),
-  nrow = 3,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(triangle, directed = FALSE)
-
-open_triplet <- matrix(
-  c(0, 1, 0,
-    1, 0, 1,
-    0, 1, 0),
-  nrow = 3,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(open_triplet, directed = FALSE)
+  # small-world (undirected, high clustering) as an extra, higher-transitivity case
+  g <- igraph::sample_smallworld(dim = 1, size = n, nei = 3, p = 0.05)
+  check_formats(g, directed = FALSE, weighted = FALSE,
+                label = paste0("smallworld undirected (", sz_name, ")"))
+}
 
 
+# ---------------------------------------------------------------------------
+# Explicit, hand-checkable values and edge cases.
+# ---------------------------------------------------------------------------
 
-# Weights should be discarded and loops ignored.
-weighted_loopy <- matrix(
-  c(9, 2, 7, 0,
-    0, 5, 3, 0,
-    0, 0, 4, 1,
-    0, 0, 0, 8),
-  nrow = 4,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(weighted_loopy, directed = TRUE, weighted = TRUE)
+# A fully connected triangle has global transitivity exactly 1, in every format.
+tri <- igraph::make_full_graph(3)
+expect_equal(snafun::g_transitivity(tri), 1, info = "triangle igraph == 1")
+expect_equal(snafun::g_transitivity(snafun::to_matrix(tri)), 1, info = "triangle matrix == 1")
+expect_equal(snafun::g_transitivity(snafun::to_edgelist(tri)), 1, info = "triangle edge-list == 1")
+expect_equal(snafun::g_transitivity(snafun::to_network(tri)), 1, info = "triangle network == 1")
 
+# A single edge has no length-2 paths -> NaN (must match igraph, not error / 0).
+edge <- igraph::graph_from_literal(A - B)
+expect_true(is.nan(snafun::g_transitivity(edge)), info = "single edge igraph -> NaN")
+expect_true(is.nan(snafun::g_transitivity(snafun::to_matrix(edge))), info = "single edge matrix -> NaN")
 
+# The default method must raise an informative error for unsupported input.
+expect_error(snafun::g_transitivity(42L), info = "default method errors on integer")
+expect_error(snafun::g_transitivity("not a graph"), info = "default method errors on character")
 
-# Isolates should not affect the result.
-with_isolate <- matrix(
-  c(0, 1, 1, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0),
-  nrow = 4,
-  byrow = TRUE
-)
-expect_transitivity_across_formats(with_isolate, directed = TRUE)
-
+# A rectangular (two-mode / bipartite) matrix is not a one-mode adjacency.
+rect <- matrix(c(1, 0, 1, 1, 0, 1), nrow = 2)
+expect_error(snafun::g_transitivity(rect), info = "rectangular matrix is rejected")
 
 
-# Empty graph stays NaN.
-expect_true(is.nan(snafun::g_transitivity(matrix(0, 0, 0))))
+# ---------------------------------------------------------------------------
+# LARGE-NETWORK REGRESSION.
+#
+# This is the crucial guard. The April 2026 backend built a dense adjacency and
+# computed `x %*% x`, which is O(n^2) in memory: for n = 50,000 that alone is
+# ~20 GB, and it simply hung on enwiki-scale data. The restored implementation
+# stays sparse (igraph), so it must return the correct value quickly.
+#
+# We exercise the two input types that are sparse by construction (igraph object
+# and edge-list data.frame). The matrix and network representations are dense by
+# construction (an n x n adjacency), so they are intentionally NOT used at this
+# scale -- the point of the fix is precisely to avoid densification.
+# ---------------------------------------------------------------------------
 
+for (n_big in c(50000L, 200000L)) {
+  gL <- igraph::sample_smallworld(dim = 1, size = n_big, nei = 3, p = 0.05)
+  ref_big <- igraph::transitivity(gL, type = "global")
 
+  # igraph input: must match and must be fast (a hang would never return).
+  timing_ig <- system.time(v_ig <- snafun::g_transitivity(gL))[["elapsed"]]
+  expect_equal(v_ig, ref_big,
+               info = paste0("large igraph n=", n_big, " matches igraph::transitivity"))
+  expect_true(timing_ig < 30,
+              info = paste0("large igraph n=", n_big, " completes quickly (", round(timing_ig, 2), "s)"))
 
-# Bipartite inputs are not supported.
-bipartite_matrix <- matrix(c(1, 0, 0, 1, 1, 0), nrow = 2, byrow = TRUE)
-expect_error(
-  snafun::g_transitivity(bipartite_matrix),
-  "only defined for one-mode networks"
-)
-
-# Random regression sweep across the requested variants.
-set.seed(20260418)
-for (directed in c(FALSE, TRUE)) {
-  for (weighted in c(FALSE, TRUE)) {
-    for (allow_loops in c(FALSE, TRUE)) {
-      for (sim in seq_len(40)) {
-        n <- sample(3:8, size = 1)
-        density <- stats::runif(1, min = 0.05, max = 0.7)
-        
-        if (directed) {
-          mat <- matrix(stats::rbinom(n * n, size = 1, prob = density), nrow = n)
-        } else {
-          upper <- matrix(0, nrow = n, ncol = n)
-          upper[upper.tri(upper)] <- stats::rbinom(
-            n = n * (n - 1) / 2,
-            size = 1,
-            prob = density
-          )
-          mat <- upper + t(upper)
-        }
-        
-        if (!allow_loops) {
-          diag(mat) <- 0
-        } else {
-          diag(mat) <- stats::rbinom(n, size = 1, prob = density)
-        }
-        
-        # Force an isolate in some simulations to keep that branch covered.
-        if (sim %% 5 == 0) {
-          isolate <- sample.int(n, size = 1)
-          mat[isolate, ] <- 0
-          mat[, isolate] <- 0
-        }
-        
-        if (weighted) {
-          weights <- matrix(
-            sample(c(0, 1, 2, 5), size = n * n, replace = TRUE,
-                   prob = c(0.3, 0.3, 0.2, 0.2)),
-            nrow = n
-          )
-          if (!directed) {
-            weights[lower.tri(weights)] <- t(weights)[lower.tri(weights)]
-          }
-          mat[mat != 0] <- weights[mat != 0]
-          if (!allow_loops) {
-            diag(mat) <- 0
-          }
-        }
-        
-        expect_transitivity_across_formats(
-          mat = mat,
-          directed = directed,
-          weighted = weighted
-        )
-      }
-    }
-  }
+  # edge-list (data.frame) input: also sparse, must match.
+  elL <- snafun::to_edgelist(gL)
+  timing_el <- system.time(v_el <- snafun::g_transitivity(elL))[["elapsed"]]
+  expect_equal(v_el, ref_big,
+               info = paste0("large edge-list n=", n_big, " matches igraph::transitivity"))
+  expect_true(timing_el < 30,
+              info = paste0("large edge-list n=", n_big, " completes quickly (", round(timing_el, 2), "s)"))
 }

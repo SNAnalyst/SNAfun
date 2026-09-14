@@ -409,17 +409,22 @@ g_reciprocity.network <- function(x) {
 #' j -> k, and i -> k, and divide by the number of triplets in which 
 #' i -> j and j -> k (regardless of whether there is an i -> k edge).
 #' 
-#' Weights are discarded. Specific functions that can alternatively be used (and are 
-#' called by this function) include \code{\link[sna]{gtrans}} (for objects of 
-#' class \code{network}) and \code{\link[igraph]{transitivity}} (for objects of 
-#' class \code{igraph}). Internally, \code{snafun} now computes weak
-#' transitivity from a binary adjacency matrix for all supported input formats.
-#' This keeps the result consistent across backends and also allows the
-#' function to work for one-mode matrices and edge lists.
-#' 
-#' Self-loops are ignored, weights are discarded, and the result is
-#' \code{NaN} when there are no valid length-2 paths that could potentially be
-#' transitive. Bipartite inputs are not supported.
+#' Weights are discarded. The calculation is delegated to trusted, well-tested
+#' implementations: \code{\link[igraph]{transitivity}} with
+#' \code{type = "global"} for objects of class \code{igraph}, and
+#' \code{\link[sna]{gtrans}} (weak measure) for objects of class \code{network}.
+#' \code{matrix} and \code{data.frame} (edge list) inputs are turned into an
+#' \code{igraph} object and then handled by \code{igraph::transitivity()}, so
+#' they return exactly the same value as for the equivalent \code{igraph}
+#' object. These paths are kept sparse on purpose, so they also work on very
+#' large networks (the earlier matrix backend built a dense adjacency product
+#' and hung on large graphs).
+#'
+#' NB: the \code{igraph} backend (used for igraph/matrix/edge-list inputs)
+#' reports the classic global transitivity (clustering coefficient), whereas the
+#' \code{network} backend reports \code{sna}'s weak transitivity; for directed
+#' graphs these two measures can differ. This mirrors the long-standing
+#' behaviour of \code{snafun} prior to April 2026.
 #' 
 #' @export
 #' @examples
@@ -456,80 +461,81 @@ g_transitivity.default <- function(x) {
 
 #' @export
 g_transitivity.igraph <- function(x) {
-  g_transitivity_matrix_backend(snafun::to_matrix(x))
+  # Baseline behaviour (restored 2026-09-14): classic global transitivity
+  # from igraph. This is the long-standing, trusted computation. The April 2026
+  # rewrite replaced this with a hand-rolled matrix backend whose only test was
+  # a copy of its own formula (see git history); it silently changed results and
+  # is therefore removed here.
+  igraph::transitivity(x, type = "global")
 }
 
 
 #' @export
 g_transitivity.network <- function(x) {
-  g_transitivity_matrix_backend(snafun::to_matrix(x))
+  # Baseline behaviour (restored 2026-09-14): sna's weak transitivity for
+  # network objects, exactly as before the April 2026 rewrite.
+  sna::gtrans(x,
+              mode = ifelse(is_directed(x), "digraph", "graph"),
+              measure = "weak",
+              use.adjacency = TRUE)
 }
 
 
+# The matrix and data.frame (edge list) methods were ADDED in the April 2026
+# rewrite. Per the maintainer's decision (2026-09-14) they are kept as
+# convenient entry points, but reimplemented to be BOTH correct and scale-safe.
+#
+# Two things went wrong before and are deliberately avoided here:
+#   (1) The April matrix backend computed transitivity from a dense `x %*% x`
+#       product. That is O(n^2) memory and hung / ran out of memory on large
+#       networks (e.g. the enwiki dataset). We instead build a (sparse) igraph
+#       object and let igraph::transitivity() do the work.
+#   (2) Routing through snafun::to_igraph() is not safe either: for directed
+#       (asymmetric) matrices its internal simplify() step changes the result
+#       (verified 2026-09-14: it returned a different value than the igraph
+#       backend for the very same network). We therefore construct the igraph
+#       object directly and only then delegate to igraph::transitivity(), so the
+#       matrix / edge-list methods return exactly the same value as
+#       g_transitivity.igraph() for the same network.
+
 #' @export
 g_transitivity.matrix <- function(x) {
-  g_transitivity_matrix_backend(x)
+  x <- as.matrix(x)
+  if (nrow(x) != ncol(x)) {
+    stop("'g_transitivity' is only defined for one-mode (square) matrices; bipartite/rectangular input is not supported")
+  }
+  storage.mode(x) <- "numeric"
+  x[is.na(x)] <- 0
+  x[x != 0] <- 1                 # weights are discarded, matching igraph::transitivity
+  if (nrow(x) > 0) {
+    diag(x) <- 0                 # self-loops are irrelevant for triadic closure
+  }
+  # Directedness is inferred from symmetry. Global transitivity ignores edge
+  # direction, so this only affects how the adjacency is read, not the result.
+  mode <- if (isSymmetric(unname(x))) "undirected" else "directed"
+  g <- igraph::graph_from_adjacency_matrix(x, mode = mode)
+  igraph::transitivity(g, type = "global")
 }
 
 
 #' @export
 g_transitivity.data.frame <- function(x) {
-  g_transitivity_matrix_backend(snafun::to_matrix(x))
-}
-
-
-
-#' Compute weak transitivity from a binary adjacency matrix
-#'
-#' Internal helper that standardizes the transitivity calculation across the
-#' supported one-mode backends. Each non-zero entry is treated as a tie,
-#' self-loops are ignored, and the result is returned as the share of
-#' transitive length-2 paths among all length-2 paths.
-#'
-#' @param x adjacency matrix for a one-mode network
-#'
-#' @return numeric scalar with the weak transitivity, or \code{NaN} if there
-#' are no valid length-2 paths
-#' @keywords internal
-g_transitivity_matrix_backend <- function(x) {
-  if (!is.matrix(x)) {
-    x <- as.matrix(x)
+  x <- as.data.frame(x)
+  if (ncol(x) < 2L) {
+    stop("a data.frame passed to 'g_transitivity' must be an edge list with at least two columns")
   }
-  
-  if (nrow(x) != ncol(x)) {
-    stop("'g_transitivity' is only defined for one-mode networks; bipartite inputs are not supported")
+  # Treat the first two columns as the edge endpoints and build the graph
+  # directly. We build it undirected: global transitivity ignores direction, and
+  # igraph::transitivity() ignores multiple edges, so a reciprocated arc that
+  # becomes a pair of parallel edges does not affect the result. This keeps the
+  # edge-list path sparse and therefore usable on very large networks.
+  el <- x[, 1:2, drop = FALSE]
+  if (nrow(el) == 0L) {
+    return(NaN)                  # no edges -> no 2-paths -> NaN, matching igraph
   }
-  
-  x <- matrix(
-    data = x,
-    nrow = nrow(x),
-    ncol = ncol(x),
-    dimnames = dimnames(x)
-  )
-  storage.mode(x) <- "numeric"
-  x[is.na(x)] <- 0
-  x[x != 0] <- 1
-  
-  # Weak transitivity is defined on ties between distinct vertices, so loops do
-  # not create valid 2-paths or transitive closures here.
-  if (nrow(x) > 0) {
-    diag(x) <- 0
-  }
-  
-  if (nrow(x) == 0) {
-    return(NaN)
-  }
-  
-  two_paths <- x %*% x
-  diag(two_paths) <- 0
-  
-  denominator <- sum(two_paths)
-  if (denominator == 0) {
-    return(NaN)
-  }
-  
-  numerator <- sum(two_paths * x)
-  numerator / denominator
+  el[] <- lapply(el, as.character)
+  g <- igraph::graph_from_data_frame(el, directed = FALSE)
+  igraph::transitivity(g, type = "global")
 }
 
 

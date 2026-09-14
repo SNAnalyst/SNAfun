@@ -7,14 +7,14 @@ report_side_effects()
 g <- igraph::make_graph("Zachary")
 expect_equal(extract_neighbors(g, 1), c(2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 18, 20, 22, 32))
 expect_equal(extract_neighbors(g, 27), c(30, 34))
-expect_error(extract_neighbors(g, 100), "This vertex is in not the graph")
+expect_error(extract_neighbors(g, 100), "This vertex is not in the graph")
 expect_error(suppressWarnings(extract_neighbors(g, "a")))
 
 # make vertices named
 igraph::V(g)$name <- c(letters, LETTERS[1:8])
 expect_equal(extract_neighbors(g, 1), c(2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 18, 20, 22, 32))
 expect_equal(extract_neighbors(g, 27), c(30, 34))
-expect_error(extract_neighbors(g, 100), "This vertex is in not the graph")
+expect_error(extract_neighbors(g, 100), "This vertex is not in the graph")
 expect_equal(extract_neighbors(g, "A"), c("D", "H"))
 expect_error(extract_neighbors(g, c(27, 3)), "You need to specify exactly 1 vertex")
 
