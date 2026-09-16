@@ -69,6 +69,35 @@ expect_equal(num(snafun::v_pagerank(gd)), num(igraph::page_rank(gd)$vector),
 
 
 # ---------------------------------------------------------------------------
+# 2b. g_reciprocity: igraph vs network must agree, and both vs igraph reference.
+# (The .network method uses sna::grecip(edgewise); it must equal
+# igraph::reciprocity across many kinds of directed network. 2026-09-16.)
+# ---------------------------------------------------------------------------
+
+recip_cases <- list(
+  igraph::sample_gnp(40, 0.15, directed = TRUE),
+  igraph::sample_gnp(30, 0.40, directed = TRUE),   # dense
+  igraph::sample_gnp(80, 0.03, directed = TRUE),   # sparse
+  igraph::make_ring(20, directed = TRUE),          # reciprocity 0
+  igraph::make_full_graph(10, directed = TRUE),    # reciprocity 1
+  igraph::make_star(15, mode = "out")              # reciprocity 0
+)
+for (i in seq_along(recip_cases)) {
+  gi <- recip_cases[[i]]
+  ref <- igraph::reciprocity(gi)
+  expect_equal(snafun::g_reciprocity(gi), ref,
+               info = paste0("g_reciprocity[", i, "] igraph == igraph::reciprocity"))
+  expect_equal(snafun::g_reciprocity(snafun::to_network(gi)), ref, tolerance = 1e-8,
+               info = paste0("g_reciprocity[", i, "] network == igraph (input-class consistent)"))
+}
+# a weighted directed graph (weights ignored by reciprocity)
+gw <- igraph::sample_gnp(50, 0.2, directed = TRUE)
+igraph::E(gw)$weight <- stats::runif(igraph::ecount(gw), 1, 5)
+expect_equal(snafun::g_reciprocity(snafun::to_network(gw)), snafun::g_reciprocity(gw),
+             tolerance = 1e-8, info = "g_reciprocity weighted: network == igraph")
+
+
+# ---------------------------------------------------------------------------
 # 3. Cross-representation: igraph and network inputs must agree (also weighted).
 #    Covers v_stress / v_geokpath / v_shapley, which have no simple igraph twin.
 # ---------------------------------------------------------------------------

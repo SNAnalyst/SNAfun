@@ -8,7 +8,9 @@
 #       could never catch a conceptual error.
 # The backend has been removed and the behaviour restored / hardened:
 #   * g_transitivity.igraph  -> igraph::transitivity(x, type = "global")
-#   * g_transitivity.network -> sna::gtrans(..., measure = "weak")
+#   * g_transitivity.network -> converted to igraph, then igraph::transitivity()
+#     (2026-09-16: was sna::gtrans(weak); now unified on the igraph measure so
+#     the result is identical across input classes and scales to large networks)
 #   * g_transitivity.matrix / .data.frame -> build a (sparse) igraph object and
 #     delegate to igraph::transitivity(), so they equal the igraph result AND
 #     scale to very large networks.
@@ -51,17 +53,18 @@ check_formats <- function(g, directed, weighted, label) {
                info = paste0(label, ": edge-list input vs igraph::transitivity"))
 
   # network object ---------------------------------------------------------
+  # As of 2026-09-16 the network method is routed through igraph, so it returns
+  # the igraph global transitivity for EVERY input, identical to the igraph path.
   net <- snafun::to_network(g)
-  mode <- if (directed) "digraph" else "graph"
-  ref_sna <- sna::gtrans(net, mode = mode, measure = "weak", use.adjacency = TRUE)
-  expect_equal(snafun::g_transitivity(net), ref_sna,
-               info = paste0(label, ": network input vs sna::gtrans(weak)"))
+  expect_equal(snafun::g_transitivity(net), ref_ig,
+               info = paste0(label, ": network input == igraph global"))
 
-  # Independent cross-check between the two ecosystems, where the measures
-  # coincide (undirected, unweighted graphs).
+  # Independent sanity cross-check: for undirected, unweighted graphs igraph's
+  # global transitivity coincides with sna's weak transitivity.
   if (!directed && !weighted) {
-    expect_equal(snafun::g_transitivity(net), ref_ig, tolerance = 1e-6,
-                 info = paste0(label, ": sna weak == igraph global (undirected)"))
+    ref_sna <- sna::gtrans(net, mode = "graph", measure = "weak", use.adjacency = TRUE)
+    expect_equal(snafun::g_transitivity(net), ref_sna, tolerance = 1e-6,
+                 info = paste0(label, ": undirected == sna::gtrans(weak)"))
   }
 
   # All four formats must agree with each other for the igraph-based measure.
@@ -140,6 +143,30 @@ expect_error(snafun::g_transitivity("not a graph"), info = "default method error
 # A rectangular (two-mode / bipartite) matrix is not a one-mode adjacency.
 rect <- matrix(c(1, 0, 1, 1, 0, 1), nrow = 2)
 expect_error(snafun::g_transitivity(rect), info = "rectangular matrix is rejected")
+
+
+# ---------------------------------------------------------------------------
+# INPUT-CLASS CONSISTENCY (2026-09-16): g_transitivity() must return the SAME
+# value for a graph and its network representation, INCLUDING directed graphs
+# with reciprocated dyads and loops -- exactly the case (e.g. the enwiki graph)
+# where the old sna::gtrans(weak) network path disagreed with the igraph path.
+# ---------------------------------------------------------------------------
+
+set.seed(11)
+for (n in c(60L, 150L)) {
+  # directed graph with plenty of reciprocated dyads
+  gd <- igraph::sample_gnp(n, 0.15, directed = TRUE)
+  # add some self-loops to mimic enwiki
+  gd <- igraph::add_edges(gd, c(1, 1, 2, 2, 3, 3))
+  expect_equal(snafun::g_transitivity(snafun::to_network(gd)),
+               snafun::g_transitivity(gd),
+               info = paste0("directed+mutuals+loops n=", n,
+                             ": network == igraph (input-class consistent)"))
+  expect_equal(snafun::g_transitivity(snafun::to_network(gd)),
+               igraph::transitivity(gd, type = "global"),
+               info = paste0("directed+mutuals+loops n=", n,
+                             ": network == igraph::transitivity(global)"))
+}
 
 
 # ---------------------------------------------------------------------------

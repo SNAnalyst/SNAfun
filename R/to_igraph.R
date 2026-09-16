@@ -118,26 +118,69 @@ to_igraph.default <- function(x, bipartite = FALSE,
 to_igraph.matrix <- function(x, bipartite = FALSE,
                              vertices = NULL,
                              directed = NULL) {
+  # PERFORMANCE (2026-09-16): the binary and symmetry predicates below were
+  # previously all(x %in% c(0, 1)) and isSymmetric(x). Both are O(n^2), and on
+  # large matrices %in% (hashing) and isSymmetric() (tolerance-based all.equal)
+  # dominated the runtime. matrix_is_binary() / matrix_is_symmetric_fast() are
+  # vectorized equivalents; each predicate is also computed only once here.
+  is_binary <- matrix_is_binary(x)
   if (nrow(x) != ncol(x) | bipartite) {
-    if (!(all(x %in% c(0, 1)))) {
+    if (!is_binary) {
       graph <- igraph::graph_from_incidence_matrix(x,
                           weighted = TRUE, directed = FALSE)
     } else {
       graph <- igraph::graph_from_incidence_matrix(x, directed = FALSE)
     }
   } else {
-    if (!(all(x %in% c(0, 1)))) {
-      graph <- igraph::graph_from_adjacency_matrix(x,
-                          mode = ifelse(isSymmetric(x), "undirected", "directed"),
-                          weighted = TRUE)
+    mode <- if (matrix_is_symmetric_fast(x)) "undirected" else "directed"
+    if (!is_binary) {
+      graph <- igraph::graph_from_adjacency_matrix(x, mode = mode, weighted = TRUE)
     } else {
-      graph <- igraph::graph_from_adjacency_matrix(x,
-                          mode = ifelse(isSymmetric(x), "undirected", "directed"))
+      graph <- igraph::graph_from_adjacency_matrix(x, mode = mode)
     }
   }
   # simplify, because loops will otherwise occur twice each
   graph <- igraph::simplify(graph, remove.multiple = TRUE, remove.loops = FALSE)
   graph
+}
+
+
+#' Fast test whether a matrix contains only 0/1 values
+#'
+#' Vectorized replacement for \code{all(x \%in\% c(0, 1))}. Returns the same
+#' result (including \code{FALSE} when \code{NA}s are present) but avoids the
+#' hashing overhead of \code{\%in\%} on large matrices.
+#'
+#' @param x a matrix
+#' @return logical scalar
+#' @keywords internal
+#' @noRd
+matrix_is_binary <- function(x) {
+  isTRUE(all(x == 0 | x == 1))
+}
+
+
+#' Fast symmetry test for adjacency matrices
+#'
+#' Used to decide directed vs. undirected in \code{to_igraph.matrix()}. For
+#' matrices without \code{NA}s (the common case, including all 0/1 adjacency
+#' matrices and cleanly symmetric weighted matrices) an exact, vectorized
+#' comparison is used, which is far faster than \code{isSymmetric()}'s
+#' tolerance-based \code{all.equal()} path. When \code{NA}s are present we defer
+#' to \code{isSymmetric()} on the unnamed matrix.
+#'
+#' @param x a matrix
+#' @return logical scalar
+#' @keywords internal
+#' @noRd
+matrix_is_symmetric_fast <- function(x) {
+  if (nrow(x) != ncol(x)) {
+    return(FALSE)
+  }
+  if (anyNA(x)) {
+    return(isSymmetric(unname(x)))
+  }
+  all(x == t(x))
 }
 
 

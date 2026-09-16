@@ -165,7 +165,8 @@ stat_cug <- function(x,
 
   observed_graph <- convert_cug_matrix_to_graph(
     x = observed_matrix,
-    graph = graph
+    graph = graph,
+    directed = directed
   )
   obs_stat <- evaluate_cug_statistic(
     x = observed_graph,
@@ -177,26 +178,40 @@ stat_cug <- function(x,
     graph_label = graph
   )
 
+  # Precompute everything that is constant across replicates (performance, B):
+  #  * cug_target: the conditioning parameters (edge count / dyad census / tie
+  #    probability). Previously these were recomputed from the observed matrix on
+  #    every replicate (e.g. sna::dyad.census() per rep).
+  #  * fun_spec: which of mode/diag/directed to inject into FUN, previously
+  #    re-derived by reflection on every replicate.
+  cug_target <- precompute_cug_target(observed_matrix, mode = mode,
+                                      cmode = cmode, diag = diag)
+  fun_spec <- precompute_cug_fun_spec(FUN, FUN.args = FUN.args, mode = mode,
+                                      diag = diag, directed = directed)
+
+  # For the igraph representation we draw an (sna) edge list directly and build
+  # the graph from it, avoiding the dense n x n adjacency matrix and its
+  # which()/upper.tri() scan entirely (this dominated the runtime). Other
+  # representations still go through the dense matrix, which they require anyway.
+  build_from_edgelist <- identical(graph, "igraph")
+
   replicate_stats <- numeric(reps)
   for (rep_index in seq_len(reps)) {
-    replicate_matrix <- draw_cug_replicate_matrix(
-      observed_matrix = observed_matrix,
-      mode = mode,
-      cmode = cmode,
-      diag = diag
-    )
-    replicate_graph <- convert_cug_matrix_to_graph(
-      x = replicate_matrix,
-      graph = graph
-    )
-    replicate_stats[[rep_index]] <- evaluate_cug_statistic(
-      x = replicate_graph,
-      FUN = FUN,
-      FUN.args = FUN.args,
-      mode = mode,
-      diag = diag,
-      directed = directed,
-      graph_label = graph
+    if (build_from_edgelist) {
+      replicate_graph <- build_cug_igraph_from_edges(
+        draw_cug_replicate_edges(cug_target),
+        n_vertices = cug_target$n_vertices,
+        directed = directed
+      )
+    } else {
+      replicate_graph <- convert_cug_matrix_to_graph(
+        x = draw_cug_replicate_matrix(cug_target),
+        graph = graph,
+        directed = directed
+      )
+    }
+    replicate_stats[[rep_index]] <- evaluate_cug_statistic_fast(
+      replicate_graph, fun_spec = fun_spec, graph_label = graph
     )
   }
 
@@ -463,19 +478,38 @@ plot.stat_cug <- function(x,
     stop("There are no valid replicate statistics to plot")
   }
 
-  graphics::hist(
-    valid_replicates,
+  observed <- x$obs.stat
+  have_observed <- !(is.na(observed) | is.nan(observed))
+
+  dots <- list(...)
+  hist_args <- list(
+    x = valid_replicates,
     breaks = breaks,
     col = col,
     border = border,
     prob = prob,
     main = main,
     sub = sub,
-    xlab = xlab,
-    ...
+    xlab = xlab
   )
-  if (!(is.na(x$obs.stat) | is.nan(x$obs.stat))) {
-    graphics::abline(v = x$obs.stat, col = observed_col, lwd = observed_lwd)
+  # In a CUG test the observed statistic often lies far in the tail of the null
+  # distribution (e.g. an observed transitivity of 0.65 against replicates near
+  # 0.05). If the x-axis only spans the replicate range, the observed reference
+  # line is drawn outside the plot region and is therefore invisible. We widen
+  # xlim to include the observed value (as sna::plot.cug.test() effectively
+  # does), unless the caller supplied an explicit xlim.
+  if (have_observed && !("xlim" %in% names(dots))) {
+    rng <- range(c(valid_replicates, observed), na.rm = TRUE)
+    pad <- diff(rng) * 0.04
+    if (!is.finite(pad) || pad == 0) {
+      pad <- if (rng[[2]] != 0) abs(rng[[2]]) * 0.04 else 1
+    }
+    hist_args$xlim <- c(rng[[1]] - pad, rng[[2]] + pad)
+  }
+
+  do.call(graphics::hist, c(hist_args, dots))
+  if (have_observed) {
+    graphics::abline(v = observed, col = observed_col, lwd = observed_lwd)
   }
   invisible(x)
 }
@@ -581,7 +615,8 @@ resolve_cug_graph_type <- function(graph, x, observed_matrix, FUN, FUN.args,
   for (candidate in candidates) {
     candidate_graph <- convert_cug_matrix_to_graph(
       x = observed_matrix,
-      graph = candidate
+      graph = candidate,
+      directed = directed
     )
     candidate_result <- try(
       evaluate_cug_statistic(
@@ -642,12 +677,37 @@ infer_cug_original_graph_class <- function(x) {
 #' @return Object in the requested graph representation.
 #' @keywords internal
 #' @noRd
-convert_cug_matrix_to_graph <- function(x, graph) {
+convert_cug_matrix_to_graph <- function(x, graph, directed = FALSE) {
   if (identical(graph, "matrix")) {
     return(x)
   }
   if (identical(graph, "igraph")) {
-    return(snafun::to_igraph(x))
+    # Fast path (stat_cug performance fix, 2026-09-14). The CUG matrices are
+    # already binary and their directedness is fixed by the test's `mode`, so we
+    # build the igraph directly from the edge coordinates instead of going
+    # through snafun::to_igraph.matrix(). That avoids two O(n^2) costs that
+    # dominated the runtime on larger graphs: to_igraph.matrix()'s tolerance-
+    # based isSymmetric() (via all.equal) and its all(x %in% c(0, 1)) check, and
+    # more importantly graph_from_adjacency_matrix()'s scan of the full dense
+    # n x n matrix. Building from the (sparse) edge list touches only the edges,
+    # exactly as sna::cug.test() does internally, while preserving isolates and
+    # producing a graph equivalent to to_igraph(x) for a binary matrix.
+    directed <- isTRUE(directed)
+    if (directed) {
+      idx <- which(x != 0, arr.ind = TRUE)              # every arc, incl. loops
+    } else {
+      idx <- which(x != 0 & upper.tri(x, diag = TRUE), arr.ind = TRUE)
+    }
+    g <- igraph::make_empty_graph(n = nrow(x), directed = directed)
+    if (nrow(idx) > 0) {
+      g <- igraph::add_edges(g, as.vector(t(idx)))
+    }
+    # simplify() is REQUIRED for equivalence with to_igraph.matrix(): it mirrors
+    # that function's simplify(remove.multiple = TRUE, remove.loops = FALSE) step.
+    # Without it, igraph::transitivity(type = "global") counts directed graphs
+    # differently (verified: a directed graph gives 0.3305 unsimplified vs the
+    # correct 0.3131 simplified). Loops are kept, matching to_igraph.matrix().
+    return(igraph::simplify(g, remove.multiple = TRUE, remove.loops = FALSE))
   }
   if (identical(graph, "network")) {
     return(snafun::to_network(x))
@@ -698,68 +758,167 @@ evaluate_cug_statistic <- function(x, FUN, FUN.args, mode, diag, directed,
 }
 
 
-#' Draw one replicate graph for a CUG test
+#' Precompute the CUG conditioning target once
 #'
-#' Generate a binary adjacency matrix from one of the supported CUG null models.
+#' Compute the conditioning parameters (constant across replicates) a single
+#' time, so they are not recomputed from the observed matrix inside the replicate
+#' loop. For \code{cmode = "edges"} this is the edge count; for
+#' \code{cmode = "dyad.census"} the mutual/asymmetric/null dyad counts; for
+#' \code{cmode = "size"} the tie probability.
 #'
-#' @param observed_matrix Prepared binary adjacency matrix of the observed
-#'   graph.
+#' @param observed_matrix Prepared binary adjacency matrix of the observed graph.
 #' @param mode Character scalar, \code{"digraph"} or \code{"graph"}.
 #' @param cmode Conditioning scheme.
 #' @param diag Logical scalar indicating whether loops are allowed.
 #'
+#' @return A list describing the null model to draw from.
+#' @keywords internal
+#' @noRd
+precompute_cug_target <- function(observed_matrix, mode, cmode, diag) {
+  n_vertices <- nrow(observed_matrix)
+  if (identical(cmode, "size")) {
+    return(list(cmode = "size", n_vertices = n_vertices, mode = mode,
+                diag = diag, tprob = 0.5))
+  }
+  if (identical(cmode, "edges")) {
+    return(list(cmode = "edges", n_vertices = n_vertices, mode = mode, diag = diag,
+                m = count_cug_edges_from_matrix(observed_matrix, mode = mode, diag = diag)))
+  }
+  if (identical(cmode, "dyad.census")) {
+    dyad_counts <- suppressWarnings(sna::dyad.census(observed_matrix))
+    return(list(cmode = "dyad.census", n_vertices = n_vertices,
+                mut = dyad_counts[[1]], asym = dyad_counts[[2]], null = dyad_counts[[3]]))
+  }
+  stop("'cmode' should be one of 'size', 'edges', or 'dyad.census'")
+}
+
+
+#' Draw one replicate graph for a CUG test as a dense adjacency matrix
+#'
+#' Used for the non-igraph output representations. Takes the precomputed target
+#' from \code{\link{precompute_cug_target}} so nothing is recomputed per rep.
+#'
+#' @param target Precomputed CUG target.
+#'
 #' @return Square binary adjacency matrix.
 #' @keywords internal
 #' @noRd
-draw_cug_replicate_matrix <- function(observed_matrix, mode, cmode, diag) {
-  n_vertices <- nrow(observed_matrix)
+draw_cug_replicate_matrix <- function(target) {
+  if (identical(target$cmode, "size")) {
+    return(sna::rgraph(target$n_vertices, 1, mode = target$mode,
+                       diag = target$diag, tprob = target$tprob))
+  }
+  if (identical(target$cmode, "edges")) {
+    return(sna::rgnm(1, target$n_vertices, target$m, mode = target$mode,
+                     diag = target$diag))
+  }
+  # dyad.census
+  sna::rguman(1, target$n_vertices, mut = target$mut, asym = target$asym,
+              null = target$null, method = "exact")
+}
 
-  if (identical(cmode, "size")) {
-    return(
-      sna::rgraph(
-        n = n_vertices,
-        m = 1,
-        mode = mode,
-        diag = diag,
-        tprob = 0.5
-      )
+
+#' Draw one replicate graph for a CUG test as an (sna) edge list
+#'
+#' The fast path for the igraph representation: draws the replicate directly as
+#' an edge list (return.as.edgelist = TRUE), so no dense n x n adjacency matrix
+#' is ever allocated or scanned.
+#'
+#' @param target Precomputed CUG target.
+#'
+#' @return A two-or-three column edge-list matrix (columns: sender, receiver,
+#'   value); for undirected null models each tie may appear in both directions.
+#' @keywords internal
+#' @noRd
+draw_cug_replicate_edges <- function(target) {
+  el <- if (identical(target$cmode, "size")) {
+    sna::rgraph(target$n_vertices, 1, mode = target$mode, diag = target$diag,
+                tprob = target$tprob, return.as.edgelist = TRUE)
+  } else if (identical(target$cmode, "edges")) {
+    sna::rgnm(1, target$n_vertices, target$m, mode = target$mode,
+              diag = target$diag, return.as.edgelist = TRUE)
+  } else {
+    sna::rguman(1, target$n_vertices, mut = target$mut, asym = target$asym,
+                null = target$null, method = "exact", return.as.edgelist = TRUE)
+  }
+  # sna::rguman() (and n = 1 draws in general) may wrap the edge list in a list.
+  if (is.list(el) && !is.data.frame(el)) {
+    el <- el[[1]]
+  }
+  el
+}
+
+
+#' Build a CUG replicate igraph directly from an edge list
+#'
+#' Mirrors the igraph branch of \code{\link{convert_cug_matrix_to_graph}} (which
+#' keeps loops and removes multiple edges via simplify(), matching
+#' to_igraph.matrix()), but starts from an edge list instead of a dense matrix.
+#' Isolates are preserved via \code{n_vertices}.
+#'
+#' @param edges Edge-list matrix (first two columns are the endpoints).
+#' @param n_vertices Total number of vertices (to preserve isolates).
+#' @param directed Logical scalar.
+#'
+#' @return An \code{igraph} object.
+#' @keywords internal
+#' @noRd
+build_cug_igraph_from_edges <- function(edges, n_vertices, directed) {
+  g <- igraph::make_empty_graph(n = n_vertices, directed = isTRUE(directed))
+  if (!is.null(edges) && nrow(edges) > 0) {
+    g <- igraph::add_edges(g, as.vector(t(edges[, 1:2, drop = FALSE])))
+  }
+  igraph::simplify(g, remove.multiple = TRUE, remove.loops = FALSE)
+}
+
+
+#' Precompute the FUN evaluation spec for a CUG test
+#'
+#' Resolve, once, which of \code{mode}/\code{diag}/\code{directed} should be
+#' injected into \code{FUN} (based on its formals and the user's \code{FUN.args}),
+#' instead of doing this reflection on every replicate.
+#'
+#' @param FUN,FUN.args,mode,diag,directed Statistic specification.
+#'
+#' @return A list with the resolved function and the extra argument list.
+#' @keywords internal
+#' @noRd
+precompute_cug_fun_spec <- function(FUN, FUN.args, mode, diag, directed) {
+  fun <- match.fun(FUN)
+  fun_formals <- tryCatch(names(formals(fun)), error = function(e) character(0))
+  extra <- FUN.args
+  if (!("mode" %in% names(FUN.args)) && "mode" %in% fun_formals) {
+    extra$mode <- mode
+  }
+  if (!("diag" %in% names(FUN.args)) && "diag" %in% fun_formals) {
+    extra$diag <- diag
+  }
+  if (!("directed" %in% names(FUN.args)) && "directed" %in% fun_formals) {
+    extra$directed <- directed
+  }
+  list(fun = fun, extra = extra)
+}
+
+
+#' Evaluate the CUG statistic using a precomputed FUN spec
+#'
+#' @param x Graph object in the representation chosen for the statistic.
+#' @param fun_spec Output of \code{\link{precompute_cug_fun_spec}}.
+#' @param graph_label Character scalar used in error messages.
+#'
+#' @return Numeric scalar.
+#' @keywords internal
+#' @noRd
+evaluate_cug_statistic_fast <- function(x, fun_spec, graph_label) {
+  result <- do.call(fun_spec$fun, c(list(x), fun_spec$extra))
+  if (!is.numeric(result) || length(result) != 1L) {
+    stop(
+      "'FUN' should return a single numeric statistic when evaluated on a ",
+      graph_label,
+      " graph"
     )
   }
-
-  if (identical(cmode, "edges")) {
-    n_edges <- count_cug_edges_from_matrix(
-      x = observed_matrix,
-      mode = mode,
-      diag = diag
-    )
-    return(
-      sna::rgnm(
-        n = 1,
-        nv = n_vertices,
-        m = n_edges,
-        mode = mode,
-        diag = diag
-      )
-    )
-  }
-
-  if (identical(cmode, "dyad.census")) {
-    dyad_counts <- suppressWarnings(
-      sna::dyad.census(observed_matrix)
-    )
-    return(
-      sna::rguman(
-        n = 1,
-        nv = n_vertices,
-        mut = dyad_counts[[1]],
-        asym = dyad_counts[[2]],
-        null = dyad_counts[[3]],
-        method = "exact"
-      )
-    )
-  }
-
-  stop("'cmode' should be one of 'size', 'edges', or 'dyad.census'")
+  as.numeric(result[[1]])
 }
 
 

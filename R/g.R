@@ -409,22 +409,21 @@ g_reciprocity.network <- function(x) {
 #' j -> k, and i -> k, and divide by the number of triplets in which 
 #' i -> j and j -> k (regardless of whether there is an i -> k edge).
 #' 
-#' Weights are discarded. The calculation is delegated to trusted, well-tested
-#' implementations: \code{\link[igraph]{transitivity}} with
-#' \code{type = "global"} for objects of class \code{igraph}, and
-#' \code{\link[sna]{gtrans}} (weak measure) for objects of class \code{network}.
-#' \code{matrix} and \code{data.frame} (edge list) inputs are turned into an
-#' \code{igraph} object and then handled by \code{igraph::transitivity()}, so
-#' they return exactly the same value as for the equivalent \code{igraph}
-#' object. These paths are kept sparse on purpose, so they also work on very
-#' large networks (the earlier matrix backend built a dense adjacency product
-#' and hung on large graphs).
+#' Weights are discarded. The statistic reported is the classic global
+#' transitivity (clustering coefficient), computed by
+#' \code{\link[igraph]{transitivity}} with \code{type = "global"}. This is the
+#' single measure used for \emph{every} input class: \code{network},
+#' \code{matrix}, and \code{data.frame} (edge list) inputs are first turned into
+#' an \code{igraph} object and then handled by \code{igraph::transitivity()}.
+#' As a result \code{g_transitivity()} returns exactly the same value regardless
+#' of how the same graph is represented.
 #'
-#' NB: the \code{igraph} backend (used for igraph/matrix/edge-list inputs)
-#' reports the classic global transitivity (clustering coefficient), whereas the
-#' \code{network} backend reports \code{sna}'s weak transitivity; for directed
-#' graphs these two measures can differ. This mirrors the long-standing
-#' behaviour of \code{snafun} prior to April 2026.
+#' All paths are sparse, so the function also works on very large networks. In
+#' particular the \code{network} method converts to \code{igraph} rather than
+#' calling \code{\link[sna]{gtrans}} on a dense sociomatrix (which does not scale
+#' and, being \code{sna}'s \emph{weak} transitivity, returned a different value
+#' than the igraph global transitivity for directed graphs with reciprocated
+#' dyads or loops).
 #' 
 #' @export
 #' @examples
@@ -472,12 +471,15 @@ g_transitivity.igraph <- function(x) {
 
 #' @export
 g_transitivity.network <- function(x) {
-  # Baseline behaviour (restored 2026-09-14): sna's weak transitivity for
-  # network objects, exactly as before the April 2026 rewrite.
-  sna::gtrans(x,
-              mode = ifelse(is_directed(x), "digraph", "graph"),
-              measure = "weak",
-              use.adjacency = TRUE)
+  # Route through igraph (2026-09-16) so that g_transitivity() returns the SAME
+  # measure (igraph's global transitivity) for every input class, and so it
+  # scales to large networks. The previous sna::gtrans(use.adjacency = TRUE) path
+  # densified the sociomatrix (does not scale) and reported sna's *weak*
+  # transitivity, which differs from the igraph global transitivity for directed
+  # graphs with reciprocated dyads or loops -- making g_transitivity(g) and
+  # g_transitivity(to_network(g)) disagree. Converting first removes that
+  # inconsistency.
+  g_transitivity.igraph(snafun::to_igraph(x))
 }
 
 
