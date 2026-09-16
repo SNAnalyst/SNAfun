@@ -197,32 +197,34 @@ to_igraph.network <- function (x, bipartite = FALSE,
     attr <- attr[-isna]
   }
   
-  if (network::is.bipartite(x)) {
-    if ("weight" %in% network::list.edge.attributes(x)) {
-      graph <- sna::as.sociomatrix.sna(x, attrname = "weight")
-      graph <- igraph::graph_from_incidence_matrix(graph, weighted = TRUE)
-    } else {
-      graph <- sna::as.sociomatrix.sna(x)
-      graph <- igraph::graph_from_incidence_matrix(graph)
-    }
-  } else {
-    if ("weight" %in% network::list.edge.attributes(x)) {
-      graph <- sna::as.sociomatrix.sna(x, attrname = "weight")
-      graph <- igraph::graph_from_adjacency_matrix(graph, 
-                    weighted = TRUE, mode = ifelse(x$gal$directed, "directed", "undirected"))
-    # } else if (length(network::list.edge.attributes(x)) > 1) {
-    #   x$gal$multiple <- FALSE
-    #   graph <- sna::as.sociomatrix.sna(x, attrname = network::list.edge.attributes(x)[1])
-    #   graph <- igraph::graph_from_adjacency_matrix(graph, 
-    #                 weighted = TRUE, mode = ifelse(x$gal$directed, "directed", "undirected"))
-    } else {
-      graph <- sna::as.sociomatrix.sna(x)
-      graph <- igraph::graph_from_adjacency_matrix(graph, 
-                    mode = ifelse(x$gal$directed, "directed", "undirected"))
-    }
+  # Build the graph STRUCTURE from the sparse edge list instead of a dense
+  # sociomatrix (2026-09-16). The old path used sna::as.sociomatrix.sna() +
+  # graph_from_adjacency_matrix()/graph_from_incidence_matrix(), which
+  # materializes and scans an n x n matrix; graph_from_adjacency_matrix() alone
+  # cost ~4s on the enwiki graph. network::as.edgelist() is O(number of edges).
+  # Vertex names, edge attributes (including weight) and vertex attributes are
+  # attached below exactly as before, so the resulting graph is identical (this
+  # is verified bit-for-bit against the old implementation in the tests).
+  n <- network::network.size(x)
+  el <- network::as.edgelist(x)
+  graph <- igraph::make_empty_graph(n = n, directed = isTRUE(x$gal$directed))
+  if (!is.null(el) && nrow(el) > 0) {
+    graph <- igraph::add_edges(graph, as.vector(t(el[, 1:2, drop = FALSE])))
   }
-  
-  # edge attribs 
+  # vertex names (the dense path set these from the sociomatrix dimnames)
+  vertex_names <- network::get.vertex.attribute(x, "vertex.names")
+  if (!is.null(vertex_names)) {
+    igraph::V(graph)$name <- as.character(vertex_names)
+  }
+  # bipartite: mark the two partitions with the logical 'type' attribute, as
+  # graph_from_incidence_matrix() would have done.
+  if (network::is.bipartite(x)) {
+    partition_size <- network::get.network.attribute(x, "bipartite")
+    igraph::V(graph)$type <- c(rep(FALSE, partition_size),
+                               rep(TRUE, n - partition_size))
+  }
+
+  # edge attribs
   if (has_edge_attributes(x)) { # there are edge attribs to copy over
     edges_network <- to_edgelist(x)
     # note the need for overwrite = TRUE (try flomar_network)
