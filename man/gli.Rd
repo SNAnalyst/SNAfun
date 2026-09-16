@@ -139,7 +139,10 @@ Also note that \code{\link[igraph]{edge_density}} does not correctly deal with
 loops, so the current function reports correct density values whereas 
 \code{\link[igraph]{edge_density}} reports incorrect values.
 
-\item \code{g_mean_distance()}: Mean path distance
+\item \code{g_mean_distance()}: Mean path distance. Weights are discarded (distances are
+counted in number of steps), matching the rest of \pkg{snafun} and the
+\code{network}/\code{matrix} inputs. The mean is taken over reachable ordered
+pairs (unconnected pairs are ignored rather than counted as infinite).
 
 \item \code{g_correlation()}: Product-moment correlation between two networks. 
 Missing values are permitted. Takes into account whether the 

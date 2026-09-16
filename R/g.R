@@ -173,7 +173,10 @@ g_density <- function(x, loops = FALSE) {
 
 
 ####----------------------------------------------------------------------------
-#' @describeIn gli Mean path distance
+#' @describeIn gli Mean path distance. Weights are discarded (distances are
+#' counted in number of steps), matching the rest of \pkg{snafun} and the
+#' \code{network}/\code{matrix} inputs. The mean is taken over reachable ordered
+#' pairs (unconnected pairs are ignored rather than counted as infinite).
 #' @export
 g_mean_distance <- function(x) {
   UseMethod("g_mean_distance")
@@ -189,7 +192,10 @@ g_mean_distance.default <- function(x) {
 
 #' @export
 g_mean_distance.igraph <- function(x) {
-  igraph::mean_distance(x, weights = NULL, directed = TRUE,
+  # weights = NA (not NULL): ignore any 'weight' edge attribute so distances are
+  # step counts, consistent with the rest of snafun and with the network/matrix
+  # paths (which discard weights). weights = NULL would silently use the weights.
+  igraph::mean_distance(x, weights = NA, directed = TRUE,
                         unconnected = TRUE,
                         details = FALSE)
 }
@@ -197,10 +203,13 @@ g_mean_distance.igraph <- function(x) {
 
 #' @export
 g_mean_distance.network <- function(x) {
-  dists <- sna::geodist(x, count.paths = FALSE,
-                        ignore.eval = TRUE)$gdist
-  n <- network::network.size(x)
-  sum(dists)/(n * (n-1))
+  # Route through igraph (2026-09-16): sna::geodist() builds a dense all-pairs
+  # distance matrix and does not scale (it hangs on large graphs such as
+  # enwiki). igraph::mean_distance() on the sparse structural graph gives an
+  # identical value for connected graphs and, for disconnected graphs, averages
+  # over reachable pairs -- matching g_mean_distance.igraph() -- instead of the
+  # previous behaviour of returning Inf when any pair was unreachable.
+  g_mean_distance.igraph(network_structure_to_igraph(x))
 }
 
 

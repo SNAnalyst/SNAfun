@@ -307,23 +307,12 @@ count_triads.igraph <- function(x, echo = TRUE) {
 
 #' @export
 count_triads.network <- function(x, echo = TRUE) {
-  if (snafun::is_bipartite(x)) {
-    stop("A bipartite option for a triad census is not yet implemented.")
-  } else {
-    if (snafun::is_directed(x)) {
-      out <- suppressWarnings(sna::triad.census(x, mode = "digraph")) |> as.data.frame()
-    } else {
-      triads <- suppressWarnings(sna::triad.census(x, mode = "graph")) |> as.data.frame()
-      out <- data.frame(matrix(0, ncol = 16, nrow = 1))
-      names(out) <- c("003", "012", "102", "021D",
-                      "021U", "021C", "111D", "111U",
-                      "030T", "030C", "201", "120D",
-                      "120U", "120C", "210", "300")
-      out[1, c("003", "102", "201", "300")] <- triads
-    }
-    if (echo) print(out, row.names = FALSE)
-    invisible(out)
-  }
+  # Route through igraph (2026-09-16): sna::triad.census() coerces the network to
+  # a dense sociomatrix and hangs on large graphs (e.g. enwiki). The bare
+  # structural igraph is built from the sparse edge list and yields an identical
+  # triad census (verified for directed and undirected graphs, incl. isolates
+  # and loops). Bipartite input is caught by count_triads.igraph().
+  count_triads.igraph(network_structure_to_igraph(x), echo = echo)
 }
 
 
@@ -331,9 +320,7 @@ count_triads.network <- function(x, echo = TRUE) {
 count_triads.matrix <- function(x, echo = TRUE) {
   if (ncol(x) != nrow(x)) {
     stop("'x' should be square, a bipartite option for a triad census is not yet implemented.")
-  } else {
-    out <- count_triads(snafun::to_network(x), echo = FALSE)
-    if (echo) print(out, row.names = FALSE)
-    invisible(out)
   }
+  # via igraph rather than through a (dense) network object.
+  count_triads.igraph(snafun::to_igraph(x), echo = echo)
 }

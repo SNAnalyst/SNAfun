@@ -240,6 +240,40 @@ to_igraph.network <- function (x, bipartite = FALSE,
 
 
 
+#' Build a bare structural igraph from a network object (sparse)
+#'
+#' Internal helper for the measure methods (transitivity, triad/dyad census,
+#' mean distance) that only need graph STRUCTURE, not attributes. It builds the
+#' igraph from the network's sparse edge list instead of materializing a dense
+#' sociomatrix via \code{sna::as.sociomatrix.sna()} (which does not scale -- e.g.
+#' it hangs / needs ~n^2 memory on the enwiki graph). The vertex count (hence
+#' isolates), the directedness, and -- for bipartite inputs -- the vertex
+#' \code{type} are preserved; edge/vertex attributes and weights are dropped, as
+#' the callers ignore them. Loops are kept and multiple edges removed, matching
+#' \code{to_igraph.matrix()}.
+#'
+#' @param x a \code{network} object
+#' @return an \code{igraph} object
+#' @keywords internal
+#' @noRd
+network_structure_to_igraph <- function(x) {
+  n <- network::network.size(x)
+  directed <- network::is.directed(x)
+  el <- network::as.edgelist(x)
+  g <- igraph::make_empty_graph(n = n, directed = directed)
+  if (!is.null(el) && nrow(el) > 0) {
+    g <- igraph::add_edges(g, as.vector(t(el[, 1:2, drop = FALSE])))
+  }
+  g <- igraph::simplify(g, remove.multiple = TRUE, remove.loops = FALSE)
+  if (network::is.bipartite(x)) {
+    partition_size <- network::get.network.attribute(x, "bipartite")
+    igraph::V(g)$type <- c(rep(FALSE, partition_size),
+                           rep(TRUE, n - partition_size))
+  }
+  g
+}
+
+
 #' @export
 to_igraph.igraph <- function(x, bipartite = FALSE,
                              vertices = NULL,
