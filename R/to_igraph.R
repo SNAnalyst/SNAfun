@@ -139,8 +139,32 @@ to_igraph.matrix <- function(x, bipartite = FALSE,
       graph <- igraph::graph_from_adjacency_matrix(x, mode = mode)
     }
   }
-  # simplify, because loops will otherwise occur twice each
-  graph <- igraph::simplify(graph, remove.multiple = TRUE, remove.loops = FALSE)
+  # De-duplicate ONLY genuine multiple edges. An adjacency/incidence matrix can
+  # never encode real multi-edges (each cell is a single value), so any
+  # multiplicity here is spurious -- historically graph_from_adjacency_matrix()
+  # could represent an undirected loop twice, which this collapses.
+  #
+  # NOTE (2026-09-17): we do NOT call simplify() unconditionally anymore. For a
+  # DIRECTED graph with mutual dyads, simplify(remove.multiple = TRUE) shifts
+  # igraph::transitivity(type = "global") to a non-canonical value even when
+  # there is nothing to remove (verified: to_igraph(m) then transitivity gave
+  # 0.037913 vs the canonical 0.037725 from graph_from_adjacency_matrix()). This
+  # made g_transitivity(to_igraph(m)) disagree with g_transitivity(m). Modern
+  # igraph does not double loops, so which_multiple() is all FALSE and we skip
+  # simplify() entirely, keeping the output canonical; we still collapse any
+  # spurious duplicates should an older igraph produce them. Loops are always
+  # kept (remove.loops = FALSE).
+  if (any(igraph::which_multiple(graph))) {
+    graph <- igraph::simplify(graph, remove.multiple = TRUE, remove.loops = FALSE)
+  }
+  # graph_from_adjacency_matrix(weighted = TRUE) returns a *named* weight vector
+  # (named by the source cells). The old unconditional simplify() happened to
+  # strip those names; now that we skip simplify() we drop them explicitly, so the
+  # edge weights (and anything derived from them, e.g. to_edgelist()) stay clean
+  # and unnamed as before.
+  if (igraph::is_weighted(graph)) {
+    igraph::E(graph)$weight <- unname(igraph::E(graph)$weight)
+  }
   graph
 }
 
