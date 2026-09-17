@@ -187,15 +187,24 @@ NULL
 #' @param n_observations Expected number of rows in the fitted model frame.
 #' @param zero.policy Logical scalar passed through to
 #' \code{\link[spdep]{mat2listw}}.
-#' @param tolerance Numeric tolerance used to decide whether non-zero rows are
-#' already row-standardized.
+#' @param tolerance Numeric tolerance used to decide whether a row is a genuine
+#' zero row (a vertex without neighbours). This stays tight.
+#' @param normalized_tolerance Numeric tolerance used to decide whether the
+#' non-zero rows are already row-standardized (i.e. sum to 1). This is
+#' deliberately loose (default \code{1e-4}) so that a matrix that was normalized
+#' at ordinary numeric precision -- e.g. normalized in another tool or rounded to
+#' a handful of decimals, giving row sums like 1.000002 -- is still recognized as
+#' row-standardized and does NOT trigger the informational message. A genuinely
+#' raw weight matrix has row sums far from 1 (e.g. the row degrees), so it is
+#' still flagged.
 #'
 #' @return An object of class \code{listw}.
 #' @keywords internal
 #' @noRd
 prepare_nam_weight_listw <- function(x, arg_name, n_observations,
                                      zero.policy,
-                                     tolerance = sqrt(.Machine$double.eps)) {
+                                     tolerance = sqrt(.Machine$double.eps),
+                                     normalized_tolerance = 1e-4) {
     if (!inherits(x, "network") &&
         !inherits(x, "igraph") &&
         !is.matrix(x) &&
@@ -225,10 +234,18 @@ prepare_nam_weight_listw <- function(x, arg_name, n_observations,
     # network analysis often provide raw adjacency-style matrices. We therefore
     # only message when a genuinely non-zero row is not already standardized and
     # let spdep do the canonical row normalization.
+    #
+    # NOTE (2026-09-18): the deviation from 1 is judged with a LOOSE tolerance
+    # (normalized_tolerance, default 1e-4), not the machine-epsilon `tolerance`.
+    # The tight tolerance produced false "not row-normalized" messages for
+    # matrices that were normalized at ordinary precision (e.g. row sums of
+    # 1.000002 after rounding to ~6 decimals or normalizing outside R). Zero-row
+    # detection still uses the tight `tolerance`. A genuinely raw matrix has row
+    # sums far from 1, so it is still flagged.
     row_sums <- base::rowSums(weight_matrix)
     non_zero_rows <- row_sums > tolerance
     if (any(non_zero_rows) &&
-        any(abs(row_sums[non_zero_rows] - 1) > tolerance)) {
+        any(abs(row_sums[non_zero_rows] - 1) > normalized_tolerance)) {
         message("You supplied a weight matrix",
                 if (identical(arg_name, "W2")) " (W2)" else "",
                 " that was not row-normalized\n",

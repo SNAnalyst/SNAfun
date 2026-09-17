@@ -384,6 +384,67 @@ expect_message(
 )
 
 
+# Regression (2026-09-18): the "not row-normalized" check used a machine-epsilon
+# tolerance, so a matrix that was row-normalized at ordinary numeric precision
+# (row sums like 0.999999 after rounding to a few decimals, or normalized outside
+# R) was FALSELY reported as un-normalized. The check now uses a loose tolerance
+# (normalized_tolerance = 1e-4). These tests lock that in and confirm a genuinely
+# raw matrix is still flagged.
+prep_nam <- snafun:::prepare_nam_weight_listw
+nam_norm_message_fires <- function(W, n = nrow(W)) {
+  msgs <- character(0)
+  withCallingHandlers(
+    prep_nam(W, arg_name = "W", n_observations = n, zero.policy = TRUE),
+    message = function(m) {
+      msgs[[length(msgs) + 1L]] <<- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    }
+  )
+  any(grepl("not row-normalized", msgs, fixed = TRUE))
+}
+
+# a matrix row-normalized at ordinary precision: row sums ~0.999999 (rounded to
+# 6 dp), which deviates from 1 by more than the old machine-epsilon tolerance ...
+W_thirds <- matrix(0, 6, 6)
+for (i in seq_len(6)) W_thirds[i, ((i + 0:2) %% 6) + 1] <- 1   # 3 neighbours each
+W_thirds <- round(W_thirds / base::rowSums(W_thirds), 6)        # 1/3 -> 0.333333
+expect_true(max(abs(base::rowSums(W_thirds) - 1)) > sqrt(.Machine$double.eps),
+            info = "test setup: rounded normalization deviates beyond machine tolerance")
+# ... must NOT be reported as un-normalized (this is the student's case)
+expect_false(nam_norm_message_fires(W_thirds),
+             info = "row-normalized-but-rounded W: no false 'not row-normalized' message")
+
+# an exactly row-normalized matrix: no message (was already fine)
+expect_false(nam_norm_message_fires(fixture$W1),
+             info = "exactly row-normalized W: no message")
+
+# a genuinely raw / off-scale matrix (binary rows summing to 3) is still flagged
+expect_true(nam_norm_message_fires((W_thirds > 0) * 1),
+            info = "raw un-normalized W: still flagged")
+
+# W2 must follow the SAME regime (it goes through the same helper): a rounded
+# row-normalized W2 gives no message, a raw W2 is still flagged (with the "(W2)"
+# wording).
+w2_message_fires <- function(W, n = nrow(W)) {
+  msgs <- character(0)
+  withCallingHandlers(
+    prep_nam(W, arg_name = "W2", n_observations = n, zero.policy = TRUE),
+    message = function(m) {
+      msgs[[length(msgs) + 1L]] <<- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    }
+  )
+  msgs
+}
+expect_false(any(grepl("not row-normalized", w2_message_fires(W_thirds), fixed = TRUE)),
+             info = "row-normalized-but-rounded W2: no false message")
+raw_w2_messages <- w2_message_fires((W_thirds > 0) * 1)
+expect_true(any(grepl("not row-normalized", raw_w2_messages, fixed = TRUE)),
+            info = "raw un-normalized W2: still flagged")
+expect_true(any(grepl("(W2)", raw_w2_messages, fixed = TRUE)),
+            info = "W2 message identifies itself as W2")
+
+
 # zero.policy now reaches mat2listw(), so isolate rows should no longer trigger
 # the old "no-neighbour observations found" warning.
 lag_with_zero_row_warnings <- snafun::withWarnings(
