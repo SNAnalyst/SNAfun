@@ -11,9 +11,10 @@ stat_cug(
   cmode = c("size", "edges", "dyad.census"),
   diag = FALSE,
   reps = 1000,
-  graph = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
+  graph_class = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
   ignore.eval = TRUE,
-  FUN.args = list()
+  FUN.args = list(),
+  graph = NULL
 )
 }
 \arguments{
@@ -36,16 +37,25 @@ allowed in the observed graph and the null model.}
 
 \item{reps}{Number of replicate graphs to generate.}
 
-\item{graph}{Character scalar indicating the graph class on which
-\code{FUN} should be evaluated. One of \code{"auto"}, \code{"same"},
-\code{"igraph"}, \code{"network"}, \code{"matrix"}, or
-\code{"edgelist"}.}
+\item{graph_class}{Character scalar indicating the graph class on which
+\code{FUN} should be evaluated. One of \code{"auto"} (try \code{igraph}
+first, then fall back), \code{"same"} (the class of \code{x}),
+\code{"igraph"}, \code{"network"}, \code{"matrix"}, or \code{"edgelist"}.
+Setting this explicitly is recommended; see Details for guidance (use
+\code{"igraph"} for \pkg{igraph}/\pkg{snafun} statistics and \code{"matrix"}
+for \pkg{sna} statistics).}
 
 \item{ignore.eval}{Logical scalar. Currently only \code{TRUE} is supported.
 This means edge weights are ignored and every non-zero entry is treated as
 a tie.}
 
 \item{FUN.args}{Optional list of additional arguments passed to \code{FUN}.}
+
+\item{graph}{\strong{Deprecated.} The former name of \code{graph_class}. It
+still works but issues a deprecation warning and will be removed in a future
+release; please use \code{graph_class} instead. (The name was changed
+because \code{graph} was easily confused with \code{mode = "graph"}, which
+means "undirected".)}
 }
 \value{
 An object of class \code{stat_cug}. It contains the observed
@@ -85,12 +95,34 @@ Three conditioning schemes are available:
   engine, just as in \code{sna::cug.test()}.
 }
 
-By default, \code{graph = "auto"} tries to evaluate \code{FUN} on a graph in
-the same class as the original input. If that fails, it tries the other
-supported graph classes until it finds one that yields a numeric scalar. This
-makes it convenient to use \code{igraph} functions on \code{network} input,
-\pkg{sna} functions on \code{igraph} input, or small custom wrapper
-functions. If you want full control, set \code{graph} explicitly.
+The \code{graph_class} argument controls the graph class on which \code{FUN}
+is evaluated for the observed graph and for every replicate. \strong{It is
+recommended to set this explicitly.} The best choice depends on \code{FUN}:
+
+\itemize{
+  \item For \pkg{igraph} statistics and \pkg{snafun} statistics (which accept
+  any class), use \code{graph_class = "igraph"}. This is by far the fastest
+  option: the replicates are drawn and built directly as (sparse)
+  \code{igraph} objects, avoiding the dense \eqn{n \times n} adjacency matrix.
+  It is also the most reproducible, because it fixes a single, canonical graph
+  construction (this matters for construction-sensitive statistics such as the
+  global transitivity of a directed graph, whose value can otherwise differ
+  slightly between graph classes).
+  \item For \pkg{sna} statistics (e.g. \code{sna::gtrans}, \code{sna::gden}),
+  use \code{graph_class = "matrix"} (or \code{"network"}), because those
+  functions require a matrix or a \code{network} object.
+}
+
+By default, \code{graph_class = "auto"} first tries \code{igraph} (the fast,
+canonical path) and falls back to the original input class and then the
+remaining classes until it finds one on which \code{FUN} returns a numeric
+scalar. This is convenient, but note two things: (1) with \code{"auto"} you do
+not control which class is used, so for a construction-sensitive statistic the
+result may depend on that automatic choice; and (2) an explicitly chosen class
+that \code{FUN} cannot handle raises an error, whereas \code{"auto"} would
+have searched for a working class. In short: set \code{graph_class} to the
+class your \code{FUN} expects; leave it at \code{"auto"} only when you are
+unsure.
 
 If the statistic function has formal arguments named \code{mode},
 \code{diag}, or \code{directed}, \code{snafun::stat_cug()} supplies them
@@ -124,7 +156,7 @@ stat_cug(
   FUN = count_visible_edges,
   cmode = "edges",
   reps = 49,
-  graph = "edgelist"
+  graph_class = "edgelist"
 )
 }
 \seealso{

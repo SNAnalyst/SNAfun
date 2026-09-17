@@ -26,7 +26,7 @@ set.seed(20260914)
 g <- igraph::simplify(igraph::sample_smallworld(1, 40, 4, 0.05))
 
 res <- snafun::stat_cug(g, FUN = snafun::g_transitivity, mode = "graph",
-                        cmode = "edges", reps = 100, graph = "igraph")
+                        cmode = "edges", reps = 100, graph_class = "igraph")
 
 # The observed value must be well outside the replicate range (otherwise this
 # test would not exercise the bug).

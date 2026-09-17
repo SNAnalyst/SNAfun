@@ -11,7 +11,7 @@ expect_cug_matches_sna <- function(mat, mode, cmode, diag = FALSE, reps = 50) {
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
   set.seed(20260418)
   theirs <- sna::cug.test(
@@ -45,7 +45,7 @@ expect_cug_input_parity <- function(mat, mode = "digraph", cmode = "edges",
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
   set.seed(99)
   res_igraph <- snafun::stat_cug(
@@ -55,7 +55,7 @@ expect_cug_input_parity <- function(mat, mode = "digraph", cmode = "edges",
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
   set.seed(99)
   res_network <- snafun::stat_cug(
@@ -65,7 +65,7 @@ expect_cug_input_parity <- function(mat, mode = "digraph", cmode = "edges",
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
   set.seed(99)
   res_edgelist <- snafun::stat_cug(
@@ -75,7 +75,7 @@ expect_cug_input_parity <- function(mat, mode = "digraph", cmode = "edges",
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
 
   expect_equal(res_igraph$obs.stat, res_matrix$obs.stat, tolerance = 1e-12)
@@ -175,9 +175,9 @@ auto_network <- snafun::stat_cug(
   mode = "graph",
   cmode = "edges",
   reps = 15,
-  graph = "auto"
+  graph_class = "auto"
 )
-expect_equal(auto_network$graph, "igraph")
+expect_equal(auto_network$graph_class, "igraph")
 
 set.seed(123)
 explicit_igraph <- snafun::stat_cug(
@@ -186,7 +186,7 @@ explicit_igraph <- snafun::stat_cug(
   mode = "graph",
   cmode = "edges",
   reps = 15,
-  graph = "igraph"
+  graph_class = "igraph"
 )
 expect_equal(auto_network$obs.stat, explicit_igraph$obs.stat, tolerance = 1e-12)
 expect_equal(auto_network$rep.stat, explicit_igraph$rep.stat, tolerance = 1e-12)
@@ -219,13 +219,13 @@ custom_result <- snafun::stat_cug(
   cmode = "edges",
   diag = TRUE,
   reps = 12,
-  graph = "edgelist"
+  graph_class = "edgelist"
 )
-expect_equal(custom_result$graph, "edgelist")
+expect_equal(custom_result$graph_class, "edgelist")
 expect_equal(custom_result$obs.stat, sum(loopy_mat != 0), tolerance = 1e-12)
 
 
-# graph = "same" should keep the edgelist representation for edgelist input.
+# graph_class = "same" should keep the edgelist representation for edgelist input.
 set.seed(8)
 same_result <- snafun::stat_cug(
   x = snafun::to_edgelist(undirected_mat),
@@ -233,9 +233,9 @@ same_result <- snafun::stat_cug(
   mode = "graph",
   cmode = "edges",
   reps = 10,
-  graph = "same"
+  graph_class = "same"
 )
-expect_equal(same_result$graph, "edgelist")
+expect_equal(same_result$graph_class, "edgelist")
 
 
 # Weighted inputs are binarized, so the result should match the unweighted structure.
@@ -250,7 +250,7 @@ expect_warning(
     mode = "digraph",
     cmode = "edges",
     reps = 20,
-    graph = "matrix"
+    graph_class = "matrix"
   ),
   "Weighted input detected"
 )
@@ -261,7 +261,7 @@ binary_result <- snafun::stat_cug(
   mode = "digraph",
   cmode = "edges",
   reps = 20,
-  graph = "matrix"
+  graph_class = "matrix"
 )
 expect_equal(weighted_result$obs.stat, binary_result$obs.stat, tolerance = 1e-12)
 expect_equal(weighted_result$rep.stat, binary_result$rep.stat, tolerance = 1e-12)
@@ -298,7 +298,7 @@ expect_true(any(grepl("measure = ", print_capture, fixed = TRUE)))
 summary_value <- summary(binary_result)
 expect_inherits(summary_value, "summary.stat_cug")
 expect_equal(summary_value$obs.stat, binary_result$obs.stat, tolerance = 1e-12)
-expect_equal(summary_value$graph, binary_result$graph)
+expect_equal(summary_value$graph_class, binary_result$graph_class)
 expect_equal(summary_value$valid.reps, binary_result$valid.reps)
 expect_true("Mean" %in% names(summary_value$null.summary))
 
@@ -316,7 +316,7 @@ expect_true(is.data.frame(summary_df))
 expect_equal(nrow(summary_df), 1)
 expect_equal(summary_df$obs_stat, binary_result$obs.stat, tolerance = 1e-12)
 expect_equal(summary_df$p_greater_equal_obs, binary_result$pgteobs, tolerance = 1e-12)
-expect_equal(summary_df$graph, binary_result$graph)
+expect_equal(summary_df$graph_class, binary_result$graph_class)
 expect_equal(summary_df$fun, binary_result$fun)
 
 replicate_df <- as.data.frame(binary_result, replicates = TRUE)
@@ -347,7 +347,7 @@ expect_error(
     FUN = function(x) c(1, 2),
     cmode = "edges",
     reps = 5,
-    graph = "matrix"
+    graph_class = "matrix"
   ),
   "single numeric statistic"
 )
@@ -355,3 +355,56 @@ expect_error(
   as.data.frame(binary_result, replicates = NA),
   "should be either TRUE or FALSE"
 )
+
+
+# ---------------------------------------------------------------------------
+# graph -> graph_class rename (2026-09-17)
+# ---------------------------------------------------------------------------
+
+# The deprecated 'graph' argument still works but warns, and produces the same
+# result as the new 'graph_class' argument. (In tinytest expect_warning() returns
+# the expectation, not the call's value, so we grab the value separately with
+# suppressWarnings().)
+expect_warning(
+  snafun::stat_cug(directed_mat, FUN = sna::gden, cmode = "edges", reps = 20,
+                   graph = "matrix"),
+  "deprecated"
+)
+set.seed(555)
+dep_result <- suppressWarnings(
+  snafun::stat_cug(directed_mat, FUN = sna::gden, cmode = "edges", reps = 20,
+                   graph = "matrix")
+)
+set.seed(555)
+new_result <- snafun::stat_cug(directed_mat, FUN = sna::gden, cmode = "edges",
+                               reps = 20, graph_class = "matrix")
+expect_equal(dep_result$graph_class, "matrix")
+expect_equal(dep_result$obs.stat, new_result$obs.stat, tolerance = 1e-12)
+expect_equal(dep_result$rep.stat, new_result$rep.stat, tolerance = 1e-12)
+
+# The result object's element is now named 'graph_class', not 'graph'. (Note:
+# result$graph would still return a value through R's partial matching of $, so
+# we check the actual element names exactly.)
+expect_false("graph" %in% names(new_result))
+expect_true("graph_class" %in% names(new_result))
+
+# 'auto' now PREFERS igraph: for a statistic that works on an igraph object,
+# the chosen evaluation class is 'igraph', even for network/matrix/edgelist input.
+for (inp in list(directed_mat,
+                 snafun::to_network(directed_mat),
+                 snafun::to_igraph(directed_mat),
+                 snafun::to_edgelist(directed_mat))) {
+  set.seed(11)
+  auto_res <- snafun::stat_cug(inp, FUN = snafun::g_transitivity, mode = "digraph",
+                               cmode = "edges", reps = 10, graph_class = "auto")
+  expect_equal(auto_res$graph_class, "igraph",
+               info = "auto prefers igraph for an igraph-compatible statistic")
+}
+
+# 'auto' still falls back when the statistic does NOT work on igraph (raw sna
+# function needs a matrix/network), so it must not error.
+set.seed(12)
+auto_sna <- snafun::stat_cug(directed_mat, FUN = sna::gtrans, mode = "digraph",
+                             cmode = "edges", reps = 10, graph_class = "auto")
+expect_true(auto_sna$graph_class %in% c("matrix", "network"),
+            info = "auto falls back to a matrix/network class for raw sna functions")

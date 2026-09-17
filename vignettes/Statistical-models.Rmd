@@ -161,7 +161,7 @@ snafun::stat_cug(
   cmode = c("size", "edges", "dyad.census"),
   diag = FALSE,
   reps = 1000,
-  graph = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
+  graph_class = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
   ignore.eval = TRUE,
   FUN.args = list()
 )
@@ -184,9 +184,34 @@ Here
 
     -   `"dyad.census"`: this conditions on a dyad census
 
--   `graph` determines in which graph class `FUN` is evaluated. If you
-    leave it at `"auto"`, `snafun` first tries the original graph class
-    and then tries the other supported classes until `FUN` works.
+-   `graph_class` determines in which graph class `FUN` is evaluated (for
+    the observed graph and for every replicate). **We recommend setting
+    this explicitly**, because it matters both for speed and for
+    reproducibility:
+
+    -   For `igraph` functions and `snafun` functions (which accept any
+        class), use `graph_class = "igraph"`. This is by far the fastest
+        option — replicates are drawn and built directly as sparse
+        `igraph` objects, avoiding the dense adjacency matrix — and it is
+        the most reproducible, because it fixes a single, canonical graph
+        construction. (For a construction-sensitive statistic such as the
+        global transitivity of a *directed* graph, the value can otherwise
+        differ slightly between graph classes.)
+
+    -   For `sna` functions (e.g. `sna::gtrans`, `sna::gden`), use
+        `graph_class = "matrix"` (or `"network"`), because those functions
+        need a matrix or a `network` object.
+
+    If you leave it at `"auto"`, `snafun` first tries `igraph` and then
+    falls back to the original class and the remaining classes until `FUN`
+    returns a numeric scalar. That is convenient, but you then do not
+    control which class is used (which can matter for a
+    construction-sensitive statistic), so prefer setting `graph_class`
+    yourself whenever you know what `FUN` expects.
+
+    (The argument used to be called `graph`; that name still works but is
+    deprecated and now warns, because it was easily confused with
+    `mode = "graph"`, which means "undirected".)
 
 -   `ignore.eval = TRUE` means that current CUG tests in `snafun` are
     structural and binary: weights are ignored and every non-zero tie is
@@ -197,8 +222,17 @@ is exceptional for a network of the same size and edge count as in `g`,
 you would run:
 
 ```{r}
-snafun::stat_cug(g, FUN = snafun::g_transitivity, cmode = "edges")
+snafun::stat_cug(
+  g,
+  FUN = snafun::g_transitivity,
+  cmode = "edges",
+  graph_class = "igraph"
+)
 ```
+
+Here we set `graph_class = "igraph"` because `g_transitivity()` is a
+`snafun` statistic: this evaluates the observed graph and all replicates as
+`igraph` objects, which is the fastest and most reproducible choice.
 
 If your graph is undirected, it is still wise to say so explicitly:
 
@@ -208,7 +242,8 @@ snafun::stat_cug(
   FUN = snafun::g_transitivity,
   mode = "graph",
   cmode = "edges",
-  reps = 1000
+  reps = 1000,
+  graph_class = "igraph"
 )
 ```
 
@@ -222,7 +257,7 @@ snafun::stat_cug(
   mode = "graph",
   cmode = "edges",
   reps = 200,
-  graph = "same"
+  graph_class = "igraph"
 )
 ```
 
@@ -240,7 +275,7 @@ snafun::stat_cug(
   mode = "graph",
   cmode = "edges",
   reps = 200,
-  graph = "igraph"
+  graph_class = "igraph"
 )
 ```
 

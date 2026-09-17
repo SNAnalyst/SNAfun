@@ -11,7 +11,7 @@ compare_cug_to_sna_reference <- function(mat, mode, cmode, diag, reps) {
     cmode = cmode,
     diag = diag,
     reps = reps,
-    graph = "matrix"
+    graph_class = "matrix"
   )
   set.seed(1401)
   theirs <- sna::cug.test(

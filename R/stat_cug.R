@@ -30,12 +30,34 @@
 #'   engine, just as in \code{sna::cug.test()}.
 #' }
 #'
-#' By default, \code{graph = "auto"} tries to evaluate \code{FUN} on a graph in
-#' the same class as the original input. If that fails, it tries the other
-#' supported graph classes until it finds one that yields a numeric scalar. This
-#' makes it convenient to use \code{igraph} functions on \code{network} input,
-#' \pkg{sna} functions on \code{igraph} input, or small custom wrapper
-#' functions. If you want full control, set \code{graph} explicitly.
+#' The \code{graph_class} argument controls the graph class on which \code{FUN}
+#' is evaluated for the observed graph and for every replicate. \strong{It is
+#' recommended to set this explicitly.} The best choice depends on \code{FUN}:
+#'
+#' \itemize{
+#'   \item For \pkg{igraph} statistics and \pkg{snafun} statistics (which accept
+#'   any class), use \code{graph_class = "igraph"}. This is by far the fastest
+#'   option: the replicates are drawn and built directly as (sparse)
+#'   \code{igraph} objects, avoiding the dense \eqn{n \times n} adjacency matrix.
+#'   It is also the most reproducible, because it fixes a single, canonical graph
+#'   construction (this matters for construction-sensitive statistics such as the
+#'   global transitivity of a directed graph, whose value can otherwise differ
+#'   slightly between graph classes).
+#'   \item For \pkg{sna} statistics (e.g. \code{sna::gtrans}, \code{sna::gden}),
+#'   use \code{graph_class = "matrix"} (or \code{"network"}), because those
+#'   functions require a matrix or a \code{network} object.
+#' }
+#'
+#' By default, \code{graph_class = "auto"} first tries \code{igraph} (the fast,
+#' canonical path) and falls back to the original input class and then the
+#' remaining classes until it finds one on which \code{FUN} returns a numeric
+#' scalar. This is convenient, but note two things: (1) with \code{"auto"} you do
+#' not control which class is used, so for a construction-sensitive statistic the
+#' result may depend on that automatic choice; and (2) an explicitly chosen class
+#' that \code{FUN} cannot handle raises an error, whereas \code{"auto"} would
+#' have searched for a working class. In short: set \code{graph_class} to the
+#' class your \code{FUN} expects; leave it at \code{"auto"} only when you are
+#' unsure.
 #'
 #' If the statistic function has formal arguments named \code{mode},
 #' \code{diag}, or \code{directed}, \code{snafun::stat_cug()} supplies them
@@ -54,14 +76,22 @@
 #' @param diag Logical scalar indicating whether loops on the diagonal are
 #'   allowed in the observed graph and the null model.
 #' @param reps Number of replicate graphs to generate.
-#' @param graph Character scalar indicating the graph class on which
-#'   \code{FUN} should be evaluated. One of \code{"auto"}, \code{"same"},
-#'   \code{"igraph"}, \code{"network"}, \code{"matrix"}, or
-#'   \code{"edgelist"}.
+#' @param graph_class Character scalar indicating the graph class on which
+#'   \code{FUN} should be evaluated. One of \code{"auto"} (try \code{igraph}
+#'   first, then fall back), \code{"same"} (the class of \code{x}),
+#'   \code{"igraph"}, \code{"network"}, \code{"matrix"}, or \code{"edgelist"}.
+#'   Setting this explicitly is recommended; see Details for guidance (use
+#'   \code{"igraph"} for \pkg{igraph}/\pkg{snafun} statistics and \code{"matrix"}
+#'   for \pkg{sna} statistics).
 #' @param ignore.eval Logical scalar. Currently only \code{TRUE} is supported.
 #'   This means edge weights are ignored and every non-zero entry is treated as
 #'   a tie.
 #' @param FUN.args Optional list of additional arguments passed to \code{FUN}.
+#' @param graph \strong{Deprecated.} The former name of \code{graph_class}. It
+#'   still works but issues a deprecation warning and will be removed in a future
+#'   release; please use \code{graph_class} instead. (The name was changed
+#'   because \code{graph} was easily confused with \code{mode = "graph"}, which
+#'   means "undirected".)
 #'
 #' @return An object of class \code{stat_cug}. It contains the observed
 #'   statistic, the replicate statistics, the conditioning choices, the chosen
@@ -98,7 +128,7 @@
 #'   FUN = count_visible_edges,
 #'   cmode = "edges",
 #'   reps = 49,
-#'   graph = "edgelist"
+#'   graph_class = "edgelist"
 #' )
 stat_cug <- function(x,
                      FUN,
@@ -106,13 +136,33 @@ stat_cug <- function(x,
                      cmode = c("size", "edges", "dyad.census"),
                      diag = FALSE,
                      reps = 1000,
-                     graph = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
+                     graph_class = c("auto", "same", "igraph", "network", "matrix", "edgelist"),
                      ignore.eval = TRUE,
-                     FUN.args = list()) {
+                     FUN.args = list(),
+                     graph = NULL) {
   call <- match.call(expand.dots = FALSE)
   mode <- mode[[1]]
   cmode <- cmode[[1]]
-  graph <- graph[[1]]
+
+  # The argument that selects the class on which FUN is evaluated used to be
+  # called 'graph'. It was renamed to 'graph_class' (2026-09-17) because 'graph'
+  # collided confusingly with mode = "graph" (which means "undirected"). 'graph'
+  # is kept as a DEPRECATED alias so existing scripts keep working.
+  if (!is.null(graph)) {
+    .Deprecated(msg = paste0(
+      "The 'graph' argument of 'stat_cug()' has been renamed to 'graph_class' ",
+      "and is deprecated; please use 'graph_class' instead."
+    ))
+    if (missing(graph_class)) {
+      graph_class <- graph
+    } else {
+      warning(
+        "Both the deprecated 'graph' and the new 'graph_class' were supplied to ",
+        "'stat_cug()'; using 'graph_class' and ignoring 'graph'."
+      )
+    }
+  }
+  graph_class <- graph_class[[1]]
 
   if (!inherits(x, "igraph") &&
       !inherits(x, "network") &&
@@ -152,8 +202,8 @@ stat_cug <- function(x,
   mode <- observed$mode
   directed <- identical(mode, "digraph")
 
-  graph <- resolve_cug_graph_type(
-    graph = graph,
+  graph_class <- resolve_cug_graph_type(
+    graph = graph_class,
     x = x,
     observed_matrix = observed_matrix,
     FUN = FUN,
@@ -165,7 +215,7 @@ stat_cug <- function(x,
 
   observed_graph <- convert_cug_matrix_to_graph(
     x = observed_matrix,
-    graph = graph,
+    graph = graph_class,
     directed = directed
   )
   obs_stat <- evaluate_cug_statistic(
@@ -175,7 +225,7 @@ stat_cug <- function(x,
     mode = mode,
     diag = diag,
     directed = directed,
-    graph_label = graph
+    graph_label = graph_class
   )
 
   # Precompute everything that is constant across replicates (performance, B):
@@ -189,29 +239,28 @@ stat_cug <- function(x,
   fun_spec <- precompute_cug_fun_spec(FUN, FUN.args = FUN.args, mode = mode,
                                       diag = diag, directed = directed)
 
-  # For the igraph representation we draw an (sna) edge list directly and build
-  # the graph from it, avoiding the dense n x n adjacency matrix and its
-  # which()/upper.tri() scan entirely (this dominated the runtime). Other
-  # representations still go through the dense matrix, which they require anyway.
-  build_from_edgelist <- identical(graph, "igraph")
+  # For the igraph representation we draw each replicate with igraph's own random
+  # graph constructors (sample_gnm / sample_gnp; see draw_cug_replicate_igraph()),
+  # which is 2.5-3.8x faster than drawing an sna matrix/edge list and rebuilding
+  # the graph, and produces the canonical igraph construction that the observed
+  # graph now also uses. (cmode = "dyad.census" has no igraph-native sampler and
+  # still draws via sna::rguman.) Other representations go through the dense
+  # matrix, which they require anyway.
+  build_igraph_replicates <- identical(graph_class, "igraph")
 
   replicate_stats <- numeric(reps)
   for (rep_index in seq_len(reps)) {
-    if (build_from_edgelist) {
-      replicate_graph <- build_cug_igraph_from_edges(
-        draw_cug_replicate_edges(cug_target),
-        n_vertices = cug_target$n_vertices,
-        directed = directed
-      )
+    if (build_igraph_replicates) {
+      replicate_graph <- draw_cug_replicate_igraph(cug_target, directed = directed)
     } else {
       replicate_graph <- convert_cug_matrix_to_graph(
         x = draw_cug_replicate_matrix(cug_target),
-        graph = graph,
+        graph = graph_class,
         directed = directed
       )
     }
     replicate_stats[[rep_index]] <- evaluate_cug_statistic_fast(
-      replicate_graph, fun_spec = fun_spec, graph_label = graph
+      replicate_graph, fun_spec = fun_spec, graph_label = graph_class
     )
   }
 
@@ -234,7 +283,7 @@ stat_cug <- function(x,
     pgteobs = p_greater_equal,
     reps = reps,
     valid.reps = sum(valid_replicates),
-    graph = graph,
+    graph_class = graph_class,
     ignore.eval = ignore.eval,
     fun = stat_cug_fun_label(FUN = FUN, call = call),
     fun.args = FUN.args,
@@ -296,7 +345,7 @@ summary.stat_cug <- function(object, na.rm = TRUE, ...) {
     pgteobs = object$pgteobs,
     reps = object$reps,
     valid.reps = object$valid.reps,
-    graph = object$graph,
+    graph_class = object$graph_class,
     ignore.eval = object$ignore.eval,
     fun = object$fun,
     fun.args = object$fun.args,
@@ -323,7 +372,7 @@ print.summary.stat_cug <- function(x, digits = 4, ...) {
   cat("\nSummary of Conditional Uniform Graph Test\n\n")
   cat("Conditioning Method:", x$cmode, "\n")
   cat("Graph Type:", x$mode, "\n")
-  cat("Statistic Graph Class:", x$graph, "\n")
+  cat("Statistic Graph Class:", x$graph_class, "\n")
   cat("Statistic Function:", x$fun, "\n")
   cat("Statistic Arguments:", stat_cug_format_fun_args(x$fun.args, digits = digits), "\n")
   cat("Diagonal Used:", x$diag, "\n")
@@ -356,7 +405,7 @@ print.stat_cug <- function(x, digits = 4, ...) {
   cat("\nUnivariate Conditional Uniform Graph Test\n\n")
   cat("Conditioning Method:", x$cmode, "\n")
   cat("Graph Type:", x$mode, "\n")
-  cat("Statistic Graph Class:", x$graph, "\n")
+  cat("Statistic Graph Class:", x$graph_class, "\n")
   cat("Statistic Function:", x$fun, "\n")
   cat("Statistic Arguments:", stat_cug_format_fun_args(x$fun.args, digits = digits), "\n")
   cat("Diagonal Used:", x$diag, "\n")
@@ -405,7 +454,7 @@ as.data.frame.stat_cug <- function(x, row.names = NULL, optional = FALSE,
       cmode = x$cmode,
     reps = x$reps,
     valid_reps = x$valid.reps,
-    graph = x$graph,
+    graph_class = x$graph_class,
     fun = x$fun,
     fun_args = stat_cug_format_fun_args(x$fun.args),
     ignore_eval = x$ignore.eval,
@@ -427,7 +476,7 @@ as.data.frame.stat_cug <- function(x, row.names = NULL, optional = FALSE,
     diag = x$diag,
     cmode = x$cmode,
     reps = x$reps,
-    graph = x$graph,
+    graph_class = x$graph_class,
     fun = x$fun,
     stringsAsFactors = FALSE
   )
@@ -604,9 +653,17 @@ resolve_cug_graph_type <- function(graph, x, observed_matrix, FUN, FUN.args,
     return(graph)
   }
 
+  # 'auto' prefers igraph (2026-09-17). Building and evaluating replicates as
+  # igraph objects uses the fast sparse edge-list path (see the replicate loop in
+  # stat_cug()), is typically several times faster than the dense matrix/network
+  # path, and gives a canonical, reproducible construction of the graph. We only
+  # fall back to the original class and the remaining classes when FUN does not
+  # work on an igraph object (e.g. raw sna functions such as sna::gtrans, which
+  # need a matrix or network). Users who need a specific class should set
+  # 'graph_class' explicitly (recommended); see the function documentation.
   candidates <- unique(c(
-    original_graph,
     "igraph",
+    original_graph,
     "network",
     "matrix",
     "edgelist"
@@ -684,14 +741,22 @@ convert_cug_matrix_to_graph <- function(x, graph, directed = FALSE) {
   if (identical(graph, "igraph")) {
     # Fast path (stat_cug performance fix, 2026-09-14). The CUG matrices are
     # already binary and their directedness is fixed by the test's `mode`, so we
-    # build the igraph directly from the edge coordinates instead of going
-    # through snafun::to_igraph.matrix(). That avoids two O(n^2) costs that
-    # dominated the runtime on larger graphs: to_igraph.matrix()'s tolerance-
-    # based isSymmetric() (via all.equal) and its all(x %in% c(0, 1)) check, and
-    # more importantly graph_from_adjacency_matrix()'s scan of the full dense
-    # n x n matrix. Building from the (sparse) edge list touches only the edges,
-    # exactly as sna::cug.test() does internally, while preserving isolates and
-    # producing a graph equivalent to to_igraph(x) for a binary matrix.
+    # build the igraph directly from the edge coordinates instead of scanning the
+    # full dense n x n matrix (as graph_from_adjacency_matrix() would). Building
+    # from the (sparse) edge coordinates touches only the edges and preserves
+    # isolates via make_empty_graph(n).
+    #
+    # NOTE (2026-09-17): we deliberately do NOT call simplify() here. For a
+    # DIRECTED graph with mutual dyads, simplify(remove.multiple = TRUE) shifts
+    # igraph::transitivity(type = "global") to a non-canonical value, even though
+    # there are no genuine multiple edges (verified: for one fixed graph
+    # add_edges + simplify gave 0.1707 while add_edges alone,
+    # graph_from_adjacency_matrix() and igraph::sample_gnm() all gave 0.1717).
+    # make_empty() + add_edges() WITHOUT simplify() is therefore the canonical
+    # igraph construction and matches the replicate sampler (sample_gnm/
+    # sample_gnp), so the observed graph and every replicate are constructed
+    # identically. For undirected input we take only the upper triangle, so no
+    # edge is ever added twice and no de-duplication is needed.
     directed <- isTRUE(directed)
     if (directed) {
       idx <- which(x != 0, arr.ind = TRUE)              # every arc, incl. loops
@@ -702,12 +767,7 @@ convert_cug_matrix_to_graph <- function(x, graph, directed = FALSE) {
     if (nrow(idx) > 0) {
       g <- igraph::add_edges(g, as.vector(t(idx)))
     }
-    # simplify() is REQUIRED for equivalence with to_igraph.matrix(): it mirrors
-    # that function's simplify(remove.multiple = TRUE, remove.loops = FALSE) step.
-    # Without it, igraph::transitivity(type = "global") counts directed graphs
-    # differently (verified: a directed graph gives 0.3305 unsimplified vs the
-    # correct 0.3131 simplified). Loops are kept, matching to_igraph.matrix().
-    return(igraph::simplify(g, remove.multiple = TRUE, remove.loops = FALSE))
+    return(g)
   }
   if (identical(graph, "network")) {
     return(snafun::to_network(x))
@@ -849,12 +909,56 @@ draw_cug_replicate_edges <- function(target) {
 }
 
 
+#' Draw one CUG replicate directly as an igraph object
+#'
+#' The fast path for \code{graph_class = "igraph"} (2026-09-17). For
+#' \code{cmode = "size"} and \code{cmode = "edges"} the replicate is drawn with
+#' igraph's own C-level constructors (\code{\link[igraph]{sample_gnp}} /
+#' \code{\link[igraph]{sample_gnm}}), which is 2.5-3.8x faster than drawing an
+#' sna matrix/edge list and rebuilding the graph, and which produces the
+#' canonical igraph construction that the observed graph also uses (see the note
+#' in \code{\link{convert_cug_matrix_to_graph}}). For \code{cmode =
+#' "dyad.census"} igraph has no native sampler that conditions on the dyad
+#' census, so we fall back to \code{sna::rguman()} (as an edge list) and build
+#' the graph canonically via \code{\link{build_cug_igraph_from_edges}}.
+#'
+#' @param target Precomputed CUG target from \code{\link{precompute_cug_target}}.
+#' @param directed Logical scalar.
+#'
+#' @return An \code{igraph} object.
+#' @keywords internal
+#' @noRd
+draw_cug_replicate_igraph <- function(target, directed) {
+  directed <- isTRUE(directed)
+  if (identical(target$cmode, "size")) {
+    return(igraph::sample_gnp(target$n_vertices, target$tprob,
+                              directed = directed, loops = isTRUE(target$diag)))
+  }
+  if (identical(target$cmode, "edges")) {
+    return(igraph::sample_gnm(target$n_vertices, target$m,
+                              directed = directed, loops = isTRUE(target$diag)))
+  }
+  # dyad.census: no igraph-native sampler -> draw via sna and build canonically.
+  build_cug_igraph_from_edges(draw_cug_replicate_edges(target),
+                              n_vertices = target$n_vertices, directed = directed)
+}
+
+
 #' Build a CUG replicate igraph directly from an edge list
 #'
-#' Mirrors the igraph branch of \code{\link{convert_cug_matrix_to_graph}} (which
-#' keeps loops and removes multiple edges via simplify(), matching
-#' to_igraph.matrix()), but starts from an edge list instead of a dense matrix.
-#' Isolates are preserved via \code{n_vertices}.
+#' Used for the \code{cmode = "dyad.census"} igraph path. Builds the graph from
+#' the (sparse) edge list with \code{make_empty_graph()} + \code{add_edges()},
+#' preserving isolates via \code{n_vertices}.
+#'
+#' NOTE (2026-09-17): this does NOT call \code{simplify()}. For a directed graph
+#' with mutual dyads, \code{simplify(remove.multiple = TRUE)} shifts
+#' \code{igraph::transitivity(type = "global")} to a non-canonical value even
+#' though there are no genuine multiple edges. Plain \code{add_edges()} matches
+#' \code{graph_from_adjacency_matrix()} / \code{sample_gnm()} (the canonical
+#' construction), keeping this path consistent with the observed graph and with
+#' the sample_gnm/sample_gnp replicates. sna::rguman() draws a directed graph in
+#' which mutual dyads are two distinct arcs (not multiple edges), so no
+#' de-duplication is needed.
 #'
 #' @param edges Edge-list matrix (first two columns are the endpoints).
 #' @param n_vertices Total number of vertices (to preserve isolates).
@@ -868,7 +972,7 @@ build_cug_igraph_from_edges <- function(edges, n_vertices, directed) {
   if (!is.null(edges) && nrow(edges) > 0) {
     g <- igraph::add_edges(g, as.vector(t(edges[, 1:2, drop = FALSE])))
   }
-  igraph::simplify(g, remove.multiple = TRUE, remove.loops = FALSE)
+  g
 }
 
 
