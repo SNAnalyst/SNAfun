@@ -375,27 +375,33 @@ summary.stat_qap_logit <- function(object, ...) {
 }
 
 
-#' Format logistic goodness-of-fit values with degrees of freedom
+#' Print the logistic goodness-of-fit block
+#'
+#' Prints a clean goodness-of-fit section (deviances with degrees of freedom, the
+#' likelihood-ratio test of fit improvement, AIC/BIC, and the two pseudo-R^2
+#' measures), mirroring the layout of \code{summary(sna::netlogit(...))}. It reads
+#' the fields carried on a \code{summary.stat_qap_logit} object.
+#'
+#' @param x A \code{summary.stat_qap_logit} object (or a list with the same
+#'   goodness-of-fit fields).
+#' @param digits Number of significant digits.
 #'
 #' @keywords internal
 #' @noRd
-stat_qap_logit_format_fit_table <- function(x, digits = 4) {
-  fit_table <- x$fit.table
-  null_dev <- fit_table[["Null deviance (df)"]]
-  resid_dev <- fit_table[["Residual deviance (df)"]]
-  fit_table[["Null deviance (df)"]] <- paste0(
-    signif(null_dev, digits = digits),
-    " (",
-    x$fit.df[["Null deviance (df)"]],
-    ")"
-  )
-  fit_table[["Residual deviance (df)"]] <- paste0(
-    signif(resid_dev, digits = digits),
-    " (",
-    x$fit.df[["Residual deviance (df)"]],
-    ")"
-  )
-  fit_table
+stat_qap_logit_print_gof <- function(x, digits = 4) {
+  cat("Null deviance:     ", format(signif(x$null.deviance, digits)),
+      " on ", x$fit.df[["Null deviance (df)"]], " degrees of freedom\n", sep = "")
+  cat("Residual deviance: ", format(signif(x$deviance, digits)),
+      " on ", x$fit.df[["Residual deviance (df)"]], " degrees of freedom\n", sep = "")
+  cat("Chi-squared test of fit improvement:\n")
+  cat("    ", format(signif(x$lr.test$statistic, digits)), " on ",
+      x$lr.test$parameter, " degrees of freedom, p-value ",
+      format(signif(x$lr.test$p.value, digits)), "\n", sep = "")
+  cat("AIC: ", format(signif(x$aic, digits)),
+      "    BIC: ", format(signif(x$bic, digits)), "\n", sep = "")
+  cat("Pseudo-R^2 (McFadden): ", format(signif(x$pseudo.r2$mcfadden, digits)),
+      "    (adjusted): ", format(signif(x$pseudo.r2$adjusted, digits)), "\n", sep = "")
+  invisible(NULL)
 }
 
 
@@ -438,7 +444,7 @@ print.stat_qap_logit <- function(x, digits = 4, ...) {
   print(signif(coefficient_table, digits = digits))
 
   cat("\nGoodness of Fit\n\n")
-  print(stat_qap_logit_format_fit_table(x_summary, digits = digits))
+  stat_qap_logit_print_gof(x_summary, digits = digits)
   cat("\nConfusion Table\n\n")
   print(x$confusion.table)
   cat("\nClassification\n\n")
@@ -480,7 +486,7 @@ print.summary.stat_qap_logit <- function(x, digits = 4, ...) {
   print(signif(x$coefficient.table, digits = digits))
 
   cat("\nGoodness of Fit\n\n")
-  print(stat_qap_logit_format_fit_table(x, digits = digits))
+  stat_qap_logit_print_gof(x, digits = digits)
   cat("\nConfusion Table\n\n")
   print(x$confusion.table)
   cat("\nClassification\n\n")

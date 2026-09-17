@@ -336,6 +336,67 @@ summary_text <- capture.output(print(summary_out))
 expect_true(any(grepl("Summary of QAP Linear Model", summary_text, fixed = TRUE)))
 expect_true(any(grepl("Permutation p-values are shown for t-values only.", summary_text, fixed = TRUE)))
 
+
+# --- OLS goodness-of-fit block (R^2, adj R^2, F, residual SE) ----------------
+# The summary must carry the same goodness-of-fit statistics that
+# summary(sna::netlm(...)) reports.
+expect_true(all(c("r.squared", "adj.r.squared", "sigma", "fstatistic",
+                  "fstatistic.p.value", "residual.quantiles") %in% names(summary_out)),
+            info = "summary carries OLS goodness-of-fit fields")
+
+# self-consistency with the stored fit
+gof_from_fit <- function(f) {
+  fv <- as.numeric(f$fitted.values)
+  rs <- as.numeric(f$residuals)
+  di <- if (isTRUE(f$intercept)) 1L else 0L
+  rdf <- f$df.residual
+  qn <- rdf + f$rank
+  mss <- if (isTRUE(f$intercept)) sum((fv - mean(fv))^2) else sum(fv^2)
+  rss <- sum(rs^2)
+  r2 <- mss / (mss + rss)
+  list(r2 = r2, adj = 1 - (1 - r2) * ((qn - di) / rdf), sigma = sqrt(rss / rdf))
+}
+g_self <- gof_from_fit(default_fit)
+expect_equal(summary_out$r.squared, g_self$r2, tolerance = 1e-10,
+             info = "summary R^2 self-consistent with the fit")
+expect_equal(summary_out$adj.r.squared, g_self$adj, tolerance = 1e-10,
+             info = "summary adjusted R^2 self-consistent with the fit")
+expect_equal(summary_out$sigma, g_self$sigma, tolerance = 1e-10,
+             info = "summary residual std error self-consistent with the fit")
+
+# the printed summary shows the goodness-of-fit block
+expect_true(any(grepl("Multiple R-squared", summary_text, fixed = TRUE)),
+            info = "printed summary shows Multiple R-squared")
+expect_true(any(grepl("Adjusted R-squared", summary_text, fixed = TRUE)),
+            info = "printed summary shows Adjusted R-squared")
+expect_true(any(grepl("F-statistic", summary_text, fixed = TRUE)),
+            info = "printed summary shows F-statistic")
+expect_true(any(grepl("Residual standard error", summary_text, fixed = TRUE)),
+            info = "printed summary shows residual standard error")
+
+# and it matches sna::netlm's goodness-of-fit exactly on a fresh model
+if (requireNamespace("sna", quietly = TRUE)) {
+  set.seed(123)
+  gof_n <- 18
+  gof_mk <- function(n) { m <- matrix(stats::rbinom(n * n, 1, 0.3), n); diag(m) <- 0; m }
+  gof_Y <- gof_mk(gof_n); gof_X1 <- gof_mk(gof_n); gof_X2 <- gof_mk(gof_n)
+  gof_sn <- summary(snafun::stat_qap_lm(gof_Y, x = list(gof_X1, gof_X2),
+                                        reps = 20, directed = "directed", seed = 9))
+  set.seed(9)
+  gof_nl <- sna::netlm(gof_Y, list(gof_X1, gof_X2), mode = "digraph", reps = 20)
+  mss <- sum((stats::fitted(gof_nl) - mean(stats::fitted(gof_nl)))^2)
+  rss <- sum(stats::resid(gof_nl)^2)
+  qn <- NROW(gof_nl$qr$qr)
+  rdf <- qn - gof_nl$rank
+  r2 <- mss / (mss + rss)
+  ar2 <- 1 - (1 - r2) * ((qn - gof_nl$intercept) / rdf)
+  fval <- (mss / (gof_nl$rank - gof_nl$intercept)) / (rss / rdf)
+  expect_equal(gof_sn$r.squared, r2, tolerance = 1e-10, info = "R^2 == sna::netlm")
+  expect_equal(gof_sn$adj.r.squared, ar2, tolerance = 1e-10, info = "adjusted R^2 == sna::netlm")
+  expect_equal(gof_sn$sigma, sqrt(rss / rdf), tolerance = 1e-10, info = "residual SE == sna::netlm")
+  expect_equal(unname(gof_sn$fstatistic[["value"]]), fval, tolerance = 1e-10, info = "F-statistic == sna::netlm")
+}
+
 tmp_plot <- tempfile(fileext = ".png")
 grDevices::png(filename = tmp_plot)
 plot(default_fit, term = "directed_x1", statistic = "t-value")

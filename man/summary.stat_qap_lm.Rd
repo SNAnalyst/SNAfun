@@ -15,5 +15,9 @@
 An object of class \code{summary.stat_qap_lm}.
 }
 \description{
-Summarize the coefficient-level results from \code{\link{stat_qap_lm}}.
+Summarize the coefficient-level results from \code{\link{stat_qap_lm}},
+together with the ordinary-least-squares goodness-of-fit statistics
+(R-squared, adjusted R-squared, residual standard error, and the overall
+F-test). These match the goodness-of-fit block reported by
+\code{summary(sna::netlm(...))}.
 }

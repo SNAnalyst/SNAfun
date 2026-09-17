@@ -259,9 +259,98 @@ stat_qap_lm <- function(y,
 }
 
 
+#' Ordinary-least-squares goodness-of-fit for a QAP linear model
+#'
+#' Reproduces the goodness-of-fit block that \code{sna:::print.summary.netlm}
+#' computes on the fly (R-squared, adjusted R-squared, residual standard error,
+#' and the overall F-test), using exactly the same formulas so the numbers match
+#' \code{summary(sna::netlm(...))}. Everything is derived from the stored fit
+#' (fitted values, residuals, rank, residual df, and whether an intercept was
+#' included); the number of dyads is recovered as \code{df.residual + rank}.
+#'
+#' @param object A \code{stat_qap_lm} object.
+#'
+#' @return A list with \code{r.squared}, \code{adj.r.squared}, \code{sigma}
+#'   (residual standard error), the \code{fstatistic} (value, numerator df,
+#'   denominator df), its \code{fstatistic.p.value}, and the residual quantiles.
+#' @keywords internal
+#' @noRd
+stat_qap_lm_gof <- function(object) {
+  fitted_values <- as.numeric(object$fitted.values)
+  residuals <- as.numeric(object$residuals)
+  rank <- object$rank
+  rdf <- object$df.residual
+  df_int <- if (isTRUE(object$intercept)) 1L else 0L
+  n_obs <- rdf + rank                       # NROW(qr$qr) in sna::netlm
+
+  # model / residual sums of squares (sna centres only when an intercept is used)
+  mss <- if (isTRUE(object$intercept)) {
+    sum((fitted_values - mean(fitted_values))^2)
+  } else {
+    sum(fitted_values^2)
+  }
+  rss <- sum(residuals^2)
+
+  resvar <- if (rdf > 0) rss / rdf else NA_real_
+  numdf <- rank - df_int
+  f_value <- if (!is.na(resvar) && numdf > 0 && resvar > 0) {
+    (mss / numdf) / resvar
+  } else {
+    NA_real_
+  }
+  r_squared <- if ((mss + rss) > 0) mss / (mss + rss) else NA_real_
+  adj_r_squared <- if (!is.na(r_squared) && rdf > 0) {
+    1 - (1 - r_squared) * ((n_obs - df_int) / rdf)
+  } else {
+    NA_real_
+  }
+  sigma <- if (!is.na(resvar)) sqrt(resvar) else NA_real_
+  f_p_value <- if (!is.na(f_value) && numdf > 0 && rdf > 0) {
+    stats::pf(f_value, numdf, rdf, lower.tail = FALSE)
+  } else {
+    NA_real_
+  }
+
+  list(
+    r.squared = r_squared,
+    adj.r.squared = adj_r_squared,
+    sigma = sigma,
+    fstatistic = c(value = f_value, numdf = numdf, dendf = rdf),
+    fstatistic.p.value = f_p_value,
+    residual.quantiles = stats::quantile(residuals)
+  )
+}
+
+
+#' Print the OLS goodness-of-fit block for a QAP linear model
+#'
+#' @param gof Output of \code{\link{stat_qap_lm_gof}}.
+#' @param digits Number of significant digits.
+#'
+#' @keywords internal
+#' @noRd
+stat_qap_lm_print_gof <- function(gof, digits = 4) {
+  cat("Residual standard error:", format(gof$sigma, digits = digits),
+      "on", gof$fstatistic[["dendf"]], "degrees of freedom\n")
+  cat("Multiple R-squared:", format(gof$r.squared, digits = digits), "\t")
+  cat("Adjusted R-squared:", format(gof$adj.r.squared, digits = digits), "\n")
+  if (!is.na(gof$fstatistic[["value"]])) {
+    cat("F-statistic:", formatC(gof$fstatistic[["value"]], digits = digits),
+        "on", gof$fstatistic[["numdf"]], "and", gof$fstatistic[["dendf"]],
+        "degrees of freedom, p-value:",
+        formatC(gof$fstatistic.p.value, digits = digits), "\n")
+  }
+  invisible(NULL)
+}
+
+
 #' Summarize a QAP linear model result
 #'
-#' Summarize the coefficient-level results from \code{\link{stat_qap_lm}}.
+#' Summarize the coefficient-level results from \code{\link{stat_qap_lm}},
+#' together with the ordinary-least-squares goodness-of-fit statistics
+#' (R-squared, adjusted R-squared, residual standard error, and the overall
+#' F-test). These match the goodness-of-fit block reported by
+#' \code{summary(sna::netlm(...))}.
 #'
 #' @param object Object returned by \code{\link{stat_qap_lm}}.
 #' @param ... Ignored.
@@ -297,6 +386,8 @@ summary.stat_qap_lm <- function(object, ...) {
     )
   }
 
+  gof <- stat_qap_lm_gof(object)
+
   out <- list(
     coefficients = object$coefficients,
     t.stat = object$t.stat,
@@ -315,6 +406,12 @@ summary.stat_qap_lm <- function(object, ...) {
     predictor.names = object$predictor.names,
     rank = object$rank,
     df.residual = object$df.residual,
+    r.squared = gof$r.squared,
+    adj.r.squared = gof$adj.r.squared,
+    sigma = gof$sigma,
+    fstatistic = gof$fstatistic,
+    fstatistic.p.value = gof$fstatistic.p.value,
+    residual.quantiles = gof$residual.quantiles,
     call = object$call
   )
   class(out) <- "summary.stat_qap_lm"
@@ -356,6 +453,9 @@ print.stat_qap_lm <- function(x, digits = 4, ...) {
     `Pr(two-sided)` = if (x$test.statistic == "beta") x$p.beta$p.two.sided else x$p.t$p.two.sided
   )
   print(signif(coefficient_table, digits = digits))
+
+  cat("\nGoodness of Fit\n\n")
+  stat_qap_lm_print_gof(stat_qap_lm_gof(x), digits = digits)
   invisible(x)
 }
 
@@ -391,6 +491,20 @@ print.summary.stat_qap_lm <- function(x, digits = 4, ...) {
   }
   cat("\n")
   print(signif(x$coefficient.table, digits = digits))
+
+  cat("\nResiduals:\n")
+  print(signif(x$residual.quantiles, digits = digits))
+  cat("\nGoodness of Fit\n\n")
+  stat_qap_lm_print_gof(
+    gof = list(
+      r.squared = x$r.squared,
+      adj.r.squared = x$adj.r.squared,
+      sigma = x$sigma,
+      fstatistic = x$fstatistic,
+      fstatistic.p.value = x$fstatistic.p.value
+    ),
+    digits = digits
+  )
   invisible(x)
 }
 
