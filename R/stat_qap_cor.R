@@ -143,25 +143,26 @@ stat_qap_cor <- function(x,
     reference = x_matrix
   )
 
-  obs_stat <- stat_qap_cor_compute(
+  # Build the constant part of the computation ONCE. Only y is permuted across
+  # replications, so the x side (vectorization, rank transform, and -- with
+  # controls -- residualization) and the control design are the same every
+  # replication. Precomputing them (see stat_qap_cor_build_plan()) avoids
+  # recomputing them 'reps' times; with controls this used to re-residualize x
+  # (an lm.fit) on every replication.
+  qap_plan <- stat_qap_cor_build_plan(
     x = x_matrix,
-    y = y_matrix,
     controls = control_matrices,
     method = method,
-    diagonal = diagonal,
-    directed = directed_flag
+    diagonal = diagonal
   )
+
+  obs_stat <- stat_qap_cor_eval(plan = qap_plan, y = y_matrix)
 
   rep_stats <- numeric(reps)
   for (rep_index in seq_len(reps)) {
-    permuted_y <- stat_qap_cor_permute_matrix(y_matrix)
-    rep_stats[[rep_index]] <- stat_qap_cor_compute(
-      x = x_matrix,
-      y = permuted_y,
-      controls = control_matrices,
-      method = method,
-      diagonal = diagonal,
-      directed = directed_flag
+    rep_stats[[rep_index]] <- stat_qap_cor_eval(
+      plan = qap_plan,
+      y = stat_qap_cor_permute_matrix(y_matrix)
     )
   }
 
@@ -522,114 +523,114 @@ stat_qap_cor_resolve_direction <- function(x, directed) {
 
 #' Vectorize a matrix for QAP correlation
 #'
+#' Selects the cells that enter the correlation: all off-diagonal cells, plus the
+#' diagonal when \code{diagonal = TRUE}. For directed input every dyad is used;
+#' for undirected input the (symmetric) off-diagonal cells appear twice, which
+#' does not change a correlation. This is why the (previous) \code{directed}
+#' argument was not needed and has been dropped.
+#'
 #' @keywords internal
 #' @noRd
-stat_qap_cor_vectorize <- function(x, diagonal, directed) {
+stat_qap_cor_vectorize <- function(x, selector) {
+  as.numeric(x[selector])
+}
+
+
+#' Build the constant ("x side") part of a QAP correlation once
+#'
+#' Everything that does not change across permutations is computed a single time:
+#' the cell selector, the (optionally rank-transformed) x vector and control
+#' columns, and -- when controls are present -- the QR of the control design and
+#' x's residuals. Only y is permuted afterwards, so this turns the per-replication
+#' work into "vectorize y, (rank y), residualize y on the precomputed design,
+#' correlate". Results are identical to computing everything from scratch each
+#' replication; this only removes redundant recomputation (notably the repeated
+#' residualization of x with controls).
+#'
+#' @param x The (aligned) x adjacency matrix.
+#' @param controls List of (aligned) control matrices.
+#' @param method \code{"pearson"} or \code{"spearman"}.
+#' @param diagonal Logical scalar; include the diagonal cells?
+#'
+#' @return A list describing how to evaluate the correlation for any y.
+#' @keywords internal
+#' @noRd
+stat_qap_cor_build_plan <- function(x, controls, method, diagonal) {
   selector <- matrix(TRUE, nrow = nrow(x), ncol = ncol(x))
   if (!diagonal) {
     diag(selector) <- FALSE
   }
 
-  as.numeric(x[selector])
+  spearman <- identical(method, "spearman")
+  x_vec <- stat_qap_cor_vectorize(x = x, selector = selector)
+  if (spearman) {
+    x_vec <- rank(x_vec, ties.method = "average")
+  }
+
+  if (length(controls) == 0L) {
+    return(list(
+      selector = selector,
+      spearman = spearman,
+      has_controls = FALSE,
+      x_final = x_vec,
+      sd_x = stats::sd(x_vec)
+    ))
+  }
+
+  n_cells <- sum(selector)
+  z <- vapply(
+    controls,
+    function(one_control) stat_qap_cor_vectorize(x = one_control, selector = selector),
+    numeric(n_cells)
+  )
+  z <- matrix(z, nrow = n_cells, ncol = length(controls))
+  if (spearman) {
+    z <- apply(z, 2, rank, ties.method = "average")
+    z <- matrix(z, nrow = n_cells, ncol = length(controls))
+  }
+
+  design <- cbind("(Intercept)" = 1, z)
+  qr_design <- qr(design)
+  x_resid <- qr.resid(qr_design, x_vec)
+
+  list(
+    selector = selector,
+    spearman = spearman,
+    has_controls = TRUE,
+    qr_design = qr_design,
+    x_resid = x_resid,
+    sd_x = stats::sd(x_resid)
+  )
 }
 
 
-#' Compute an observed or permuted QAP correlation
+#' Evaluate a QAP correlation for one y (observed or permuted)
 #'
+#' @param plan Output of \code{\link{stat_qap_cor_build_plan}}.
+#' @param y The (observed or permuted) y adjacency matrix.
+#'
+#' @return A numeric scalar, or \code{NA_real_} when either side has zero
+#'   variance (so the correlation is undefined).
 #' @keywords internal
 #' @noRd
-stat_qap_cor_compute <- function(x, y, controls, method, diagonal, directed) {
-  x_vec <- stat_qap_cor_vectorize(x = x, diagonal = diagonal, directed = directed)
-  y_vec <- stat_qap_cor_vectorize(x = y, diagonal = diagonal, directed = directed)
-  z_mat <- stat_qap_cor_vectorize_controls(
-    controls = controls,
-    diagonal = diagonal,
-    directed = directed
-  )
+stat_qap_cor_eval <- function(plan, y) {
+  y_vec <- stat_qap_cor_vectorize(x = y, selector = plan$selector)
+  if (plan$spearman) {
+    y_vec <- rank(y_vec, ties.method = "average")
+  }
 
-  vectors <- stat_qap_cor_transform_vectors(
-    x = x_vec,
-    y = y_vec,
-    z = z_mat,
-    method = method
-  )
-
-  if (ncol(vectors$z) == 0L) {
-    if (stats::sd(vectors$x) == 0 || stats::sd(vectors$y) == 0) {
+  if (!plan$has_controls) {
+    if (plan$sd_x == 0 || stats::sd(y_vec) == 0) {
       return(NA_real_)
     }
-    return(stats::cor(vectors$x, vectors$y, method = "pearson"))
+    return(stats::cor(plan$x_final, y_vec, method = "pearson"))
   }
 
-  x_resid <- stat_qap_cor_residualize(y = vectors$x, x = vectors$z)
-  y_resid <- stat_qap_cor_residualize(y = vectors$y, x = vectors$z)
-  if (stats::sd(x_resid) == 0 || stats::sd(y_resid) == 0) {
+  y_resid <- qr.resid(plan$qr_design, y_vec)
+  if (plan$sd_x == 0 || stats::sd(y_resid) == 0) {
     return(NA_real_)
   }
-  stats::cor(x_resid, y_resid, method = "pearson")
-}
-
-
-#' Vectorize control matrices for QAP correlation
-#'
-#' @keywords internal
-#' @noRd
-stat_qap_cor_vectorize_controls <- function(controls, diagonal, directed) {
-  if (length(controls) == 0L) {
-    return(matrix(numeric(0), nrow = length(logical(0)), ncol = 0L))
-  }
-
-  columns <- lapply(
-    controls,
-    function(one_control) {
-      stat_qap_cor_vectorize(
-        x = one_control,
-        diagonal = diagonal,
-        directed = directed
-      )
-    }
-  )
-
-  out <- do.call(cbind, columns)
-  if (is.null(dim(out))) {
-    out <- matrix(out, ncol = 1L)
-  }
-  out
-}
-
-
-#' Apply the selected correlation scale to QAP vectors
-#'
-#' @keywords internal
-#' @noRd
-stat_qap_cor_transform_vectors <- function(x, y, z, method) {
-  if (identical(method, "spearman")) {
-    x <- rank(x, ties.method = "average")
-    y <- rank(y, ties.method = "average")
-    if (ncol(z) > 0L) {
-      z <- apply(z, 2, rank, ties.method = "average")
-      if (is.null(dim(z))) {
-        z <- matrix(z, ncol = 1L)
-      }
-    }
-  }
-
-  list(x = x, y = y, z = z)
-}
-
-
-#' Residualize a numeric vector on a control matrix
-#'
-#' @keywords internal
-#' @noRd
-stat_qap_cor_residualize <- function(y, x) {
-  if (ncol(x) == 0L) {
-    return(y)
-  }
-
-  design <- cbind("(Intercept)" = 1, x)
-  fit <- stats::lm.fit(x = design, y = y)
-  fit$residuals
+  stats::cor(plan$x_resid, y_resid, method = "pearson")
 }
 
 

@@ -19,7 +19,12 @@
 #' As in \code{\link{stat_qap_lm}}, \code{directed = "auto"} infers the graph
 #' type from \code{y}. Predictor names are preserved from the original call
 #' where possible, so \code{list(net1, net2)} is reported as \code{net1} and
-#' \code{net2} rather than the backend defaults \code{x1} and \code{x2}.
+#' \code{net2} rather than the backend defaults \code{x1} and \code{x2}. The
+#' vectorization convention follows \code{\link[sna]{netlogit}}, to which the fit
+#' and the QAP permutations are delegated: for directed analyses all dyads are
+#' used, while for undirected analyses only a single triangle of the (symmetric)
+#' matrix is used (this differs from \code{\link{stat_qap_cor}}, which uses the
+#' full symmetric matrix).
 #'
 #' \code{test.statistic = "beta"} emphasizes raw logistic coefficients,
 #' whereas \code{test.statistic = "z-value"} emphasizes those coefficients
@@ -684,7 +689,13 @@ stat_qap_logit_pvalues <- function(fit, coefficient_names, available) {
   p_greater <- stats::setNames(as.numeric(fit$pgreq), coefficient_names)
   p_two_sided <- stats::setNames(as.numeric(fit$pgreqabs), coefficient_names)
 
-  p_equal <- pmax(0, 1 - p_less - p_greater)
+  # sna::netlogit reports pgreq = Pr(X >= obs) and pleeq = Pr(X <= obs), which are
+  # non-strict, so pgreq + pleeq = 1 + Pr(X == obs). The probability of an exact
+  # tie is therefore pgreq + pleeq - 1 (not 1 - pgreq - pleeq, which is <= 0). For
+  # the continuous beta/z permutation statistics ties are essentially never
+  # present, so this is ~0 in practice, but we compute it correctly. pmax(0, .)
+  # guards against tiny negative rounding.
+  p_equal <- pmax(0, p_greater + p_less - 1)
   names(p_equal) <- coefficient_names
 
   list(

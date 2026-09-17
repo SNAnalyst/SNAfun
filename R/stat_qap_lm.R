@@ -32,11 +32,15 @@
 #' depends on the random-number stream, the R version, and the platform, so the
 #' chosen null model would otherwise not be reproducible.
 #'
-#' As in \code{\link{stat_qap_cor}}, the vectorization convention follows the
-#' adjacency matrix that students actually inspect: for directed analyses, all
-#' dyads are used, optionally including the diagonal; for undirected analyses,
-#' the full symmetric matrix is vectorized as-is rather than collapsing to a
-#' single triangle.
+#' The vectorization convention follows \code{\link[sna]{netlm}}, to which the
+#' fitting and the QAP permutations are delegated: for directed analyses all
+#' dyads are used, optionally including the diagonal, while for undirected
+#' analyses \code{sna::netlm()} uses only a single triangle of the (symmetric)
+#' matrix. Note that this differs from \code{\link{stat_qap_cor}}, which for
+#' undirected input vectorizes the full symmetric matrix as-is. The difference
+#' does not change the estimated coefficients, but for an undirected model it does
+#' affect the residual degrees of freedom (\eqn{n(n-1)/2} rather than
+#' \eqn{n(n-1)} dyads) and hence the t-values.
 #'
 #' @param y Dependent network or network-like object.
 #' @param x Predictor network, or a list of predictor networks. Each predictor

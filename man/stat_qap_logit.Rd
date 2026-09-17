@@ -75,7 +75,12 @@ valued.
 As in \code{\link{stat_qap_lm}}, \code{directed = "auto"} infers the graph
 type from \code{y}. Predictor names are preserved from the original call
 where possible, so \code{list(net1, net2)} is reported as \code{net1} and
-\code{net2} rather than the backend defaults \code{x1} and \code{x2}.
+\code{net2} rather than the backend defaults \code{x1} and \code{x2}. The
+vectorization convention follows \code{\link[sna]{netlogit}}, to which the fit
+and the QAP permutations are delegated: for directed analyses all dyads are
+used, while for undirected analyses only a single triangle of the (symmetric)
+matrix is used (this differs from \code{\link{stat_qap_cor}}, which uses the
+full symmetric matrix).
 
 \code{test.statistic = "beta"} emphasizes raw logistic coefficients,
 whereas \code{test.statistic = "z-value"} emphasizes those coefficients
