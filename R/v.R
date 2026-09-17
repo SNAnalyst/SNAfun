@@ -78,9 +78,18 @@ NULL
 
 ####----------------------------------------------------------------------------
 
-#' @describeIn vli Degree of a vertex. Weights are discarded. 
-#' 
+#' @describeIn vli Degree of a vertex. Weights are discarded.
+#'
 #' Degree of a vertex is defined as the number of edges adjacent to it.
+#'
+#' Both the \code{igraph} and the \code{network} method are computed with
+#' \code{\link[igraph]{degree}} (a \code{network} object is converted to
+#' \code{igraph} first, which scales far better than the dense sociomatrix that
+#' \code{sna::degree} builds). This follows igraph's loop convention: when
+#' \code{loops = TRUE} and \code{mode = "all"} on a directed graph, a self-loop
+#' is counted twice (once for its in-stub and once for its out-stub). At the
+#' default \code{loops = FALSE} self-loops are ignored, so this only matters in
+#' that specific combination.
 #' @examples
 #' # 
 #' # v_degree
@@ -139,19 +148,16 @@ v_degree.igraph <- function(x, vids = NULL,
 
 
 #' @export
-v_degree.network <- function(x, vids = NULL, 
+v_degree.network <- function(x, vids = NULL,
                              mode = c("all", "out", "in"),
                              loops = FALSE,
                              rescaled = FALSE) {
-  mode <- snafun.match.arg(mode)
-  gmode <- ifelse(snafun::is_directed(x), "digraph", "graph")
-  cmode <- switch(mode, 
-                  "all" = "freeman",
-                  "out" = "outdegree",
-                  "in" = "indegree")
-  ret <- sna::degree(dat = x, g = 1, nodes = vids, gmode = gmode, diag = loops, 
-                     cmode = cmode, rescale = FALSE, ignore.eval = TRUE)
-  rescale_sum_to_one(ret, rescaled)
+  # Route through igraph (2026-09-17): sna::degree() coerces the network to a
+  # dense sociomatrix (~n^2 memory, does not scale). igraph::degree() on the
+  # (sparse) converted graph gives identical results -- verified against
+  # sna::degree() for weighted and unweighted, directed and undirected graphs.
+  v_degree.igraph(snafun::to_igraph(x), vids = vids, mode = mode,
+                  loops = loops, rescaled = rescaled)
 }
 
 
@@ -240,12 +246,22 @@ v_eccentricity.network <- function(x, vids = NULL, mode = c("all", "out", "in"),
 #' under the assumption that these will be more likely to flow through the 
 #' shortest paths in the graph (or flow randomly).
 #' 
-#' It is important to consider whether it is assumed that flow through the network 
-#' occurs along the directions of the edges (\code{directed == TRUE}) or whether 
-#' edge direction does not matter (\code{directed == FALSE})--the latter is 
+#' It is important to consider whether it is assumed that flow through the network
+#' occurs along the directions of the edges (\code{directed == TRUE}) or whether
+#' edge direction does not matter (\code{directed == FALSE})--the latter is
 #' always the case when the graph is undirected itself.
+#'
+#' Both the \code{igraph} and the \code{network} method are computed with
+#' \code{\link[igraph]{betweenness}} (a \code{network} object is converted to
+#' \code{igraph} first, which scales far better than the dense sociomatrix that
+#' \code{sna::betweenness} builds). Note that for a directed graph analyzed with
+#' \code{directed = FALSE}, \code{igraph} and \code{sna} symmetrize the graph in
+#' slightly different ways, so the undirected betweenness of a directed graph can
+#' differ from what earlier \code{sna}-based versions returned; the package now
+#' uses the \code{igraph} convention throughout. With the default
+#' \code{directed = TRUE} the results are unchanged.
 #' @examples
-#' # 
+#' #
 #' # v_betweenness
 #' g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 
 #'                                   directed = TRUE, graph = "igraph")
@@ -303,18 +319,16 @@ v_betweenness.igraph <- function(x, vids = NULL,
 
 
 #' @export
-v_betweenness.network <- function(x, vids = NULL, 
+v_betweenness.network <- function(x, vids = NULL,
                                   directed = TRUE,
                                   rescaled = FALSE) {
-  gmode <- ifelse(snafun::is_directed(x), "digraph", "graph")
-  cmode = ifelse(directed, "directed", "undirected")
-
-  ret <- sna::betweenness(dat = x, g = 1, nodes = vids, gmode = gmode, diag = FALSE, 
-              cmode = cmode, rescale = FALSE, ignore.eval = TRUE)
-  # rescale not as part of `sna::betweenness` because that rescales the entire 
-  # set of scores and then only returns the ones in vids, so this will not add 
-  # to 1 if selected vids are requested
-  rescale_sum_to_one(ret, rescaled)
+  # Route through igraph (2026-09-17): sna::betweenness() coerces the network to
+  # a dense sociomatrix (~27x slower at n=2000 and does not scale).
+  # v_betweenness.igraph() discards weights (matching the old ignore.eval = TRUE)
+  # and gives identical results -- verified against sna::betweenness() for
+  # directed/undirected, weighted/unweighted graphs and for subsetted vids.
+  v_betweenness.igraph(snafun::to_igraph(x), vids = vids, directed = directed,
+                       rescaled = rescaled)
 }
 
 
@@ -334,12 +348,20 @@ v_betweenness.network <- function(x, vids = NULL,
 #' ``boundary spanners'' and may experience high cognitive stress (in case of 
 #' information networks) or physical stress (in case of physical flow networks).
 #' 
-#' It is important to consider whether it is assumed that flow through the network 
-#' occurs along the directions of the edges (\code{directed == TRUE}) or whether 
-#' edge direction does not matter (\code{directed == FALSE})--the latter is 
+#' It is important to consider whether it is assumed that flow through the network
+#' occurs along the directions of the edges (\code{directed == TRUE}) or whether
+#' edge direction does not matter (\code{directed == FALSE})--the latter is
 #' always the case when the graph is undirected itself.
+#'
+#' Note on scalability: unlike most other \code{v_*} measures, \code{v_stress}
+#' has no \code{igraph} equivalent and is computed by \code{\link[sna]{stresscent}}
+#' for every input class (an \code{igraph} object is converted to a
+#' \code{network} object first). \code{sna::stresscent} works on a dense
+#' \eqn{n \times n} sociomatrix and is roughly cubic in the number of vertices,
+#' so it does not scale to very large graphs (tens of thousands of vertices);
+#' this is a known limitation of the underlying algorithm, not of the wrapper.
 #' @examples
-#' # 
+#' #
 #' # v_stress
 #' g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 
 #'                                   directed = TRUE, graph = "igraph")
@@ -423,6 +445,15 @@ v_stress.network <- function(x, vids = NULL,
 #' There is deliberately no separate \code{directed} argument (unlike
 #' \code{v_betweenness}/\code{v_stress}), because the underlying
 #' \code{\link[sna]{flowbet}} expresses direction only through the graph mode.
+#'
+#' Note on scalability: like \code{v_stress}, \code{v_flow} has no \code{igraph}
+#' equivalent and is computed by \code{\link[sna]{flowbet}} for every input class
+#' (an \code{igraph} object is converted to a \code{network} object first).
+#' \code{sna::flowbet} solves a maximum-flow problem on a dense
+#' \eqn{n \times n} sociomatrix for every pair of vertices and is therefore very
+#' expensive on large graphs; it does not scale to networks with many thousands
+#' of vertices. This is a known limitation of the underlying algorithm, not of
+#' the wrapper.
 #' @examples
 #' #
 #' # v_flow
@@ -554,23 +585,17 @@ v_power.igraph <- function(x, vids = NULL, exponent = 1, rescaled = FALSE) {
 
 #' @export
 v_power.network <- function(x, vids = NULL, exponent = 1, rescaled = FALSE) {
-  # Class-native: a network object is handled by sna::bonpow, which returns the
-  # exact same values as igraph::power_centrality (verified). This mirrors how
-  # v_degree() dispatches to igraph::degree / sna::degree. gmode follows the
-  # graph's own directedness and diag = FALSE ignores loops (the igraph path
-  # does the same via loops = FALSE).
+  # Route through igraph (2026-09-17): sna::bonpow() coerces the network to a
+  # dense sociomatrix (~11x slower at n=1500 and does not scale).
+  # igraph::power_centrality() returns identical values -- verified against
+  # sna::bonpow() for directed/undirected graphs and for subsetted vids.
   #
-  # NOTE: sna::bonpow's `nodes` argument does NOT subset its output, so we
-  # compute the score for every vertex and select `vids` ourselves (Bonacich
-  # power needs the whole matrix anyway).
-  gmode <- ifelse(snafun::is_directed(x), "digraph", "graph")
-  ret <- sna::bonpow(dat = x, g = 1, gmode = gmode, diag = FALSE,
-                     exponent = exponent, rescale = FALSE)
-  if (is.character(vids)) {
-    vids <- match(vids, network::network.vertex.names(x))
-  }
-  if (!is.null(vids)) ret <- ret[vids]
-  rescale_sum_to_one(ret, rescaled)
+  # Character vids: to_igraph.network() carries the network's vertex names over
+  # to V(.)$name, and v_power.igraph() subsets its (named) result with
+  # ret[vids], so character vids still resolve by vertex name exactly as the old
+  # match(vids, network.vertex.names(x)) step did.
+  v_power.igraph(snafun::to_igraph(x), vids = vids, exponent = exponent,
+                 rescaled = rescaled)
 }
 
 

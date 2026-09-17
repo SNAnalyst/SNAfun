@@ -137,9 +137,18 @@ Calculate several vertex level indices.
 }
 \section{Functions}{
 \itemize{
-\item \code{v_degree()}: Degree of a vertex. Weights are discarded. 
+\item \code{v_degree()}: Degree of a vertex. Weights are discarded.
 
 Degree of a vertex is defined as the number of edges adjacent to it.
+
+Both the \code{igraph} and the \code{network} method are computed with
+\code{\link[igraph]{degree}} (a \code{network} object is converted to
+\code{igraph} first, which scales far better than the dense sociomatrix that
+\code{sna::degree} builds). This follows igraph's loop convention: when
+\code{loops = TRUE} and \code{mode = "all"} on a directed graph, a self-loop
+is counted twice (once for its in-stub and once for its out-stub). At the
+default \code{loops = FALSE} self-loops are ignored, so this only matters in
+that specific combination.
 
 \item \code{v_eccentricity()}: Eccentricity of a vertex. Weights are discarded. 
 The heavy lifting is done using \code{\link[igraph]{eccentricity}}.
@@ -179,10 +188,20 @@ position having disproportionately fast access to information and rumors,
 under the assumption that these will be more likely to flow through the 
 shortest paths in the graph (or flow randomly).
 
-It is important to consider whether it is assumed that flow through the network 
-occurs along the directions of the edges (\code{directed == TRUE}) or whether 
-edge direction does not matter (\code{directed == FALSE})--the latter is 
+It is important to consider whether it is assumed that flow through the network
+occurs along the directions of the edges (\code{directed == TRUE}) or whether
+edge direction does not matter (\code{directed == FALSE})--the latter is
 always the case when the graph is undirected itself.
+
+Both the \code{igraph} and the \code{network} method are computed with
+\code{\link[igraph]{betweenness}} (a \code{network} object is converted to
+\code{igraph} first, which scales far better than the dense sociomatrix that
+\code{sna::betweenness} builds). Note that for a directed graph analyzed with
+\code{directed = FALSE}, \code{igraph} and \code{sna} symmetrize the graph in
+slightly different ways, so the undirected betweenness of a directed graph can
+differ from what earlier \code{sna}-based versions returned; the package now
+uses the \code{igraph} convention throughout. With the default
+\code{directed = TRUE} the results are unchanged.
 
 \item \code{v_stress()}: Stress centrality of a vertex. Weights are discarded. 
 
@@ -199,10 +218,18 @@ paths between other vertices; they can thus be thought of as ``bridges'' or
 ``boundary spanners'' and may experience high cognitive stress (in case of 
 information networks) or physical stress (in case of physical flow networks).
 
-It is important to consider whether it is assumed that flow through the network 
-occurs along the directions of the edges (\code{directed == TRUE}) or whether 
-edge direction does not matter (\code{directed == FALSE})--the latter is 
+It is important to consider whether it is assumed that flow through the network
+occurs along the directions of the edges (\code{directed == TRUE}) or whether
+edge direction does not matter (\code{directed == FALSE})--the latter is
 always the case when the graph is undirected itself.
+
+Note on scalability: unlike most other \code{v_*} measures, \code{v_stress}
+has no \code{igraph} equivalent and is computed by \code{\link[sna]{stresscent}}
+for every input class (an \code{igraph} object is converted to a
+\code{network} object first). \code{sna::stresscent} works on a dense
+\eqn{n \times n} sociomatrix and is roughly cubic in the number of vertices,
+so it does not scale to very large graphs (tens of thousands of vertices);
+this is a known limitation of the underlying algorithm, not of the wrapper.
 
 \item \code{v_flow()}: Flow betweenness of a vertex. Weights are discarded.
 
@@ -224,6 +251,15 @@ directed graph is analyzed as directed and an undirected graph as undirected.
 There is deliberately no separate \code{directed} argument (unlike
 \code{v_betweenness}/\code{v_stress}), because the underlying
 \code{\link[sna]{flowbet}} expresses direction only through the graph mode.
+
+Note on scalability: like \code{v_stress}, \code{v_flow} has no \code{igraph}
+equivalent and is computed by \code{\link[sna]{flowbet}} for every input class
+(an \code{igraph} object is converted to a \code{network} object first).
+\code{sna::flowbet} solves a maximum-flow problem on a dense
+\eqn{n \times n} sociomatrix for every pair of vertices and is therefore very
+expensive on large graphs; it does not scale to networks with many thousands
+of vertices. This is a known limitation of the underlying algorithm, not of
+the wrapper.
 
 \item \code{v_power()}: Bonacich power centrality of a vertex. Weights are discarded.
 
@@ -443,7 +479,7 @@ v_degree(g_n, mode = "in", rescaled = TRUE)
 v_degree(g_n, mode = "out")
 v_degree(g_n, mode = "out", rescaled = TRUE)
 v_degree(g2_n)   # weight is ignored
-# 
+#
 # v_betweenness
 g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 
                                   directed = TRUE, graph = "igraph")
@@ -463,7 +499,7 @@ g <- snafun::create_manual_graph(2:3:4:5:6:7:8:9:10 -+ 1)
 plot(g)
 v_betweenness(g) # there are no shortest paths with length >= 3
 v_betweenness(g, directed = FALSE) # all 36 shortest paths that do not include "1" go through "1"
-# 
+#
 # v_stress
 g_i <- snafun::create_random_graph(10, strategy = "gnm", m = 12, 
                                   directed = TRUE, graph = "igraph")
